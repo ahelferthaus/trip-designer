@@ -4,7 +4,7 @@ import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
 import { getActivityLink } from "../lib/activityLinks";
 import { getCurrentUser, setCurrentUser, getUserSelections, saveUserSelection, getAllUsersSelections, clearCurrentUser } from "../lib/userSession";
-import { getTripById } from "../lib/tripStorage";
+import { getTripById, loadSavedTrips } from "../lib/tripStorage";
 import type { SavedTrip } from "../lib/tripStorage";
 import type { ActivityOption } from "../lib/types";
 
@@ -222,16 +222,10 @@ export default function ItineraryPage() {
   }
 
   if (!activeItinerary) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6"
-        style={{ backgroundColor: "var(--td-bg)" }}>
-        <p className="mb-4 text-[15px]" style={{ color: "var(--td-secondary)" }}>No itinerary yet.</p>
-        <button onClick={() => navigate("/intake")} className="text-[17px]"
-          style={{ color: "var(--td-accent)" }}>
-          Plan a trip →
-        </button>
-      </div>
-    );
+    // Redirect to trips if any saved, otherwise home
+    const saved = loadSavedTrips();
+    navigate(saved.length > 0 ? "/trips" : "/", { replace: true });
+    return null;
   }
 
   // Login modal
