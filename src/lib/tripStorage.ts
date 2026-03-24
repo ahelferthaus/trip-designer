@@ -1,5 +1,5 @@
-import type { IntakeFormData } from "./types";
 import type { GeneratedItinerary } from "./generateItinerary";
+import type { IntakeFormData } from "./types";
 
 export interface SavedTrip {
   id: string;
