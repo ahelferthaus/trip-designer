@@ -140,14 +140,63 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 
 ---
 
-## Deploy to Vercel
+## Deploy to Vercel (Secure)
 
-1. Push to GitHub
-2. Go to [vercel.com](https://vercel.com) → Import Project → select `trip-designer`
-3. Add environment variables (see above)
-4. Deploy — Vercel auto-detects Vite
+Your API keys stay hidden on Vercel's servers. Users can use the app but cannot steal your keys.
 
-**SPA routing fix**: `vercel.json` in repo handles React Router routes.
+### 1. Push to GitHub
+Already done if you're reading this.
+
+### 2. Connect to Vercel
+1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+2. Click **"Add New Project"**
+3. Import `trip-designer`
+
+### 3. Add Environment Variables (CRITICAL)
+
+In the Vercel dashboard, before clicking Deploy, add these:
+
+**Required (at least one LLM):**
+```
+OPENAI_API_KEY=sk-...           # No VITE_ prefix! Server-side only
+```
+
+**Optional (for redundancy):**
+```
+ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=AIza...
+```
+
+**Optional (for cloud trips):**
+```
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+⚠️ **Important**: Use `OPENAI_API_KEY` not `VITE_OPENAI_API_KEY`. The `VITE_` prefix exposes keys to the browser. Without it, the key stays server-side secure.
+
+### 4. Deploy
+Click **Deploy**. Vercel builds and gives you a URL like:
+```
+https://trip-designer-abc123.vercel.app
+```
+
+### 5. Add to iPhone Home Screen
+1. Open the Vercel URL in Safari on your iPhone
+2. Tap **Share** → **Add to Home Screen**
+3. Now it launches full-screen like a native app
+
+---
+
+## How the Security Works
+
+| Before (insecure) | After (secure) |
+|-------------------|----------------|
+| Key in browser JS bundle | Key only on Vercel servers |
+| Anyone can open DevTools → steal key | Key never sent to browser |
+| Share URL = share your API key | Share URL = people use your app, can't steal key |
+
+The app has two API endpoints (`/api/generate` and `/api/refine`) that call OpenAI with your server-side key. Rate limited to 10 requests/minute per IP.
 
 ---
 
@@ -157,10 +206,34 @@ VITE_SUPABASE_ANON_KEY=your-anon-key
 git clone https://github.com/ahelferthaus/trip-designer.git
 cd trip-designer
 npm install
+```
+
+Create `.env`:
+```
+# For local dev (falls back to client-side if API not running)
+VITE_OPENAI_API_KEY=sk-...
+```
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173)
+The app tries `/api/generate` first. If that fails (no Vercel dev server), it falls back to `VITE_OPENAI_API_KEY` directly.
+
+---
+
+## Environment Variable Reference
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `OPENAI_API_KEY` | Vercel only | Server-side OpenAI calls (secure) |
+| `ANTHROPIC_API_KEY` | Vercel only | Server-side Claude fallback (secure) |
+| `GEMINI_API_KEY` | Vercel only | Server-side Gemini fallback (secure) |
+| `VITE_OPENAI_API_KEY` | `.env` local | Client-side fallback for local dev |
+| `VITE_SUPABASE_URL` | Both | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Both | Supabase anon key |
+
+**Rule**: `VITE_` = browser can see it. No prefix = server-side only.
 
 ---
 
