@@ -73,8 +73,9 @@ export default function IntakePage() {
     itineraryStore.setError(null);
     navigate("/itinerary");
     try {
-      const result = await generateItinerary({ ...form, group_members: members });
-      itineraryStore.setItinerary(result);
+      const finalForm = { ...form, group_members: members };
+      const result = await generateItinerary(finalForm);
+      itineraryStore.setItinerary(result, finalForm);
     } catch {
       itineraryStore.setError("Couldn't generate your itinerary. Please try again.");
     } finally {

@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../store/themeStore";
+import { loadSavedTrips } from "../lib/tripStorage";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const savedCount = loadSavedTrips().length;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--td-bg)" }}>
@@ -52,7 +54,7 @@ export default function HomePage() {
 
       <div className="flex-1" />
 
-      <div className="px-4 pb-8 safe-bottom">
+      <div className="px-4 pb-8 safe-bottom flex flex-col gap-3">
         <button
           onClick={() => navigate("/intake")}
           className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70 transition-opacity"
@@ -60,7 +62,16 @@ export default function HomePage() {
         >
           Plan a Trip
         </button>
-        <p className="text-center text-[13px] mt-3" style={{ color: "var(--td-secondary)" }}>
+        {savedCount > 0 && (
+          <button
+            onClick={() => navigate("/trips")}
+            className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70 transition-opacity"
+            style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
+          >
+            My Trips ({savedCount})
+          </button>
+        )}
+        <p className="text-center text-[13px]" style={{ color: "var(--td-secondary)" }}>
           No account needed to get started
         </p>
       </div>

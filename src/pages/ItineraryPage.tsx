@@ -153,17 +153,24 @@ export default function ItineraryPage() {
         borderColor: "var(--td-separator)"
       }}>
         <div className="px-4 safe-top pt-3 pb-3">
-          <h1 className="text-[20px] font-bold" style={{ color: "var(--td-accent-text)" }}>
-            {itinerary.title}
-          </h1>
-          <div className="flex items-center justify-between">
-            <p className="text-[13px]" style={{ color: "var(--td-accent-text)", opacity: 0.75 }}>
-              {form.destination?.name} · {itinerary.days.length} days
-            </p>
+          <div className="flex items-center justify-between mb-1">
+            <button
+              onClick={() => navigate("/")}
+              className="text-[17px] active:opacity-70"
+              style={{ color: "var(--td-accent-text)" }}
+            >
+              ‹ Home
+            </button>
             <p className="text-[13px] font-semibold" style={{ color: "var(--td-accent-text)" }}>
               ~${totalCost()}/person
             </p>
           </div>
+          <h1 className="text-[20px] font-bold" style={{ color: "var(--td-accent-text)" }}>
+            {itinerary.title}
+          </h1>
+          <p className="text-[13px]" style={{ color: "var(--td-accent-text)", opacity: 0.75 }}>
+            {form.destination?.name} · {itinerary.days.length} days
+          </p>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import IntakePage from "./pages/IntakePage";
 import ItineraryPage from "./pages/ItineraryPage";
 import ThemePage from "./pages/ThemePage";
+import TripsPage from "./pages/TripsPage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
               <Route path="/intake" element={<IntakePage />} />
               <Route path="/itinerary" element={<ItineraryPage />} />
               <Route path="/theme" element={<ThemePage />} />
+              <Route path="/trips" element={<TripsPage />} />
             </Routes>
           </BrowserRouter>
         </ItineraryStoreProvider>
