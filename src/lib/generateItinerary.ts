@@ -17,6 +17,8 @@ export async function generateItinerary(form: IntakeFormData): Promise<Generated
 
   const userPrompt = `Plan a ${days}-day trip to ${form.destination?.name}.
 
+CRITICAL: You MUST return EXACTLY ${days} days in the "days" array. No more, no less.
+
 Group: ${form.group_members.length} people (${groupDesc})
 Budget: ${form.budget_level}
 Vibe: ${form.vibes.join(", ")}
@@ -55,34 +57,45 @@ Return JSON in this exact shape:
               "weather_sensitivity": "indoor",
               "ai_generated": true
             },
-            { }
+            { "second option here with same fields" }
           ]
         }
       ]
     }
+    // REPEAT FOR ALL ${days} DAYS — Day 2, Day 3, etc.
   ],
   "hiddenGems": [
     { "day_number": 1, "tip": "local secret tip", "location": "optional place name" }
+    // One hiddenGem per day for all ${days} days
   ]
 }
 
 Rules:
+- EXACTLY ${days} days required — this is a ${days}-day trip
+- Day 1 = ${form.start_date}, Day ${days} = ${form.end_date}
 - 3 slots per day: morning, afternoon, evening
-- 2 options per slot (let user pick)
-- category must be one of: food, attraction, adventure, rest, transport
-- weather_sensitivity must be one of: indoor, outdoor, either
-- slot_type must be one of: morning, afternoon, evening, flex
+- 2 options per slot
+- Each day should have different activities (don't repeat the same stuff)
+- category: food, attraction, adventure, rest, or transport
+- weather_sensitivity: indoor, outdoor, or either
 - estimated_cost_per_person in USD
-- Keep descriptions vivid and specific to the destination
-- Vary activity types — don't stack all attractions
-- Also return a hiddenGems array — one entry per day. Each entry: a genuine local secret, non-touristy tip, or under-the-radar spot most visitors miss. Keep each tip under 2 sentences.`;
+- Descriptions vivid and specific to ${form.destination?.name}
+- hiddenGems: one per day, genuine local secrets most tourists miss`;
 
   const raw = await callLLM([
     { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
   ]);
 
-  return JSON.parse(raw) as GeneratedItinerary;
+  const result = JSON.parse(raw) as GeneratedItinerary;
+  
+  // Validate day count
+  if (result.days.length !== days) {
+    console.warn(`AI returned ${result.days.length} days but ${days} were requested. Prompt was: ${days}-day trip.`);
+    // Pad with empty days if needed, or just return what we got
+  }
+  
+  return result;
 }
 
 function daysBetween(start: string, end: string) {
