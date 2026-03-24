@@ -65,7 +65,7 @@ export default function SettingsPage() {
             })}
           </div>
           <p className="text-[12px] mt-2 px-1" style={{ color: "var(--td-secondary)" }}>
-            Add keys to your .env file to enable additional providers. Priority: GPT-4o → Claude → Gemini
+            On Vercel: keys are server-side (secure). For local dev: add VITE_ keys to .env. Priority: GPT-4o → Claude → Gemini
           </p>
         </section>
 

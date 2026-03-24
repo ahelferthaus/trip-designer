@@ -1,4 +1,4 @@
-import { callLLM } from "./llmClient";
+import { callRefineLLM } from "./llmClient";
 import type { GeneratedItinerary } from "./generateItinerary";
 import type { IntakeFormData } from "./types";
 
@@ -7,7 +7,7 @@ export async function refineItinerary(
   form: IntakeFormData,
   instruction: string
 ): Promise<GeneratedItinerary> {
-  const raw = await callLLM([
+  const raw = await callRefineLLM([
     {
       role: "system",
       content:

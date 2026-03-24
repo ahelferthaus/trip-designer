@@ -17,6 +17,22 @@ function getConfig(): LLMConfig {
   };
 }
 
+// Call secure Vercel API (key hidden server-side)
+async function callSecureAPI(messages: LLMMessage[], endpoint: "/api/generate" | "/api/refine"): Promise<string> {
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `API ${res.status}`);
+  }
+  const data = await res.json();
+  return data.content;
+}
+
+// Client-side fallbacks (only used if secure API fails or for local dev)
 async function callOpenAI(messages: LLMMessage[], key: string): Promise<string> {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -68,7 +84,8 @@ async function callGemini(messages: LLMMessage[], key: string): Promise<string> 
   return data.candidates[0].content.parts[0].text;
 }
 
-export async function callLLM(messages: LLMMessage[]): Promise<string> {
+// Client-side fallback chain
+async function callClientSideLLM(messages: LLMMessage[]): Promise<string> {
   const config = getConfig();
   const errors: string[] = [];
 
@@ -85,7 +102,31 @@ export async function callLLM(messages: LLMMessage[]): Promise<string> {
     catch (e) { errors.push(`Gemini: ${e}`); }
   }
 
-  throw new Error(`All LLMs failed:\n${errors.join("\n")}`);
+  throw new Error(`All LLMs failed. Add OPENAI_API_KEY to Vercel env vars, or add VITE_OPENAI_API_KEY to .env for local dev.\n${errors.join("\n")}`);
+}
+
+export async function callLLM(messages: LLMMessage[]): Promise<string> {
+  // Try secure API first (server-side key, not exposed)
+  try {
+    return await callSecureAPI(messages, "/api/generate");
+  } catch (err) {
+    console.log("Secure API failed, trying client-side fallback:", err);
+  }
+
+  // Fallback to client-side (for local dev without vercel dev server)
+  return callClientSideLLM(messages);
+}
+
+export async function callRefineLLM(messages: LLMMessage[]): Promise<string> {
+  // Try secure API first
+  try {
+    return await callSecureAPI(messages, "/api/refine");
+  } catch (err) {
+    console.log("Secure API failed, trying client-side fallback:", err);
+  }
+
+  // Fallback to client-side
+  return callClientSideLLM(messages);
 }
 
 export function getAvailableProviders(): string[] {
