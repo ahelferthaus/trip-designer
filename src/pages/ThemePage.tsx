@@ -25,7 +25,7 @@ export default function ThemePage() {
 
       <div className="px-4 pt-6 pb-4">
         <h2 className="text-[22px] font-bold mb-1" style={{ color: "var(--td-label)" }}>
-          Wes Anderson Palettes
+          Choose your adventure color for this journey!
         </h2>
         <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
           Each theme is pulled from a real film's color database.
