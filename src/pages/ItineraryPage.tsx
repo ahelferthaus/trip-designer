@@ -108,9 +108,9 @@ export default function ItineraryPage() {
   const [savedTrip, setSavedTrip] = useState<SavedTrip | null>(null);
   
   // Login state
-  const [showLogin, setShowLogin] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [passcodeError, setPasscodeError] = useState(false);
+  const [passcodeVerified, setPasscodeVerified] = useState(false);
   const [currentUser, setCurrentUserState] = useState(getCurrentUser());
   const [userSelections, setUserSelections] = useState<Record<string, string>>({});
   
@@ -130,7 +130,7 @@ export default function ItineraryPage() {
       setCurrentUserState(session);
       setUserSelections(getUserSelections(activeTripId, session.name));
     } else if (activeTripId) {
-      setShowLogin(true);
+      // Will show login modal by default
     }
   }, [tripId, itinerary, savedTrip?.id]);
 
@@ -138,7 +138,7 @@ export default function ItineraryPage() {
     if (passcode === TRIP_PASSCODE) {
       setPasscodeError(false);
       setPasscode("");
-      // Show member picker
+      setPasscodeVerified(true);
     } else {
       setPasscodeError(true);
     }
@@ -149,7 +149,7 @@ export default function ItineraryPage() {
     setCurrentUser(name, activeTripId);
     setCurrentUserState({ name, tripId: activeTripId });
     setUserSelections(getUserSelections(activeTripId, name));
-    setShowLogin(false);
+    setPasscodeVerified(false);
   };
 
   const selectOption = (slotId: string, optionId: string) => {
@@ -235,7 +235,7 @@ export default function ItineraryPage() {
   }
 
   // Login modal
-  if (showLogin || !currentUser) {
+  if (!passcodeVerified && !currentUser) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6"
         style={{ backgroundColor: "var(--td-bg)" }}>
@@ -291,8 +291,8 @@ export default function ItineraryPage() {
     );
   }
 
-  // Member picker (after passcode) - simplified: just show all group members
-  if (currentUser && !groupMembers.find(m => m.name === currentUser.name)) {
+  // Member picker (after passcode)
+  if (passcodeVerified && !currentUser) {
     return (
       <div className="min-h-screen flex flex-col px-6 pt-24" style={{ backgroundColor: "var(--td-bg)" }}>
         <h2 className="text-[28px] font-bold mb-2" style={{ color: "var(--td-label)" }}>
@@ -314,9 +314,8 @@ export default function ItineraryPage() {
         
         <button
           onClick={() => {
-            clearCurrentUser();
-            setShowLogin(true);
-            setCurrentUserState(null);
+            setPasscodeVerified(false);
+            setPasscode("");
           }}
           className="mt-8 text-[17px]"
           style={{ color: "var(--td-secondary)" }}
@@ -346,7 +345,6 @@ export default function ItineraryPage() {
             <button
               onClick={() => {
                 clearCurrentUser();
-                setShowLogin(true);
                 setCurrentUserState(null);
               }}
               className="text-[13px] active:opacity-70"
@@ -363,7 +361,7 @@ export default function ItineraryPage() {
               {activeForm.destination?.name} · {activeItinerary.days.length} days
             </p>
             <p className="text-[13px] font-semibold" style={{ color: "var(--td-accent-text)" }}>
-              {currentUser.name} logged in
+              {currentUser?.name} logged in
             </p>
           </div>
         </div>
@@ -379,7 +377,7 @@ export default function ItineraryPage() {
             <Avatar
               key={member.name}
               name={member.name}
-              active={member.name === currentUser.name}
+              active={member.name === currentUser?.name}
               onClick={() => selectUser(member.name)}
             />
           ))}
