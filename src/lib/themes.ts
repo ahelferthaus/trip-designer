@@ -22,7 +22,7 @@ export const themes: Theme[] = [
     id: "ios-default",
     film: "Default",
     year: "",
-    description: "Clean iOS blue",
+    description: "Classic, clean, predictable. Like a ham sandwich.",
     colors: {
       bg: "#F2F2F7",
       card: "#FFFFFF",
@@ -40,7 +40,7 @@ export const themes: Theme[] = [
     id: "grand-budapest",
     film: "The Grand Budapest Hotel",
     year: "2014",
-    description: "Cotton-candy pink, regal purple, rich red",
+    description: "You fancy, huh? Pack your monogrammed luggage.",
     colors: {
       bg: "#F9EEF2",
       card: "#FFFFFF",
@@ -58,7 +58,7 @@ export const themes: Theme[] = [
     id: "moonrise-kingdom",
     film: "Moonrise Kingdom",
     year: "2012",
-    description: "Golden yellows, earthy greens, soft browns",
+    description: "Summer camp vibes. Will probably involve a canoe.",
     colors: {
       bg: "#F5F0E8",
       card: "#FFFDF7",
@@ -76,7 +76,7 @@ export const themes: Theme[] = [
     id: "royal-tenenbaums",
     film: "The Royal Tenenbaums",
     year: "2001",
-    description: "Muted teal, bold reds, warm neutrals",
+    description: "Dysfunctional family reunion. Bring a tennis racket.",
     colors: {
       bg: "#F2EDE4",
       card: "#FAEFD1",
@@ -94,7 +94,7 @@ export const themes: Theme[] = [
     id: "fantastic-mr-fox",
     film: "Fantastic Mr. Fox",
     year: "2009",
-    description: "Rich oranges, golden yellows, rustic browns",
+    description: "Charming, slightly mischievous. Watch for farmers.",
     colors: {
       bg: "#FDF3E3",
       card: "#FFFBF2",
@@ -112,7 +112,7 @@ export const themes: Theme[] = [
     id: "life-aquatic",
     film: "The Life Aquatic",
     year: "2004",
-    description: "Aquatic blues, seafoam teals, equipment yellows",
+    description: "Marine biology meets midlife crisis. Dive in.",
     colors: {
       bg: "#E8F4F8",
       card: "#FFFFFF",
@@ -130,7 +130,7 @@ export const themes: Theme[] = [
     id: "darjeeling",
     film: "The Darjeeling Limited",
     year: "2007",
-    description: "Saffron reds, peacock greens, marigold yellows",
+    description: "Train journey. Emotional baggage included.",
     colors: {
       bg: "#FFF8EE",
       card: "#FFFFFF",
@@ -148,7 +148,7 @@ export const themes: Theme[] = [
     id: "french-dispatch",
     film: "The French Dispatch",
     year: "2021",
-    description: "Newsprint blacks, paper whites, coffeehouse neutrals",
+    description: "Journalist chic. You probably read Sartre.",
     colors: {
       bg: "#F0EDE8",
       card: "#E5E5E5",
@@ -166,7 +166,7 @@ export const themes: Theme[] = [
     id: "isle-of-dogs",
     film: "Isle of Dogs",
     year: "2018",
-    description: "Muted greys, warning reds, hope yellows",
+    description: "Dystopian but cute. Watch out for trash islands.",
     colors: {
       bg: "#EFEFEF",
       card: "#FFFFFF",
@@ -184,7 +184,7 @@ export const themes: Theme[] = [
     id: "bottle-rocket",
     film: "Bottle Rocket",
     year: "1996",
-    description: "Crimson reds, slate greens, industrial greys",
+    description: "Heist movie energy. You are definitely the mastermind.",
     colors: {
       bg: "#EAECEC",
       card: "#FFFFFF",
