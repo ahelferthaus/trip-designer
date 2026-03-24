@@ -542,7 +542,7 @@ export default function ItineraryPage() {
             {/* Flights */}
             <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
               <a
-                href={getFlightsLink(activeForm.destination?.name ?? "", activeForm.start_date)}
+                href={getFlightsLink(activeForm.destination?.name ?? "", activeForm.start_date, activeForm.end_date)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between active:opacity-70"
