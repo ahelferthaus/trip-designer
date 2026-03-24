@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+const ItineraryMap = lazy(() => import("../components/itinerary/ItineraryMap"));
 import { useNavigate, useParams } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
@@ -168,6 +169,9 @@ export default function ItineraryPage() {
   const [passcodeVerified, setPasscodeVerified] = useState(false);
   const [currentUser, setCurrentUserState] = useState(getCurrentUser());
   const [userSelections, setUserSelections] = useState<Record<string, string>>({});
+
+  // Map section state
+  const [mapOpen, setMapOpen] = useState(false);
 
   // Lodging card state
   const [lodgingOpen, setLodgingOpen] = useState(false);
@@ -522,6 +526,33 @@ export default function ItineraryPage() {
             />
           ))}
         </div>
+      </div>
+
+      {/* Map section */}
+      <div className="px-4 mb-4">
+        <button
+          onClick={() => setMapOpen(o => !o)}
+          className="w-full flex items-center justify-between py-3 active:opacity-70"
+        >
+          <span className="text-[17px] font-semibold" style={{ color: "var(--td-label)" }}>
+            🗺️ Trip Map
+          </span>
+          <span style={{ color: "var(--td-accent)" }}>{mapOpen ? "▲" : "▼"}</span>
+        </button>
+        {mapOpen && (
+          <Suspense fallback={
+            <div className="rounded-2xl flex items-center justify-center"
+              style={{ height: 220, backgroundColor: "var(--td-fill)" }}>
+              <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>Loading map…</p>
+            </div>
+          }>
+            <ItineraryMap
+              itinerary={activeItinerary}
+              destination={activeForm.destination?.name}
+              accentColor="var(--td-accent)"
+            />
+          </Suspense>
+        )}
       </div>
 
       {/* Lodging & Flights */}
