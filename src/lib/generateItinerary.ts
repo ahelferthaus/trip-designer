@@ -1,9 +1,10 @@
-import { openai } from "./openai";
+import { callLLM } from "./llmClient";
 import type { IntakeFormData, TripDay, ActivitySlot, ActivityOption } from "./types";
 
 export interface GeneratedItinerary {
   title: string;
   days: Array<TripDay & { slots: Array<ActivitySlot & { options: ActivityOption[] }> }>;
+  hiddenGems?: { day_number: number; tip: string; location?: string }[];
 }
 
 export async function generateItinerary(form: IntakeFormData): Promise<GeneratedItinerary> {
@@ -54,11 +55,14 @@ Return JSON in this exact shape:
               "weather_sensitivity": "indoor",
               "ai_generated": true
             },
-            { /* second option for same slot */ }
+            { }
           ]
         }
       ]
     }
+  ],
+  "hiddenGems": [
+    { "day_number": 1, "tip": "local secret tip", "location": "optional place name" }
   ]
 }
 
@@ -70,19 +74,14 @@ Rules:
 - slot_type must be one of: morning, afternoon, evening, flex
 - estimated_cost_per_person in USD
 - Keep descriptions vivid and specific to the destination
-- Vary activity types — don't stack all attractions`;
+- Vary activity types — don't stack all attractions
+- Also return a hiddenGems array — one entry per day. Each entry: a genuine local secret, non-touristy tip, or under-the-radar spot most visitors miss. Keep each tip under 2 sentences.`;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    temperature: 0.8,
-    response_format: { type: "json_object" },
-  });
+  const raw = await callLLM([
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt },
+  ]);
 
-  const raw = response.choices[0].message.content ?? "{}";
   return JSON.parse(raw) as GeneratedItinerary;
 }
 

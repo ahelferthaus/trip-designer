@@ -98,6 +98,12 @@ export interface GroupMember {
   age?: number;
 }
 
+export interface LodgingOption {
+  city: string;
+  checkIn: string;
+  checkOut: string;
+}
+
 export interface IntakeFormData {
   destination: Location | null;
   start_date: string;

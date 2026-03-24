@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
 import { getActivityLink, getPhotosLink } from "../lib/activityLinks";
+import { getLodgingLinks, getFlightsLink } from "../lib/lodgingLinks";
 import { refineItinerary } from "../lib/refineItinerary";
 import {
   saveCloudSelection,
@@ -28,7 +29,7 @@ const SLOT_LABELS: Record<string, string> = {
   morning: "Morning", afternoon: "Afternoon", evening: "Evening", flex: "Flex",
 };
 
-const TRIP_PASSCODE = "1234";
+const TRIP_PASSCODE = localStorage.getItem("td-passcode") ?? "1234";
 
 const REFINE_CHIPS = [
   "Make Day 2 more relaxed",
@@ -167,6 +168,9 @@ export default function ItineraryPage() {
   const [passcodeVerified, setPasscodeVerified] = useState(false);
   const [currentUser, setCurrentUserState] = useState(getCurrentUser());
   const [userSelections, setUserSelections] = useState<Record<string, string>>({});
+
+  // Lodging card state
+  const [lodgingOpen, setLodgingOpen] = useState(false);
 
   // Refinement state
   const [refineOpen, setRefineOpen] = useState(false);
@@ -520,6 +524,63 @@ export default function ItineraryPage() {
         </div>
       </div>
 
+      {/* Lodging & Flights */}
+      <div className="border-b" style={{ borderColor: "var(--td-separator)" }}>
+        <button
+          className="w-full px-4 py-3 flex items-center justify-between active:opacity-70"
+          onClick={() => setLodgingOpen(o => !o)}
+        >
+          <span className="text-[15px] font-semibold" style={{ color: "var(--td-label)" }}>
+            ✈️ Lodging &amp; Flights
+          </span>
+          <span className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
+            {lodgingOpen ? "▲" : "▼"}
+          </span>
+        </button>
+        {lodgingOpen && (
+          <div className="px-4 pb-4 flex flex-col gap-3">
+            {/* Flights */}
+            <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
+              <a
+                href={getFlightsLink(activeForm.destination?.name ?? "", activeForm.start_date)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between active:opacity-70"
+              >
+                <span className="text-[15px] font-medium" style={{ color: "var(--td-label)" }}>
+                  ✈️ Flights to {activeForm.destination?.name}
+                </span>
+                <span className="text-[13px]" style={{ color: "var(--td-accent)" }}>Google Flights ↗</span>
+              </a>
+            </div>
+            {/* Lodging */}
+            <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
+              <p className="text-[13px] font-semibold mb-2" style={{ color: "var(--td-secondary)" }}>
+                🏨 Where to stay
+              </p>
+              <div className="flex flex-wrap gap-3">
+                {getLodgingLinks(
+                  activeForm.destination?.name ?? "",
+                  activeForm.start_date,
+                  activeForm.end_date
+                ).map(link => (
+                  <a
+                    key={link.label}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[14px] font-medium underline active:opacity-70"
+                    style={{ color: "var(--td-accent)" }}
+                  >
+                    {link.label} ↗
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Refine this trip */}
       <div className="border-b" style={{ borderColor: "var(--td-separator)" }}>
         <button
@@ -635,6 +696,29 @@ export default function ItineraryPage() {
                   </div>
                 );
               })}
+              {/* Hidden Gem */}
+              {(() => {
+                const gem = activeItinerary.hiddenGems?.find(g => g.day_number === day.day_number);
+                if (!gem) return null;
+                return (
+                  <div
+                    className="rounded-2xl px-4 py-3 shadow-sm"
+                    style={{ backgroundColor: "color-mix(in srgb, var(--td-accent) 10%, var(--td-card))" }}
+                  >
+                    <p className="text-[12px] font-semibold uppercase tracking-wide mb-1" style={{ color: "var(--td-accent)" }}>
+                      🪄 Hidden Gem
+                    </p>
+                    <p className="text-[14px] leading-snug" style={{ color: "var(--td-label)" }}>
+                      {gem.tip}
+                    </p>
+                    {gem.location && (
+                      <p className="text-[12px] mt-1" style={{ color: "var(--td-secondary)" }}>
+                        📍 {gem.location}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         ))}

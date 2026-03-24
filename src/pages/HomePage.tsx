@@ -11,14 +11,21 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--td-bg)" }}>
       <div className="h-14" />
 
-      {/* Theme button top-right */}
-      <div className="px-6 flex justify-end">
+      {/* Top-right buttons */}
+      <div className="px-6 flex justify-end gap-2">
         <button
           onClick={() => navigate("/theme")}
           className="text-[13px] px-3 py-1.5 rounded-full"
           style={{ backgroundColor: "var(--td-card)", color: "var(--td-secondary)" }}
         >
           🎨 {theme.film === "Default" ? "Theme" : theme.film.split(" ").slice(0, 2).join(" ")}
+        </button>
+        <button
+          onClick={() => navigate("/settings")}
+          className="text-[13px] px-3 py-1.5 rounded-full"
+          style={{ backgroundColor: "var(--td-card)", color: "var(--td-secondary)" }}
+        >
+          ⚙️
         </button>
       </div>
 

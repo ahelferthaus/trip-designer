@@ -1,183 +1,264 @@
-You are extending TripDesigner, an existing Vite+React+TypeScript+Tailwind app. Read the existing code before making changes. Do NOT break existing functionality.
+# TripDesigner — Next Feature Build
 
-## TASK 1: Better Booking Links
+Read all existing code carefully before changing anything. Do NOT break existing functionality. Build must pass `npm run build` with zero errors when done.
 
-Replace `src/lib/activityLinks.ts` with smarter URL construction:
+---
 
+## TASK 1: Lodging + Flights Section
+
+### Add to `src/lib/types.ts`
+Add a `LodgingOption` interface:
 ```typescript
-export function getActivityLink(option: ActivityOption, destination?: string): { url: string; label: string } | null {
-  const title = encodeURIComponent(option.title);
-  const place = encodeURIComponent(option.location?.name ?? option.title);
-  const dest = encodeURIComponent(destination ?? "");
-  const query = encodeURIComponent(`${option.title} ${destination ?? ""}`);
-
-  switch (option.category) {
-    case "attraction":
-      return {
-        url: `https://en.wikipedia.org/wiki/Special:Search?search=${title}`,
-        label: "Wikipedia",
-      };
-    case "food":
-      return {
-        url: `https://www.google.com/maps/search/${query}`,
-        label: "Find on Maps",
-      };
-    case "adventure":
-      return {
-        url: `https://www.viator.com/search/${dest}?text=${title}`,
-        label: "Book on Viator",
-      };
-    case "transport":
-      return {
-        url: `https://www.rome2rio.com/s/${dest}`,
-        label: "Plan on Rome2Rio",
-      };
-    case "rest":
-      return {
-        url: `https://www.booking.com/searchresults.html?ss=${dest}`,
-        label: "Find on Booking.com",
-      };
-    default:
-      return {
-        url: `https://www.google.com/search?q=${query}`,
-        label: "Search",
-      };
-  }
+export interface LodgingOption {
+  city: string;
+  checkIn: string;
+  checkOut: string;
 }
 ```
 
-Also add a Google Images link on every option (in addition to the category-specific link). In OptionCard, add a second link:
-```
-📷 See photos → https://www.google.com/search?tbm=isch&q={title}+{destination}
-```
+### Create `src/lib/lodgingLinks.ts`
+```typescript
+export function getLodgingLinks(city: string, checkIn: string, checkOut: string) {
+  const c = encodeURIComponent(city);
+  return [
+    { label: "Airbnb", url: `https://www.airbnb.com/s/${c}/homes?checkin=${checkIn}&checkout=${checkOut}` },
+    { label: "VRBO", url: `https://www.vrbo.com/search/keywords:${c}?arrival=${checkIn}&departure=${checkOut}` },
+    { label: "Hotels.com", url: `https://www.hotels.com/search.do?q-destination=${c}&q-check-in=${checkIn}&q-check-out=${checkOut}` },
+    { label: "Expedia", url: `https://www.expedia.com/Hotel-Search?destination=${c}&startDate=${checkIn}&endDate=${checkOut}` },
+  ];
+}
 
-## TASK 2: AI Refinement
-
-Add a natural language refinement prompt on the itinerary page.
-
-1. Add a collapsible "Refine this trip" section at the TOP of the itinerary (below the nav bar, above Day 1)
-2. UI: a text input + "Refine" button. Examples shown as tappable chips: "Make Day 2 more relaxed", "Add more food options", "Make it more budget-friendly"
-3. Create `src/lib/refineItinerary.ts`:
-   ```typescript
-   import { openai } from "./openai";
-   import type { GeneratedItinerary } from "./generateItinerary";
-   import type { IntakeFormData } from "./types";
-
-   export async function refineItinerary(
-     current: GeneratedItinerary,
-     form: IntakeFormData,
-     instruction: string
-   ): Promise<GeneratedItinerary> {
-     const response = await openai.chat.completions.create({
-       model: "gpt-4o",
-       messages: [
-         {
-           role: "system",
-           content: "You are a travel planner. The user wants to modify their existing itinerary. Return the FULL modified itinerary JSON in the exact same schema. Only change what the instruction asks for. Keep everything else identical."
-         },
-         {
-           role: "user",
-           content: `Current itinerary:\n${JSON.stringify(current, null, 2)}\n\nTrip details:\nDestination: ${form.destination?.name}\nDates: ${form.start_date} to ${form.end_date}\nBudget: ${form.budget_level}\nVibes: ${form.vibes.join(", ")}\n\nInstruction: ${instruction}`
-         }
-       ],
-       temperature: 0.7,
-       response_format: { type: "json_object" },
-     });
-     const raw = response.choices[0].message.content ?? "{}";
-     return JSON.parse(raw) as GeneratedItinerary;
-   }
-   ```
-4. On submit: show spinner overlay on itinerary, call refineItinerary, update itinerary in store AND re-save to localStorage via saveTrip
-5. After refinement completes, collapse the refinement section and show a brief "Trip updated!" toast
-6. Style: iOS-native, use existing CSS variables
-
-## TASK 3: Supabase Collab Layer
-
-### Database Schema
-Create `supabase/schema.sql`:
-
-```sql
-create extension if not exists "uuid-ossp";
-
-create table trips (
-  id uuid primary key default uuid_generate_v4(),
-  title text not null,
-  destination text not null,
-  start_date date not null,
-  end_date date not null,
-  invite_code text unique not null default substr(md5(random()::text), 1, 8),
-  passcode text not null default '1234',
-  form_data jsonb not null,
-  itinerary_data jsonb not null,
-  created_by text not null,
-  created_at timestamptz default now()
-);
-
-create table trip_members (
-  id uuid primary key default uuid_generate_v4(),
-  trip_id uuid references trips(id) on delete cascade,
-  display_name text not null,
-  joined_at timestamptz default now(),
-  unique(trip_id, display_name)
-);
-
-create table slot_selections (
-  id uuid primary key default uuid_generate_v4(),
-  trip_id uuid references trips(id) on delete cascade,
-  member_name text not null,
-  slot_id text not null,
-  option_id text not null,
-  updated_at timestamptz default now(),
-  unique(trip_id, member_name, slot_id)
-);
-
-alter table trips enable row level security;
-alter table trip_members enable row level security;
-alter table slot_selections enable row level security;
-
-create policy "Public read trips" on trips for select using (true);
-create policy "Public insert trips" on trips for insert with check (true);
-create policy "Public update trips" on trips for update using (true);
-create policy "Public read members" on trip_members for select using (true);
-create policy "Public insert members" on trip_members for insert with check (true);
-create policy "Public read selections" on slot_selections for select using (true);
-create policy "Public upsert selections" on slot_selections for all using (true);
+export function getFlightsLink(destination: string, date: string) {
+  const d = encodeURIComponent(destination);
+  return `https://www.google.com/travel/flights?q=Flights+to+${d}&date=${date}`;
+}
 ```
 
-### Supabase Service
-Create `src/lib/supabaseTrips.ts` with these functions:
-- `saveCloudTrip(form, itinerary, createdBy, passcode)` - save trip to Supabase, return with invite_code
-- `getTripByInviteCode(code)` - fetch trip by invite code
-- `joinTrip(tripId, memberName)` - upsert member
-- `getTripMembers(tripId)` - list members
-- `saveCloudSelection(tripId, memberName, slotId, optionId)` - upsert selection
-- `getAllCloudSelections(tripId)` - get all selections grouped by member
-- `subscribeToSelections(tripId, callback)` - real-time subscription to slot_selections changes
+### Add to `src/lib/generateItinerary.ts`
+Add a `hiddenGem` field to the `GeneratedItinerary` type and the prompt:
+- Add to the `GeneratedItinerary` interface: `hiddenGems?: { day_number: number; tip: string; location?: string }[]`
+- Add to the prompt rules: "Also return a `hiddenGems` array — one entry per day. Each entry: a genuine local secret, non-touristy tip, or under-the-radar spot most visitors miss. Keep each tip under 2 sentences."
 
-Helper: `isSupabaseConfigured()` that checks if VITE_SUPABASE_URL is set and non-empty.
+### Add Lodging + Flights UI to `src/pages/ItineraryPage.tsx`
+Below the sticky nav bar and above the refinement section, add a "Lodging & Flights" card:
 
-### Share Trip Feature
-1. After generating a trip, if Supabase is configured, auto-save to cloud alongside localStorage
-2. On the itinerary page nav bar, add a "Share" button that copies invite link to clipboard: `{origin}/join/{invite_code}`
-3. Show a brief "Link copied!" toast
-4. Create `src/pages/JoinPage.tsx` at route `/join/:inviteCode`:
-   - Fetches trip by invite code from Supabase
-   - Shows trip title + destination
-   - Asks for passcode (from the trip record)
-   - Asks for name (free text — anyone can join, not just group members)
-   - On success: joins as member, loads itinerary, navigates to /itinerary
-5. Add the route in App.tsx
+```
+╔═══════════════════════════════╗
+║  ✈️ Flights to {destination}  ║  → Google Flights link
+║                               ║
+║  🏨 Where to stay             ║
+║  Airbnb · VRBO · Hotels.com · Expedia  ║  → all links
+╚═══════════════════════════════╝
+```
 
-### Real-time Voting
-On the itinerary page, if a cloud trip is active:
-- Subscribe to slot_selections via Supabase real-time
-- Save selections to Supabase (in addition to localStorage)
-- Show who picked each option as small avatar initials next to the option
+Style: white card with iOS-native look, use CSS variables. Links open in new tab. Collapsible (collapsed by default, tap to expand).
 
-## Quality bar
+---
+
+## TASK 2: Hidden Gems Section
+
+In `src/pages/ItineraryPage.tsx`, at the END of each day's slots, add a "Hidden Gem" card if `itinerary.hiddenGems` has an entry for that day:
+
+```
+🪄 Hidden Gem
+[tip text]
+[location if available]
+```
+
+Style: slightly different background (use a tinted version of --td-accent at low opacity), iOS card, non-tappable but visually distinct.
+
+---
+
+## TASK 3: Multi-LLM Fallback
+
+### Create `src/lib/llmClient.ts`
+
+This is the single LLM abstraction layer for the app. All AI calls go through this.
+
+```typescript
+// Priority order: GPT-4o → Claude → Gemini
+// Falls back to next if current fails or key missing
+
+interface LLMMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+interface LLMConfig {
+  openaiKey?: string;       // VITE_OPENAI_API_KEY
+  anthropicKey?: string;    // VITE_ANTHROPIC_API_KEY
+  geminiKey?: string;       // VITE_GEMINI_API_KEY
+}
+
+function getConfig(): LLMConfig {
+  return {
+    openaiKey: import.meta.env.VITE_OPENAI_API_KEY,
+    anthropicKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+    geminiKey: import.meta.env.VITE_GEMINI_API_KEY,
+  };
+}
+
+async function callOpenAI(messages: LLMMessage[], key: string): Promise<string> {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ model: "gpt-4o", messages, temperature: 0.8, response_format: { type: "json_object" } }),
+  });
+  if (!res.ok) throw new Error(`OpenAI ${res.status}`);
+  const data = await res.json();
+  return data.choices[0].message.content;
+}
+
+async function callAnthropic(messages: LLMMessage[], key: string): Promise<string> {
+  const system = messages.find(m => m.role === "system")?.content ?? "";
+  const userMessages = messages.filter(m => m.role !== "system");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-opus-4-5",
+      max_tokens: 8096,
+      system,
+      messages: userMessages,
+    }),
+  });
+  if (!res.ok) throw new Error(`Anthropic ${res.status}`);
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+async function callGemini(messages: LLMMessage[], key: string): Promise<string> {
+  const combined = messages.map(m => `${m.role}: ${m.content}`).join("\n\n");
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: combined }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`Gemini ${res.status}`);
+  const data = await res.json();
+  return data.candidates[0].content.parts[0].text;
+}
+
+export async function callLLM(messages: LLMMessage[]): Promise<string> {
+  const config = getConfig();
+  const errors: string[] = [];
+
+  if (config.openaiKey) {
+    try { return await callOpenAI(messages, config.openaiKey); }
+    catch (e) { errors.push(`OpenAI: ${e}`); }
+  }
+  if (config.anthropicKey) {
+    try { return await callAnthropic(messages, config.anthropicKey); }
+    catch (e) { errors.push(`Anthropic: ${e}`); }
+  }
+  if (config.geminiKey) {
+    try { return await callGemini(messages, config.geminiKey); }
+    catch (e) { errors.push(`Gemini: ${e}`); }
+  }
+
+  throw new Error(`All LLMs failed:\n${errors.join("\n")}`);
+}
+
+export function getAvailableProviders(): string[] {
+  const config = getConfig();
+  const providers = [];
+  if (config.openaiKey) providers.push("GPT-4o");
+  if (config.anthropicKey) providers.push("Claude");
+  if (config.geminiKey) providers.push("Gemini");
+  return providers;
+}
+```
+
+### Update `src/lib/generateItinerary.ts`
+Replace the OpenAI SDK call with `callLLM()` from `llmClient.ts`. Remove the OpenAI SDK import from this file.
+
+### Update `src/lib/refineItinerary.ts`
+Same — replace OpenAI SDK with `callLLM()`.
+
+### Add to `.env.example`
+```
+VITE_ANTHROPIC_API_KEY=
+VITE_GEMINI_API_KEY=
+```
+
+### Settings Page — `src/pages/SettingsPage.tsx`
+Create a settings page at `/settings`:
+
+- Nav: "‹ Back" + "Settings" title
+- Section: "AI Providers"
+  - Shows which keys are configured (from import.meta.env) with ✓ green / ✗ grey
+  - Note: "Add keys to your .env file to enable additional providers. Priority: GPT-4o → Claude → Gemini"
+- Section: "Appearance"
+  - Link to /theme
+- Section: "Trip Passcode"
+  - Show current passcode (default: 1234)
+  - Input to change it — saves to localStorage as `td-passcode`
+  - Note: "Share this with your travel group"
+
+Update the TRIP_PASSCODE in ItineraryPage to read from localStorage:
+```typescript
+const TRIP_PASSCODE = localStorage.getItem("td-passcode") ?? "1234";
+```
+
+Add Settings gear icon (⚙️) to the HomePage top-right area alongside the theme button.
+
+Add the /settings route to App.tsx.
+
+---
+
+## TASK 4: Vercel Deployment Config
+
+### Create `vercel.json`
+```json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+This ensures React Router works on Vercel (all routes serve index.html).
+
+### Update `README.md`
+Add a deployment section:
+```markdown
+## Deploy to Vercel
+
+1. Push to GitHub (already done)
+2. Go to vercel.com → Import Project → select `trip-designer`
+3. Add environment variables in Vercel dashboard:
+   - VITE_SUPABASE_URL
+   - VITE_SUPABASE_ANON_KEY
+   - VITE_OPENAI_API_KEY (at minimum one LLM key required)
+   - VITE_ANTHROPIC_API_KEY (optional)
+   - VITE_GEMINI_API_KEY (optional)
+4. Deploy — Vercel auto-detects Vite
+
+## Sharing with Friends & Family
+
+Option A — They use your deployed app:
+- Share your Vercel URL
+- Your API keys stay server-side (in Vercel env vars, never exposed to browser)
+- Consider adding rate limiting if usage gets heavy
+
+Option B — They self-host:
+- Fork the repo
+- Add their own LLM keys to .env
+- Deploy their own Vercel instance
+```
+
+---
+
+## Quality Bar
 - TypeScript strict — no `any`, no unused vars
-- Build must pass `npm run build` with zero errors
-- Do not break existing localStorage fallback — if Supabase is not configured, everything still works locally
-- iOS-native styling throughout — use existing CSS variables (var(--td-accent) etc)
-- All new files must use `import type` for type-only imports
-- Test that `npm run build` passes before considering done
+- All type-only imports use `import type`
+- `npm run build` must pass with zero errors
+- Do not break existing localStorage fallback
+- iOS-native styling throughout using CSS vars
