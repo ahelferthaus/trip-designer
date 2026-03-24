@@ -10,6 +10,8 @@ export interface SavedTrip {
   created_at: string;
   form: IntakeFormData;
   itinerary: GeneratedItinerary;
+  cloudTripId?: string;
+  inviteCode?: string;
 }
 
 const STORAGE_KEY = "td-saved-trips";
@@ -25,6 +27,24 @@ export function loadSavedTrips(): SavedTrip[] {
 
 export function saveTrip(form: IntakeFormData, itinerary: GeneratedItinerary): SavedTrip {
   const trips = loadSavedTrips();
+  const existing = trips.findIndex(
+    t =>
+      t.destination === (form.destination?.name ?? "Unknown") &&
+      t.start_date === form.start_date &&
+      t.end_date === form.end_date
+  );
+  if (existing >= 0) {
+    // Preserve cloud fields when updating
+    const updated: SavedTrip = {
+      ...trips[existing],
+      title: itinerary.title,
+      form,
+      itinerary,
+    };
+    trips[existing] = updated;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
+    return updated;
+  }
   const trip: SavedTrip = {
     id: `trip-${Date.now()}`,
     title: itinerary.title,
@@ -35,14 +55,18 @@ export function saveTrip(form: IntakeFormData, itinerary: GeneratedItinerary): S
     form,
     itinerary,
   };
-  // Replace if same destination + dates already exists, otherwise prepend
-  const existing = trips.findIndex(
-    t => t.destination === trip.destination && t.start_date === trip.start_date && t.end_date === trip.end_date
-  );
-  if (existing >= 0) trips[existing] = trip;
-  else trips.unshift(trip);
+  trips.unshift(trip);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
   return trip;
+}
+
+export function updateTripCloudData(id: string, cloudTripId: string, inviteCode: string): void {
+  const trips = loadSavedTrips();
+  const idx = trips.findIndex(t => t.id === id);
+  if (idx >= 0) {
+    trips[idx] = { ...trips[idx], cloudTripId, inviteCode };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
+  }
 }
 
 export function deleteTrip(id: string): void {

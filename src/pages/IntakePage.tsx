@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useTripStore } from "../store/tripStore";
 import { useItineraryStore } from "../store/itineraryStore";
 import { generateItinerary } from "../lib/generateItinerary";
+import { isSupabaseConfigured, saveCloudTrip } from "../lib/supabaseTrips";
+import { updateTripCloudData } from "../lib/tripStorage";
 import type { BudgetLevel, TripVibe, GroupMember } from "../lib/types";
 
 const TOTAL_STEPS = 6;
@@ -75,7 +77,18 @@ export default function IntakePage() {
     try {
       const finalForm = { ...form, group_members: members };
       const result = await generateItinerary(finalForm);
-      itineraryStore.setItinerary(result, finalForm);
+      const saved = itineraryStore.setItinerary(result, finalForm);
+      // Cloud-save if Supabase is configured
+      if (isSupabaseConfigured()) {
+        const createdBy = members[0]?.name ?? "anonymous";
+        try {
+          const cloud = await saveCloudTrip(finalForm, result, createdBy, "1234");
+          updateTripCloudData(saved.id, cloud.id, cloud.invite_code);
+          itineraryStore.setCloudTripInfo(cloud.id, cloud.invite_code);
+        } catch {
+          // Cloud save failure is non-fatal
+        }
+      }
     } catch {
       itineraryStore.setError("Couldn't generate your itinerary. Please try again.");
     } finally {

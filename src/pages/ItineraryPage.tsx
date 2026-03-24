@@ -1,9 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
-import { getActivityLink } from "../lib/activityLinks";
-import { getCurrentUser, setCurrentUser, getUserSelections, saveUserSelection, getAllUsersSelections, clearCurrentUser } from "../lib/userSession";
+import { getActivityLink, getPhotosLink } from "../lib/activityLinks";
+import { refineItinerary } from "../lib/refineItinerary";
+import {
+  saveCloudSelection,
+  getAllCloudSelections,
+  subscribeToSelections,
+} from "../lib/supabaseTrips";
+import {
+  getCurrentUser,
+  setCurrentUser,
+  getUserSelections,
+  saveUserSelection,
+  getAllUsersSelections,
+  clearCurrentUser,
+} from "../lib/userSession";
 import { getTripById, loadSavedTrips } from "../lib/tripStorage";
 import type { SavedTrip } from "../lib/tripStorage";
 import type { ActivityOption } from "../lib/types";
@@ -15,13 +28,28 @@ const SLOT_LABELS: Record<string, string> = {
   morning: "Morning", afternoon: "Afternoon", evening: "Evening", flex: "Flex",
 };
 
-const TRIP_PASSCODE = "1234"; // Simple shared passcode
+const TRIP_PASSCODE = "1234";
 
-function OptionCard({ option, selected, onSelect, link }: {
+const REFINE_CHIPS = [
+  "Make Day 2 more relaxed",
+  "Add more food options",
+  "Make it more budget-friendly",
+];
+
+function OptionCard({
+  option,
+  selected,
+  onSelect,
+  link,
+  photosLink,
+  voters,
+}: {
   option: ActivityOption;
   selected: boolean;
   onSelect: () => void;
   link: { url: string; label: string } | null;
+  photosLink: { url: string; label: string };
+  voters: string[];
 }) {
   return (
     <div
@@ -48,17 +76,28 @@ function OptionCard({ option, selected, onSelect, link }: {
         <p className="text-[13px] leading-snug mb-1" style={{ color: "var(--td-secondary)" }}>
           {option.description}
         </p>
-        {link && (
+        <div className="flex flex-wrap gap-3 mb-1">
+          {link && (
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[12px] underline active:opacity-70"
+              style={{ color: "var(--td-accent)" }}
+            >
+              {link.label} ↗
+            </a>
+          )}
           <a
-            href={link.url}
+            href={photosLink.url}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[12px] underline active:opacity-70"
             style={{ color: "var(--td-accent)" }}
           >
-            {link.label} ↗
+            {photosLink.label} ↗
           </a>
-        )}
+        </div>
         <div className="flex gap-3 mt-1 text-[12px]" style={{ color: "var(--td-secondary)" }}>
           {option.estimated_cost_per_person != null && (
             <span>~${option.estimated_cost_per_person}/person</span>
@@ -72,6 +111,20 @@ function OptionCard({ option, selected, onSelect, link }: {
           )}
           {option.location?.name && <span className="truncate">📍 {option.location.name}</span>}
         </div>
+        {voters.length > 0 && (
+          <div className="flex gap-1 mt-1.5 flex-wrap">
+            {voters.map(v => (
+              <span
+                key={v}
+                className="w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center"
+                style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
+                title={v}
+              >
+                {v.slice(0, 2).toUpperCase()}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -101,38 +154,63 @@ function Avatar({ name, active, onClick }: { name: string; active?: boolean; onC
 }
 
 export default function ItineraryPage() {
-  const { itinerary, loading, error } = useItineraryStore();
+  const itineraryStore = useItineraryStore();
+  const { itinerary, loading, error, cloudTripId: storeCloudTripId, cloudInviteCode: storeCloudInviteCode, setItinerary: storeSetItinerary, setCloudTripInfo } = itineraryStore;
   const { form } = useTripStore();
   const navigate = useNavigate();
   const { tripId } = useParams();
   const [savedTrip, setSavedTrip] = useState<SavedTrip | null>(null);
-  
+
   // Login state
   const [passcode, setPasscode] = useState("");
   const [passcodeError, setPasscodeError] = useState(false);
   const [passcodeVerified, setPasscodeVerified] = useState(false);
   const [currentUser, setCurrentUserState] = useState(getCurrentUser());
   const [userSelections, setUserSelections] = useState<Record<string, string>>({});
-  
+
+  // Refinement state
+  const [refineOpen, setRefineOpen] = useState(false);
+  const [refineText, setRefineText] = useState("");
+  const [refining, setRefining] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Cloud / real-time state
+  const [cloudSelections, setCloudSelections] = useState<Record<string, Record<string, string>>>({});
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2000);
+  }, []);
+
   // Load from URL param or current state
   useEffect(() => {
     if (tripId) {
       const trip = getTripById(tripId);
-      if (trip) {
-        setSavedTrip(trip);
-      }
+      if (trip) setSavedTrip(trip);
     }
-    
-    // Check if user is logged in for this trip
+
     const session = getCurrentUser();
     const activeTripId = tripId ?? savedTrip?.id ?? itinerary?.days[0]?.trip_id;
     if (session && activeTripId && session.tripId === activeTripId) {
       setCurrentUserState(session);
       setUserSelections(getUserSelections(activeTripId, session.name));
-    } else if (activeTripId) {
-      // Will show login modal by default
     }
   }, [tripId, itinerary, savedTrip?.id]);
+
+  // Determine the active cloud trip id
+  const activeCloudTripId = savedTrip?.cloudTripId ?? storeCloudTripId;
+  const activeInviteCode = savedTrip?.inviteCode ?? storeCloudInviteCode;
+
+  // Real-time cloud selections
+  useEffect(() => {
+    if (!activeCloudTripId) return;
+    getAllCloudSelections(activeCloudTripId).then(setCloudSelections);
+    const unsub = subscribeToSelections(activeCloudTripId, setCloudSelections);
+    return unsub;
+  }, [activeCloudTripId]);
+
+  // Suppress unused warning for setCloudTripInfo (used in JoinPage via store)
+  void setCloudTripInfo;
 
   const handleLogin = () => {
     if (passcode === TRIP_PASSCODE) {
@@ -157,20 +235,45 @@ export default function ItineraryPage() {
     if (currentUser) {
       saveUserSelection(activeTripId, currentUser.name, slotId, optionId);
       setUserSelections(getUserSelections(activeTripId, currentUser.name));
+      if (activeCloudTripId) {
+        saveCloudSelection(activeCloudTripId, currentUser.name, slotId, optionId);
+      }
     }
   };
 
   const getSlotSelection = (slotId: string, options: ActivityOption[]) => {
-    // Return user's selection if exists, otherwise first option
     return userSelections[slotId] ?? options[0]?.id;
   };
 
-  const allUsersSelections = getAllUsersSelections(tripId ?? savedTrip?.id ?? itinerary?.days[0]?.trip_id ?? "temp");
+  const handleRefine = async () => {
+    if (!refineText.trim() || !activeItinerary) return;
+    setRefining(true);
+    try {
+      const refined = await refineItinerary(activeItinerary, activeForm, refineText.trim());
+      storeSetItinerary(refined, activeForm);
+      if (savedTrip) setSavedTrip(prev => prev ? { ...prev, itinerary: refined } : null);
+      setRefineOpen(false);
+      setRefineText("");
+      showToast("Trip updated!");
+    } catch {
+      showToast("Refinement failed. Try again.");
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (!activeInviteCode) return;
+    const url = `${window.location.origin}/join/${activeInviteCode}`;
+    navigator.clipboard.writeText(url);
+    showToast("Link copied!");
+  };
+
+  const localSelections = getAllUsersSelections(tripId ?? savedTrip?.id ?? itinerary?.days[0]?.trip_id ?? "temp");
+  const activeSelections = activeCloudTripId ? cloudSelections : localSelections;
   const groupMembers = savedTrip?.form.group_members ?? form.group_members ?? [];
   const activeItinerary = savedTrip?.itinerary ?? itinerary;
   const activeForm = savedTrip?.form ?? form;
-
-  // ... (loading, error, no-itinerary states unchanged)
 
   if (loading) {
     return (
@@ -222,7 +325,6 @@ export default function ItineraryPage() {
   }
 
   if (!activeItinerary) {
-    // Redirect to trips if any saved, otherwise home
     const saved = loadSavedTrips();
     navigate(saved.length > 0 ? "/trips" : "/", { replace: true });
     return null;
@@ -240,7 +342,7 @@ export default function ItineraryPage() {
           <p className="text-[15px] text-center mb-8" style={{ color: "var(--td-secondary)" }}>
             Enter the trip passcode to join
           </p>
-          
+
           <div className="rounded-2xl overflow-hidden shadow-sm mb-6" style={{ backgroundColor: "var(--td-card)" }}>
             <input
               type="password"
@@ -253,13 +355,13 @@ export default function ItineraryPage() {
               autoFocus
             />
           </div>
-          
+
           {passcodeError && (
             <p className="text-[13px] text-center mb-4" style={{ color: "#FF3B30" }}>
               Wrong passcode. Try 1234.
             </p>
           )}
-          
+
           <button
             onClick={handleLogin}
             disabled={passcode.length !== 4}
@@ -272,7 +374,7 @@ export default function ItineraryPage() {
           >
             Continue
           </button>
-          
+
           <button
             onClick={() => navigate("/")}
             className="w-full py-3 text-[17px] active:opacity-70"
@@ -295,7 +397,7 @@ export default function ItineraryPage() {
         <p className="text-[15px] mb-8" style={{ color: "var(--td-secondary)" }}>
           Tap your name from the group
         </p>
-        
+
         <div className="flex flex-wrap gap-4">
           {groupMembers.map(member => (
             <Avatar
@@ -305,7 +407,7 @@ export default function ItineraryPage() {
             />
           ))}
         </div>
-        
+
         <button
           onClick={() => {
             setPasscodeVerified(false);
@@ -322,6 +424,35 @@ export default function ItineraryPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--td-bg)" }}>
+      {/* Refinement spinner overlay */}
+      {refining && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+        >
+          <div className="rounded-3xl px-8 py-6 text-center shadow-xl" style={{ backgroundColor: "var(--td-card)" }}>
+            <svg className="animate-spin w-8 h-8 mx-auto mb-3" fill="none" viewBox="0 0 24 24"
+              style={{ color: "var(--td-accent)" }}>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            <p className="text-[15px] font-medium" style={{ color: "var(--td-label)" }}>
+              Refining your trip…
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-[13px] font-semibold z-50 whitespace-nowrap"
+          style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
+        >
+          {toast}
+        </div>
+      )}
+
       {/* Sticky nav */}
       <div className="sticky top-0 z-10" style={{
         backgroundColor: "var(--td-nav-bg)",
@@ -336,16 +467,27 @@ export default function ItineraryPage() {
             >
               ‹ Home
             </button>
-            <button
-              onClick={() => {
-                clearCurrentUser();
-                setCurrentUserState(null);
-              }}
-              className="text-[13px] active:opacity-70"
-              style={{ color: "var(--td-accent-text)", opacity: 0.75 }}
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-3">
+              {activeInviteCode && (
+                <button
+                  onClick={handleShare}
+                  className="text-[13px] active:opacity-70 font-medium"
+                  style={{ color: "var(--td-accent-text)" }}
+                >
+                  Share
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  clearCurrentUser();
+                  setCurrentUserState(null);
+                }}
+                className="text-[13px] active:opacity-70"
+                style={{ color: "var(--td-accent-text)", opacity: 0.75 }}
+              >
+                Logout
+              </button>
+            </div>
           </div>
           <h1 className="text-[20px] font-bold" style={{ color: "var(--td-accent-text)" }}>
             {activeItinerary.title}
@@ -378,6 +520,63 @@ export default function ItineraryPage() {
         </div>
       </div>
 
+      {/* Refine this trip */}
+      <div className="border-b" style={{ borderColor: "var(--td-separator)" }}>
+        <button
+          className="w-full px-4 py-3 flex items-center justify-between active:opacity-70"
+          onClick={() => setRefineOpen(o => !o)}
+        >
+          <span className="text-[15px] font-semibold" style={{ color: "var(--td-label)" }}>
+            ✨ Refine this trip
+          </span>
+          <span className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
+            {refineOpen ? "▲" : "▼"}
+          </span>
+        </button>
+        {refineOpen && (
+          <div className="px-4 pb-4">
+            <div className="flex flex-wrap gap-2 mb-3">
+              {REFINE_CHIPS.map(chip => (
+                <button
+                  key={chip}
+                  onClick={() => setRefineText(chip)}
+                  className="px-3 py-1.5 rounded-full text-[12px] font-medium active:opacity-70"
+                  style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={refineText}
+                onChange={e => setRefineText(e.target.value)}
+                placeholder="What would you like to change?"
+                className="flex-1 px-4 py-3 rounded-2xl text-[15px] bg-transparent focus:outline-none"
+                style={{
+                  backgroundColor: "var(--td-card)",
+                  color: "var(--td-label)",
+                  border: "1px solid var(--td-separator)",
+                }}
+                onKeyDown={e => { if (e.key === "Enter") handleRefine(); }}
+              />
+              <button
+                onClick={handleRefine}
+                disabled={!refineText.trim()}
+                className="px-4 py-3 rounded-2xl text-[15px] font-semibold active:opacity-70"
+                style={{
+                  backgroundColor: refineText.trim() ? "var(--td-accent)" : "var(--td-fill)",
+                  color: refineText.trim() ? "var(--td-accent-text)" : "var(--td-secondary)",
+                }}
+              >
+                Refine
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Days */}
       <div className="py-6 flex flex-col gap-6">
         {activeItinerary.days.map(day => (
@@ -398,42 +597,44 @@ export default function ItineraryPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              {day.slots.map(slot => (
-                <div key={slot.id}>
-                  <div className="flex items-center justify-between px-1 mb-1.5">
-                    <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--td-secondary)" }}>
-                      {SLOT_LABELS[slot.slot_type]}
-                    </p>
-                    {(() => {
-                      const allUsers = Object.keys(allUsersSelections);
-                      const thisSlotVotes = allUsers.filter(u => allUsersSelections[u]?.[slot.id]).length;
-                      if (thisSlotVotes > 0) {
+              {day.slots.map(slot => {
+                const allUsers = Object.keys(activeSelections);
+                const thisSlotVotes = allUsers.filter(u => activeSelections[u]?.[slot.id]).length;
+                return (
+                  <div key={slot.id}>
+                    <div className="flex items-center justify-between px-1 mb-1.5">
+                      <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--td-secondary)" }}>
+                        {SLOT_LABELS[slot.slot_type]}
+                      </p>
+                      {thisSlotVotes > 0 && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full"
+                          style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
+                          {thisSlotVotes} voted
+                        </span>
+                      )}
+                    </div>
+                    <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
+                      style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
+                      {slot.options.map(opt => {
+                        const voters = Object.entries(activeSelections)
+                          .filter(([, slotSels]) => slotSels[slot.id] === opt.id)
+                          .map(([name]) => name);
                         return (
-                          <span className="text-[11px] px-2 py-0.5 rounded-full"
-                            style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}
-                          >
-                            {thisSlotVotes} voted
-                          </span>
+                          <OptionCard
+                            key={opt.id}
+                            option={opt}
+                            selected={getSlotSelection(slot.id, slot.options) === opt.id}
+                            onSelect={() => selectOption(slot.id, opt.id)}
+                            link={getActivityLink(opt, activeForm.destination?.name)}
+                            photosLink={getPhotosLink(opt, activeForm.destination?.name)}
+                            voters={voters}
+                          />
                         );
-                      }
-                      return null;
-                    })()}
+                      })}
+                    </div>
                   </div>
-                  <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
-                    style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}
-                  >
-                    {slot.options.map(opt => (
-                      <OptionCard
-                        key={opt.id}
-                        option={opt}
-                        selected={getSlotSelection(slot.id, slot.options) === opt.id}
-                        onSelect={() => selectOption(slot.id, opt.id)}
-                        link={getActivityLink(opt, activeForm.destination?.name)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         ))}
