@@ -1,0 +1,27 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { TripStoreProvider } from "./store/tripStore";
+import { ItineraryStoreProvider } from "./store/itineraryStore";
+import { ThemeProvider } from "./store/themeStore";
+import HomePage from "./pages/HomePage";
+import IntakePage from "./pages/IntakePage";
+import ItineraryPage from "./pages/ItineraryPage";
+import ThemePage from "./pages/ThemePage";
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <TripStoreProvider>
+        <ItineraryStoreProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/intake" element={<IntakePage />} />
+              <Route path="/itinerary" element={<ItineraryPage />} />
+              <Route path="/theme" element={<ThemePage />} />
+            </Routes>
+          </BrowserRouter>
+        </ItineraryStoreProvider>
+      </TripStoreProvider>
+    </ThemeProvider>
+  );
+}
