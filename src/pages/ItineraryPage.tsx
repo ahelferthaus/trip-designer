@@ -3,8 +3,6 @@ const ItineraryMap = lazy(() => import("../components/itinerary/ItineraryMap"));
 import { useNavigate, useParams } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
-import { generateItinerary } from "../lib/generateItinerary";
-import { saveTrip } from "../lib/tripStorage";
 import { getActivityLink, getPhotosLink } from "../lib/activityLinks";
 import { getLodgingLinks, getFlightsLink } from "../lib/lodgingLinks";
 import { refineItinerary } from "../lib/refineItinerary";
@@ -160,7 +158,7 @@ function Avatar({ name, active, onClick }: { name: string; active?: boolean; onC
 export default function ItineraryPage() {
   const itineraryStore = useItineraryStore();
   const { itinerary, loading, error, cloudTripId: storeCloudTripId, cloudInviteCode: storeCloudInviteCode, setItinerary: storeSetItinerary, setCloudTripInfo } = itineraryStore;
-  const { form, setDestination, setDates } = useTripStore();
+  const { form } = useTripStore();
   const navigate = useNavigate();
   const { tripId } = useParams();
   const [savedTrip, setSavedTrip] = useState<SavedTrip | null>(null);
@@ -186,10 +184,6 @@ export default function ItineraryPage() {
 
   // Cloud / real-time state
   const [cloudSelections, setCloudSelections] = useState<Record<string, Record<string, string>>>({});
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editStartDate, setEditStartDate] = useState(form.start_date);
-  const [editEndDate, setEditEndDate] = useState(form.end_date);
-  const [editDestination, setEditDestination] = useState(form.destination?.name || "");
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -281,21 +275,6 @@ export default function ItineraryPage() {
     const url = `${window.location.origin}/join/${activeInviteCode}`;
     navigator.clipboard.writeText(url);
     showToast("Link copied!");
-  };
-
-  const handleRegenerate = async () => {
-    setRefining(true);
-    showToast("Regenerating itinerary...");
-    try {
-      const result = await generateItinerary(activeForm);
-      itineraryStore.setItinerary(result, activeForm);
-      saveTrip(activeForm, result);
-      showToast("Trip updated!");
-    } catch (err) {
-      showToast("Failed to regenerate. Try again.");
-    } finally {
-      setRefining(false);
-    }
   };
 
   const localSelections = getAllUsersSelections(tripId ?? savedTrip?.id ?? itinerary?.days[0]?.trip_id ?? "temp");
@@ -506,13 +485,6 @@ export default function ItineraryPage() {
                   Share
                 </button>
               )}
-              <button
-                onClick={() => setEditModalOpen(true)}
-                className="text-[13px] active:opacity-70"
-                style={{ color: "var(--td-accent-text)", opacity: 0.75 }}
-              >
-                Edit
-              </button>
               <button
                 onClick={() => {
                   clearCurrentUser();
@@ -789,84 +761,6 @@ export default function ItineraryPage() {
           </button>
         </div>
       </div>
-
-      {/* Edit Trip Modal */}
-      {editModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="w-full max-w-sm rounded-2xl p-6 shadow-xl" style={{ backgroundColor: "var(--td-card)" }}>
-            <h2 className="text-[22px] font-bold mb-4" style={{ color: "var(--td-label)" }}>Edit Trip</h2>
-            
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="text-[13px] mb-1 block" style={{ color: "var(--td-secondary)" }}>Destination</label>
-                <input
-                  type="text"
-                  value={editDestination}
-                  onChange={(e) => setEditDestination(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-[17px] bg-transparent border"
-                  style={{ color: "var(--td-label)", borderColor: "var(--td-separator)" }}
-                />
-              </div>
-              
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="text-[13px] mb-1 block" style={{ color: "var(--td-secondary)" }}>Start Date</label>
-                  <input
-                    type="date"
-                    value={editStartDate}
-                    onChange={(e) => setEditStartDate(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl text-[15px] bg-transparent border"
-                    style={{ color: "var(--td-label)", borderColor: "var(--td-separator)" }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="text-[13px] mb-1 block" style={{ color: "var(--td-secondary)" }}>End Date</label>
-                  <input
-                    type="date"
-                    value={editEndDate}
-                    onChange={(e) => setEditEndDate(e.target.value)}
-                    className="w-full px-3 py-3 rounded-xl text-[15px] bg-transparent border"
-                    style={{ color: "var(--td-label)", borderColor: "var(--td-separator)" }}
-                  />
-                </div>
-              </div>
-              
-              {(() => {
-                const days = Math.max(1, Math.round((new Date(editEndDate).getTime() - new Date(editStartDate).getTime()) / (1000 * 60 * 60 * 24)));
-                return (
-                  <p className="text-[13px]" style={{ color: "var(--td-accent)" }}>
-                    {days} day{days !== 1 ? 's' : ''}
-                  </p>
-                );
-              })()}
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  // Update form data
-                  setDestination({ name: editDestination });
-                  setDates(editStartDate, editEndDate);
-                  // Regenerate itinerary with new dates
-                  handleRegenerate();
-                  setEditModalOpen(false);
-                }}
-                className="flex-1 py-3 rounded-xl text-[17px] font-semibold active:opacity-70"
-                style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
-              >
-                Save & Regenerate
-              </button>
-              <button
-                onClick={() => setEditModalOpen(false)}
-                className="flex-1 py-3 rounded-xl text-[17px] active:opacity-70"
-                style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
