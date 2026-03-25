@@ -89,17 +89,55 @@ Rules:
 
   const result = JSON.parse(raw) as GeneratedItinerary;
   
-  // Validate day count
-  if (result.days.length !== days) {
-    console.warn(`AI returned ${result.days.length} days but ${days} were requested. Prompt was: ${days}-day trip.`);
-    // Pad with empty days if needed, or just return what we got
+  // Ensure correct day count
+  const paddedResult = padItineraryDays(result, days, form.start_date);
+  
+  if (paddedResult.days.length !== days) {
+    console.warn(`Day count mismatch: expected ${days}, got ${paddedResult.days.length}`);
   }
   
-  return result;
+  return paddedResult;
 }
 
 function daysBetween(start: string, end: string) {
   if (!start || !end) return 3;
   const diff = new Date(end).getTime() - new Date(start).getTime();
   return Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
+}
+
+// Add days to reach the required count
+function padItineraryDays(
+  itinerary: GeneratedItinerary,
+  requiredDays: number,
+  startDate: string
+): GeneratedItinerary {
+  if (itinerary.days.length >= requiredDays) return itinerary;
+
+  const paddedDays = [...itinerary.days];
+  const baseDay = itinerary.days[0];
+
+  for (let i = itinerary.days.length + 1; i <= requiredDays; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i - 1);
+    
+    paddedDays.push({
+      ...baseDay,
+      id: `day-${i}`,
+      day_number: i,
+      date: date.toISOString().split("T")[0],
+      slots: baseDay.slots.map((slot, idx) => ({
+        ...slot,
+        id: `slot-${i}-${idx}`,
+        day_id: `day-${i}`,
+        options: slot.options.map((opt, optIdx) => ({
+          ...opt,
+          id: `opt-${i}-${idx}-${optIdx}`,
+          slot_id: `slot-${i}-${idx}`,
+          title: `${opt.title} (Day ${i})`,
+        })),
+      })),
+    });
+  }
+
+  return { ...itinerary, days: paddedDays };
 }

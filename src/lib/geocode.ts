@@ -8,31 +8,53 @@ interface GeoResult {
 const cache = new Map<string, GeoResult | null>();
 
 export async function geocodeLocation(name: string, destination?: string): Promise<GeoResult | null> {
+  // Try specific location first
   const query = destination ? `${name}, ${destination}` : name;
   if (cache.has(query)) return cache.get(query) ?? null;
 
   try {
-    // Nominatim requires a unique User-Agent and max 1 req/sec
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
       { headers: { "User-Agent": "TripDesigner/1.0" } }
     );
     const data = await res.json();
-    if (data.length === 0) {
-      cache.set(query, null);
-      return null;
+    if (data.length > 0) {
+      const result: GeoResult = {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+        displayName: data[0].display_name,
+      };
+      cache.set(query, result);
+      return result;
     }
-    const result: GeoResult = {
-      lat: parseFloat(data[0].lat),
-      lng: parseFloat(data[0].lon),
-      displayName: data[0].display_name,
-    };
-    cache.set(query, result);
-    return result;
   } catch {
-    cache.set(query, null);
-    return null;
+    // Fall through to destination-only search
   }
+
+  // Fallback: try just the destination city
+  if (destination && destination !== name) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destination)}&format=json&limit=1`,
+        { headers: { "User-Agent": "TripDesigner/1.0" } }
+      );
+      const data = await res.json();
+      if (data.length > 0) {
+        const result: GeoResult = {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+          displayName: data[0].display_name,
+        };
+        cache.set(query, result);
+        return result;
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
+  cache.set(query, null);
+  return null;
 }
 
 // Geocode multiple locations with 300ms delay between requests (Nominatim rate limit)
