@@ -5,6 +5,7 @@ import { useItineraryStore } from "../store/itineraryStore";
 import { generateItinerary } from "../lib/generateItinerary";
 import { isSupabaseConfigured, saveCloudTrip } from "../lib/supabaseTrips";
 import { updateTripCloudData } from "../lib/tripStorage";
+import CalendarPicker from "../components/intake/CalendarPicker";
 import type { BudgetLevel, TripVibe, GroupMember } from "../lib/types";
 
 const TOTAL_STEPS = 6;
@@ -165,24 +166,20 @@ export default function IntakePage() {
         {/* Step 2: Dates */}
         {step === 2 && (
           <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
-            <div className="flex items-center px-4 py-4" style={{ borderBottom: "1px solid var(--td-separator)" }}>
-              <span className="text-[15px] w-28" style={{ color: "var(--td-secondary)" }}>Start date</span>
-              <input
-                type="date"
+            <div className="px-4 py-4" style={{ borderBottom: "1px solid var(--td-separator)" }}>
+              <span className="text-[15px] block mb-2" style={{ color: "var(--td-secondary)" }}>Start date</span>
+              <CalendarPicker
                 value={form.start_date}
-                onChange={e => store.setDates(e.target.value, form.end_date)}
-                className="flex-1 text-[17px] text-right focus:outline-none bg-transparent"
-                style={{ color: "var(--td-label)" }}
+                onChange={(date) => store.setDates(date, form.end_date)}
+                label="Select start date"
               />
             </div>
-            <div className="flex items-center px-4 py-4" style={{ borderBottom: days > 0 ? "1px solid var(--td-separator)" : "none" }}>
-              <span className="text-[15px] w-28" style={{ color: "var(--td-secondary)" }}>End date</span>
-              <input
-                type="date"
+            <div className="px-4 py-4" style={{ borderBottom: days > 0 ? "1px solid var(--td-separator)" : "none" }}>
+              <span className="text-[15px] block mb-2" style={{ color: "var(--td-secondary)" }}>End date</span>
+              <CalendarPicker
                 value={form.end_date}
-                onChange={e => store.setDates(form.start_date, e.target.value)}
-                className="flex-1 text-[17px] text-right focus:outline-none bg-transparent"
-                style={{ color: "var(--td-label)" }}
+                onChange={(date) => store.setDates(form.start_date, date)}
+                label="Select end date"
               />
             </div>
             {days > 0 && (

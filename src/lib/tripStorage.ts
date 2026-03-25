@@ -8,6 +8,7 @@ export interface SavedTrip {
   start_date: string;
   end_date: string;
   created_at: string;
+  created_by: string;
   form: IntakeFormData;
   itinerary: GeneratedItinerary;
   cloudTripId?: string;
@@ -25,7 +26,7 @@ export function loadSavedTrips(): SavedTrip[] {
   }
 }
 
-export function saveTrip(form: IntakeFormData, itinerary: GeneratedItinerary): SavedTrip {
+export function saveTrip(form: IntakeFormData, itinerary: GeneratedItinerary, createdBy: string = "Me"): SavedTrip {
   const trips = loadSavedTrips();
   const existing = trips.findIndex(
     t =>
@@ -52,6 +53,7 @@ export function saveTrip(form: IntakeFormData, itinerary: GeneratedItinerary): S
     start_date: form.start_date,
     end_date: form.end_date,
     created_at: new Date().toISOString(),
+    created_by: createdBy,
     form,
     itinerary,
   };

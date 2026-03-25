@@ -27,9 +27,9 @@ export function ItineraryStoreProvider({ children }: { children: ReactNode }) {
   const [cloudTripId, setCloudTripId] = useState<string | null>(null);
   const [cloudInviteCode, setCloudInviteCode] = useState<string | null>(null);
 
-  const setItinerary = (i: GeneratedItinerary, form: IntakeFormData): SavedTrip => {
+  const setItinerary = (i: GeneratedItinerary, form: IntakeFormData, createdBy: string = "Me"): SavedTrip => {
     setItineraryState(i);
-    return saveTrip(form, i); // auto-persist, return saved trip
+    return saveTrip(form, i, createdBy); // auto-persist, return saved trip
   };
 
   const clearItinerary = () => {
