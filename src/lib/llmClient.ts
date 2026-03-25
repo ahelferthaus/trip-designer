@@ -108,9 +108,12 @@ async function callClientSideLLM(messages: LLMMessage[]): Promise<string> {
 export async function callLLM(messages: LLMMessage[]): Promise<string> {
   // Try secure API first (server-side key, not exposed)
   try {
-    return await callSecureAPI(messages, "/api/generate");
+    console.log("Trying secure API...");
+    const result = await callSecureAPI(messages, "/api/generate");
+    console.log("Secure API succeeded");
+    return result;
   } catch (err) {
-    console.log("Secure API failed, trying client-side fallback:", err);
+    console.log("Secure API failed, falling back to client-side:", err);
   }
 
   // Fallback to client-side (for local dev without vercel dev server)
