@@ -8,7 +8,7 @@ import { StreakDisplay, XPProgressBar, BadgeShowcase } from "../components/gamif
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
   const savedCount = loadSavedTrips().length;
   const dailyCheckIn = useDailyCheckIn();
   const { enabled: gamificationEnabled, currentStreak, badges } = useGamification();

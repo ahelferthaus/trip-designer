@@ -84,7 +84,7 @@ export default function DailyRewardModal() {
         {/* Reward cards */}
         {!revealedReward ? (
           <div className="grid grid-cols-3 gap-3 mb-6">
-            {dailyRewards.slice(0, 3).map((reward, index) => {
+            {dailyRewards.slice(0, 3).map((_, index) => {
               const day = index + 1;
               const isCurrentDay = day === currentDay;
               const isLocked = day > currentDay;

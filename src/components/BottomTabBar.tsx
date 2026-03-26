@@ -76,10 +76,9 @@ export default function BottomTabBar() {
               >
                 <div 
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold overflow-hidden ${active ? "ring-2" : ""}`}
-                  style={{ 
+                  style={{
                     backgroundColor: active ? "var(--td-accent)" : "var(--td-fill)",
                     color: active ? "var(--td-accent-text)" : "var(--td-label)",
-                    ringColor: "var(--td-accent)"
                   }}
                 >
                   {profile?.avatar_type === "emoji" && profile.avatar_value ? (

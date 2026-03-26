@@ -133,7 +133,7 @@ export default function FeedPage() {
                     )}
                     {item.action_type === "commented" && item.metadata.body && (
                       <p className="text-[13px] mt-0.5 italic" style={{ color: "var(--td-secondary)" }}>
-                        "{item.metadata.body as string}"
+                        "{String(item.metadata.body)}"
                       </p>
                     )}
                     <p className="text-[11px] mt-1" style={{ color: "var(--td-secondary)" }}>
