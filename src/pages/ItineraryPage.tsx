@@ -535,10 +535,32 @@ export default function ItineraryPage() {
     );
   }
 
-  if (!activeItinerary) {
+  if (!activeItinerary && !loading) {
     const saved = loadSavedTrips();
     navigate(saved.length > 0 ? "/trips" : "/", { replace: true });
     return null;
+  }
+
+  // Still loading but no itinerary yet — show the spinner
+  if (!activeItinerary) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6"
+        style={{ backgroundColor: "var(--td-bg)" }}>
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full shadow-sm flex items-center justify-center mx-auto mb-5"
+            style={{ backgroundColor: "var(--td-card)" }}>
+            <svg className="animate-spin w-7 h-7" fill="none" viewBox="0 0 24 24"
+              style={{ color: "var(--td-accent)" }}>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          </div>
+          <h2 className="text-[22px] font-bold mb-1" style={{ color: "var(--td-label)" }}>
+            Loading trip…
+          </h2>
+        </div>
+      </div>
+    );
   }
 
   // Auto-login for Supabase-authenticated users: skip passcode, use email-derived name
@@ -743,16 +765,18 @@ export default function ItineraryPage() {
                   Share
                 </button>
               )}
-              <button
-                onClick={() => {
-                  clearCurrentUser();
-                  setCurrentUserState(null);
-                }}
-                className="text-[13px] active:opacity-70"
-                style={{ color: "var(--td-secondary)" }}
-              >
-                Switch User
-              </button>
+              {!authUser && (
+                <button
+                  onClick={() => {
+                    clearCurrentUser();
+                    setCurrentUserState(null);
+                  }}
+                  className="text-[13px] active:opacity-70"
+                  style={{ color: "var(--td-secondary)" }}
+                >
+                  Switch User
+                </button>
+              )}
             </div>
           </div>
           <h1 className="text-[20px] font-bold" style={{ color: "var(--td-label)" }}>
@@ -774,7 +798,7 @@ export default function ItineraryPage() {
         </div>
       </div>
 
-      {/* User avatars row */}
+      {/* User avatars row (display-only, no user switching) */}
       <div className="px-4 py-3 border-b" style={{ borderColor: "var(--td-separator)" }}>
         <p className="text-[12px] uppercase tracking-wide mb-2" style={{ color: "var(--td-secondary)" }}>
           Trip members
@@ -786,7 +810,6 @@ export default function ItineraryPage() {
               name={member.name}
               profile={member.name === currentUser?.name ? authProfile : undefined}
               active={member.name === currentUser?.name}
-              onClick={() => selectUser(member.name)}
             />
           ))}
         </div>
