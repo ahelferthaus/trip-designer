@@ -1,132 +1,129 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTheme } from "../store/themeStore";
 import { useAuth } from "../store/authStore";
 import { loadSavedTrips } from "../lib/tripStorage";
 import UserAvatar from "../components/UserAvatar";
-import PlanTripButton from "../components/PlanTripButton";
-import { StreakDisplay, XPProgressBar, BadgeShowcase, DailyRewardModal } from "../components/gamification";
-import { useGamification, useDailyCheckIn } from "../store/gamificationStore";
+import { useDailyCheckIn } from "../store/gamificationStore";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { theme } = useTheme();
   const { user, profile, signOut } = useAuth();
   const savedCount = loadSavedTrips().length;
   const dailyCheckIn = useDailyCheckIn();
-  const { currentStreak, badges } = useGamification();
-  const unlockedBadges = badges.filter(b => b.unlockedAt).length;
 
-  // Daily check-in on mount
   useEffect(() => {
     if (user) dailyCheckIn();
   }, [user]);
 
   return (
     <div className="min-h-screen flex flex-col pb-20" style={{ backgroundColor: "var(--td-bg)" }}>
-      {/* Daily reward modal */}
-      {user && <DailyRewardModal />}
-
-      <div className="h-10" />
-
-      {/* Top-right buttons */}
-      <div className="px-6 flex justify-end gap-2 items-center">
-        {user ? (
-          <div className="flex items-center gap-2">
-            <UserAvatar
-              name={profile?.display_name || user.email?.split("@")[0] || "U"}
-              profile={profile}
-              size="sm"
-              showLabel={false}
-              onClick={() => navigate(`/profile/${user.id}`)}
-            />
-            <button
-              onClick={() => signOut()}
-              className="text-[13px] px-3 py-1.5 rounded-full"
-              style={{ backgroundColor: "var(--td-card)", color: "var(--td-secondary)" }}
-            >
-              Sign Out
-            </button>
+      {/* Hero section */}
+      <div
+        className="relative px-6 pt-14 pb-10"
+        style={{
+          background: "linear-gradient(160deg, var(--td-accent), color-mix(in srgb, var(--td-accent) 60%, #000))",
+        }}
+      >
+        {/* Top bar */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            {user ? (
+              <div className="flex items-center gap-2.5">
+                <UserAvatar
+                  name={profile?.display_name || user.email?.split("@")[0] || "U"}
+                  profile={profile}
+                  size="sm"
+                  showLabel={false}
+                  onClick={() => navigate(`/profile/${user.id}`)}
+                />
+                <span className="text-[14px] font-medium text-white/90">
+                  {profile?.display_name || user.email?.split("@")[0]}
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/auth")}
+                className="text-[14px] font-medium px-4 py-2 rounded-full active:opacity-70"
+                style={{ backgroundColor: "rgba(255,255,255,0.15)", color: "white" }}
+              >
+                Sign In
+              </button>
+            )}
           </div>
-        ) : (
           <button
-            onClick={() => navigate("/auth")}
-            className="text-[13px] px-3 py-1.5 rounded-full"
-            style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
+            onClick={() => navigate("/settings")}
+            className="w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+            style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
           >
-            Sign In
+            <span className="text-white text-[15px]">⚙️</span>
           </button>
-        )}
-        <button
-          onClick={() => navigate("/theme")}
-          className="text-[13px] px-3 py-1.5 rounded-full"
-          style={{ backgroundColor: "var(--td-card)", color: "var(--td-secondary)" }}
-        >
-          🎨 {theme.film === "Default" ? "Theme" : theme.film.split(" ").slice(0, 2).join(" ")}
-        </button>
-        <button
-          onClick={() => navigate("/settings")}
-          className="text-[13px] px-3 py-1.5 rounded-full"
-          style={{ backgroundColor: "var(--td-card)", color: "var(--td-secondary)" }}
-        >
-          ⚙️
-        </button>
-      </div>
+        </div>
 
-      <div className="px-6 pt-4 pb-4">
-        <p className="text-base mb-1" style={{ color: "var(--td-secondary)" }}>Welcome to</p>
-        <h1 className="text-4xl font-black tracking-tight" style={{ color: "var(--td-label)" }}>
+        {/* Hero text */}
+        <h1 className="text-[42px] font-black tracking-tight leading-[1.05] text-white mb-3">
           VYBR
         </h1>
-        <p className="text-base mt-2 leading-relaxed" style={{ color: "var(--td-secondary)" }}>
-          AI-powered itineraries. Plan together.
+        <p className="text-[17px] leading-relaxed text-white/80 max-w-xs">
+          Plan trips with AI. Vote with your group. Share the adventure.
         </p>
+
+        {/* CTA */}
+        <button
+          onClick={() => navigate("/intake")}
+          className="mt-6 w-full py-4 rounded-2xl text-[17px] font-bold active:opacity-90 transition-all"
+          style={{
+            backgroundColor: "white",
+            color: "var(--td-accent)",
+          }}
+        >
+          Plan a Trip
+        </button>
       </div>
 
-      {/* Gamification section (logged-in users only) */}
-      {user && (
-        <div className="px-4 flex flex-col gap-3 mb-4 stagger-children">
-          {/* Streak */}
-          {currentStreak > 0 && <StreakDisplay />}
-
-          {/* XP Progress */}
-          <XPProgressBar />
-
-          {/* Quick stats */}
-          <div className="flex gap-3">
-            <div className="flex-1 rounded-2xl px-4 py-3 text-center"
-              style={{ backgroundColor: "var(--td-card)" }}>
-              <div className="text-[20px] font-bold" style={{ color: "var(--td-label)" }}>{savedCount}</div>
-              <div className="text-[11px]" style={{ color: "var(--td-secondary)" }}>Trips</div>
-            </div>
-            <div className="flex-1 rounded-2xl px-4 py-3 text-center"
-              style={{ backgroundColor: "var(--td-card)" }}>
-              <div className="text-[20px] font-bold" style={{ color: "var(--td-label)" }}>{unlockedBadges}</div>
-              <div className="text-[11px]" style={{ color: "var(--td-secondary)" }}>Badges</div>
-            </div>
-            <div className="flex-1 rounded-2xl px-4 py-3 text-center"
-              style={{ backgroundColor: "var(--td-card)" }}>
-              <div className="text-[20px] font-bold" style={{ color: "var(--td-label)" }}>{currentStreak}</div>
-              <div className="text-[11px]" style={{ color: "var(--td-secondary)" }}>Streak</div>
-            </div>
+      {/* Stats row (logged-in only) */}
+      {user && savedCount > 0 && (
+        <div className="px-4 -mt-5">
+          <div
+            className="rounded-2xl px-5 py-4 flex items-center justify-around shadow-md"
+            style={{ backgroundColor: "var(--td-card)" }}
+          >
+            <button onClick={() => navigate("/trips")} className="text-center active:opacity-70">
+              <div className="text-[22px] font-bold" style={{ color: "var(--td-label)" }}>{savedCount}</div>
+              <div className="text-[11px] font-medium" style={{ color: "var(--td-secondary)" }}>Trips</div>
+            </button>
+            <div className="w-px h-8" style={{ backgroundColor: "var(--td-separator)" }} />
+            <button onClick={() => navigate("/explore")} className="text-center active:opacity-70">
+              <div className="text-[22px] font-bold" style={{ color: "var(--td-label)" }}>🌍</div>
+              <div className="text-[11px] font-medium" style={{ color: "var(--td-secondary)" }}>Explore</div>
+            </button>
+            <div className="w-px h-8" style={{ backgroundColor: "var(--td-separator)" }} />
+            <button onClick={() => navigate("/feed")} className="text-center active:opacity-70">
+              <div className="text-[22px] font-bold" style={{ color: "var(--td-label)" }}>📡</div>
+              <div className="text-[11px] font-medium" style={{ color: "var(--td-secondary)" }}>Feed</div>
+            </button>
           </div>
         </div>
       )}
 
-      {/* Feature cards */}
-      <div className="px-4 flex flex-col gap-3 mb-4 stagger-children">
+      {/* How it works */}
+      <div className="px-4 pt-6 flex flex-col gap-3">
+        <p className="text-[12px] uppercase tracking-widest px-1 font-semibold" style={{ color: "var(--td-secondary)" }}>
+          How it works
+        </p>
         {[
-          { icon: "🤖", title: "AI Itinerary", desc: "Day-by-day plans with real options for your group" },
-          { icon: "🗳️", title: "Vote Together", desc: "Everyone picks their favorite activities" },
-          { icon: "📸", title: "Trip Photos", desc: "Capture moments at every stop, share with your group" },
-        ].map(({ icon, title, desc }) => (
-          <div key={title} className="rounded-2xl px-4 py-4 flex items-center gap-4 shadow-sm card-hover"
+          { step: "1", title: "Describe your trip", desc: "Destination, dates, group, budget, and vibe" },
+          { step: "2", title: "AI builds your itinerary", desc: "Morning, afternoon, and evening options for every day" },
+          { step: "3", title: "Plan together", desc: "Your group votes, writes in ideas, and books what's confirmed" },
+        ].map(({ step, title, desc }) => (
+          <div key={step} className="rounded-2xl px-4 py-4 flex items-start gap-4"
             style={{ backgroundColor: "var(--td-card)" }}>
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-              style={{ backgroundColor: "var(--td-bg)" }}>
-              {icon}
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-[14px] font-bold flex-shrink-0"
+              style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
+            >
+              {step}
             </div>
-            <div>
+            <div className="pt-0.5">
               <div className="font-semibold text-[15px]" style={{ color: "var(--td-label)" }}>{title}</div>
               <div className="text-[13px] leading-snug mt-0.5" style={{ color: "var(--td-secondary)" }}>{desc}</div>
             </div>
@@ -134,31 +131,50 @@ export default function HomePage() {
         ))}
       </div>
 
-      {/* Badge showcase (if any unlocked) */}
-      {user && unlockedBadges > 0 && (
-        <div className="px-4 mb-4">
-          <BadgeShowcase />
+      {/* Recent trips preview */}
+      {savedCount > 0 && (
+        <div className="px-4 pt-6">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <p className="text-[12px] uppercase tracking-widest font-semibold" style={{ color: "var(--td-secondary)" }}>
+              Your trips
+            </p>
+            <button onClick={() => navigate("/trips")} className="text-[13px] font-medium active:opacity-70"
+              style={{ color: "var(--td-accent)" }}>
+              See all ›
+            </button>
+          </div>
+          <button
+            onClick={() => navigate("/trips")}
+            className="w-full rounded-2xl px-4 py-4 text-left active:opacity-70"
+            style={{ backgroundColor: "var(--td-card)" }}
+          >
+            <div className="text-[15px] font-semibold" style={{ color: "var(--td-label)" }}>
+              {savedCount} trip{savedCount !== 1 ? "s" : ""} planned
+            </div>
+            <div className="text-[13px] mt-0.5" style={{ color: "var(--td-secondary)" }}>
+              Tap to view and manage your trips
+            </div>
+          </button>
         </div>
       )}
 
       <div className="flex-1" />
 
-      {/* CTAs */}
-      <div className="px-4 pb-24 safe-bottom flex flex-col gap-3">
-        <PlanTripButton onClick={() => navigate("/intake")} size="large" />
-        {savedCount > 0 && (
+      {/* Footer */}
+      {!user && (
+        <div className="px-4 pt-6 pb-24 safe-bottom">
           <button
-            onClick={() => navigate("/trips")}
-            className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70 transition-opacity"
+            onClick={() => navigate("/explore")}
+            className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70"
             style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
           >
-            My Trips ({savedCount})
+            Explore Public Trips
           </button>
-        )}
-        <p className="text-center text-[13px]" style={{ color: "var(--td-secondary)" }}>
-          {user ? user.email : "No account needed to get started"}
-        </p>
-      </div>
+          <p className="text-center text-[13px] mt-3" style={{ color: "var(--td-secondary)" }}>
+            No account needed to get started
+          </p>
+        </div>
+      )}
     </div>
   );
 }

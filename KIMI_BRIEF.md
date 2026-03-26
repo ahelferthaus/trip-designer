@@ -1,178 +1,106 @@
-# VYBR — UI/UX Design Brief for Kimi
+# VYBR — UI/UX Design Brief for Kimi (Pass 2)
 
-## What This Is
+## Context
 
-VYBR is an AI-powered collaborative trip planning app. It generates itineraries, lets groups vote on activities, write in their own options, book confirmed plans, share photos, and discover other travelers' trips. It's a React + TypeScript PWA targeting iPhone-first with 10 color themes.
+This is the second Kimi pass. Pass 1 added gamification (streaks, XP, badges, daily rewards) and a bottom tab bar. The gamification was too prominent and made the app look unprofessional. We've pulled it back — gamification components still exist in the codebase but are no longer shown on the home page.
 
-## What's Built (Functional, Needs Visual Polish)
+**The target aesthetic is Polarsteps** — clean, photo-forward, spacious, travel-focused. Not gamified, not flashy. Professional and inviting.
 
-### Core Pages
-- **HomePage** (`/`) — Landing with feature cards, CTA buttons (Plan, Explore, Feed, My Trips)
-- **IntakePage** (`/intake`) — 7-step wizard: destination → dates → group → budget → vibes → notes → review
-- **ItineraryPage** (`/itinerary`) — Main trip view with day-by-day slots, voting, write-ins, booking, photos, moments
-- **TripsPage** (`/trips`) — Saved trips list (local + cloud synced)
-- **SettingsPage** (`/settings`) — Profile (name, avatar, bio, privacy), passcode, AI providers, travel partners
+## What's Already Done (Don't Redo)
+- Bottom tab bar (Home/Explore/Plan/Feed/Profile) — keep this, it works
+- Gamification store + components exist in code — leave them, just don't make them prominent
+- All 20+ CSS animations in index.css — keep available but use sparingly
+- All functionality (AI trips, voting, write-ins, booking, photos, social) — don't touch
 
-### Social Pages
-- **ExplorePage** (`/explore`) — Search + browse public trips with filters
-- **TripDetailPage** (`/trip/:id`) — Public trip view with itinerary preview, clone, likes, comments, reviews
-- **FeedPage** (`/feed`) — Activity feed from people you follow
-- **ProfilePage** (`/profile/:id`) — Public profile with avatar, bio, stats, follow button, trip gallery
+## What Needs Work
 
-### Other Pages
-- **AuthPage** (`/auth`) — Sign in / sign up
-- **JoinPage** (`/join/:code`) — Join a shared trip via invite link
-- **ThemePage** (`/theme`) — 10 Wes Anderson color theme picker
+### 1. Overall Visual Identity (HIGHEST PRIORITY)
+The app needs a cohesive, premium feel across all pages:
+- **Clean white space** — Polarsteps uses generous padding and spacing
+- **Typography hierarchy** — Clear distinction between headings, body, captions
+- **Subtle shadows** — Soft, almost invisible card shadows (not harsh)
+- **Rounded corners** — Keep `rounded-2xl` on cards, but ensure consistency
+- **No emoji overload** — Reduce emoji usage to icons/accents only, not as primary UI elements
+- **Color discipline** — Use `var(--td-accent)` for CTAs and highlights only, not everywhere
 
-## Design System
+### 2. Explore Page (`/explore`) — Make It the Showpiece
+This is the discovery page — it should look like a travel magazine:
+- **Trip cards**: Larger cover areas with gradient overlay text, not stacked info
+- **Filter bar**: Replace `<select>` dropdowns with horizontal pill toggles (All / Budget / Mid / Splurge)
+- **Search**: Make it feel premium — subtle border, no harsh outlines
+- **Empty state**: Show a curated "Popular destinations" section with placeholder cards
+- **Card layout**: Consider 2-column grid for wider screens, single column for mobile
 
-### CSS Variables (already in use everywhere)
-All colors use `--td-*` CSS custom properties set by the active theme:
+### 3. Trip Detail Page (`/trip/:id`) — The Storefront
+When someone views a public trip, this is the first impression:
+- **Hero**: Full-bleed cover photo (or rich gradient), title overlay with backdrop blur
+- **Author row**: Avatar + name + follow button inline (like Instagram post header)
+- **Itinerary section**: More visual — consider timeline/rail design instead of flat list
+- **Social proof**: Likes + clones + reviews in a clean horizontal row
+- **Comments**: Chat-bubble style, not flat cards
 
-| Variable | Purpose |
-|----------|---------|
-| `--td-bg` | Page background |
-| `--td-card` | Card/surface background |
-| `--td-label` | Primary text |
-| `--td-secondary` | Secondary/muted text |
-| `--td-accent` | Primary action color (buttons, links) |
-| `--td-accent-text` | Text on accent color (always white) |
-| `--td-separator` | Divider lines |
-| `--td-fill` | Inactive fills, toggle backgrounds |
-| `--td-nav-bg` | Navigation bar background |
+### 4. Feed Page (`/feed`)
+- **Feed items**: Richer cards with trip cover thumbnail, not just text
+- **Action icons**: Use subtle line icons not emoji (or at minimum, very restrained emoji)
+- **Timestamps**: "2h ago" style, muted
 
-**Important:** All styling must use these variables, not hardcoded colors. This ensures all 10 themes work correctly.
+### 5. Profile Page (`/profile/:id`)
+- **Header**: Centered layout with large avatar, name, bio — like Instagram profile
+- **Stats row**: Follower/following/trips in a clean horizontal bar
+- **Trip grid**: 2-column image grid (use trip cover or gradient placeholder) instead of a list
 
-### Current Style
-- Mobile-first (390px iPhone viewport)
-- iOS-native feel: SF Pro font, grouped lists, rounded cards
-- Tailwind CSS v4 utility classes
-- `active:opacity-70` for tap feedback
-- Rounded corners: `rounded-2xl` for cards, `rounded-full` for pills/avatars
+### 6. Itinerary Page (`/itinerary`) — Main Trip View
+This is where users spend the most time:
+- **Day headers**: More prominent, perhaps with a subtle background color band
+- **Slot cards**: Tighter spacing, cleaner option layout
+- **Photo strip**: Slightly larger thumbnails (48px not 40px)
+- **Booking badge**: Current green is good, keep it subtle
+- **Vote bubbles**: Current size is good
 
-## What to Polish
+### 7. Settings Page (`/settings`)
+- **Profile section**: Add the avatar preview larger at the top
+- **Grouped list style**: iOS Settings-style grouped sections (already close, just tighten)
 
-### 1. Bottom Tab Bar (HIGH PRIORITY)
-Add a persistent bottom tab bar across all pages (like Instagram/Strava):
-- Home (house icon)
-- Explore (compass/search icon)
-- + Plan (center, accent-colored)
-- Feed (bell/activity icon)
-- Profile (person icon, links to own profile)
+## Design Rules
 
-Currently navigation is via buttons on the home page — a tab bar would make it feel like a real app.
+1. **Use ONLY `var(--td-*)` CSS variables** — no hardcoded colors except white/black/transparent
+2. **Don't add new npm dependencies** — use Tailwind utilities and CSS only
+3. **Keep all functional code untouched** — only modify JSX structure and class names
+4. **Test with at least 3 themes** (Default, Grand Budapest, Moonrise Kingdom) to ensure nothing breaks
+5. **Mobile-first** — design for 390px wide, but look decent on wider screens too
+6. **Subtle animations only** — use the existing CSS animations sparingly (fade-scale-in on page load, card-hover on tap, that's it)
+7. **No emoji as primary icons** — use emoji as accents only. Prefer text labels.
 
-### 2. Visual Hierarchy & Typography
-- Tighten spacing on card layouts (Explore trip cards, Feed items, Profile trip gallery)
-- Better use of font weight scale (currently mostly 13px-17px, could use more contrast)
-- Section headers could be more distinctive
-- Numbers/stats should pop more (follower counts, like counts, clone counts)
+## Snapchat Integration (Future — Don't Build Yet, Just Design For)
+We're considering Snapchat integration. For now, just leave space for:
+- A "Share to Snapchat" button on the trip detail page (next to Like/Clone)
+- A potential Bitmoji avatar option in the profile avatar picker
 
-### 3. Trip Detail Page (`/trip/:id`)
-This is the "storefront" — needs the most attention:
-- Cover photo hero treatment (gradient overlay, larger text)
-- Better itinerary preview layout (currently plain list)
-- Social proof section (likes, clones, reviews) should be more prominent
-- Clone CTA should feel premium
-- Comments section styling
+Don't implement these — just note them in comments like `{/* TODO: Snapchat share */}`.
 
-### 4. Itinerary Page (`/itinerary`)
-- Activity cards: voter avatar bubbles + photo thumbnails could be laid out better
-- Booked items: the green highlight is subtle, could be more celebratory
-- Write-in form: currently bare input, could be more inviting
-- Day headers: the numbered circle + title could have more presence
-- The "Memorable Moment" section could be more emotional/impactful
+## Files to Focus On (in priority order)
 
-### 5. Explore Page (`/explore`)
-- Trip cards need better visual treatment (cover photos, gradient fallbacks)
-- Filter bar could use pill-style toggle buttons instead of `<select>` dropdowns
-- Search should feel snappy (maybe add popular destinations as chips)
-
-### 6. Feed Page (`/feed`)
-- Feed items are currently plain cards — could use richer formatting
-- Different action types (published, liked, commented, cloned) could have distinct visual treatments
-- Timestamps could be more subtle
-
-### 7. Profile Page (`/profile/:id`)
-- Instagram-style grid layout for published trips instead of a list
-- Stats (trips/followers/following) could have more visual weight
-- Follow button states need clear differentiation
-
-### 8. Empty States
-All these pages have empty states that could be more engaging:
-- Feed: "Your feed is empty" — could suggest who to follow
-- Explore: "No trips found" — could show popular destinations
-- Trips: "No saved trips" — could be more inviting
-- Profile: "No published trips" — could encourage publishing
-
-### 9. Photo Presentation
-- Slot photo thumbnails (currently 40x40) could be larger
-- Photo lightbox could have swipe between photos in the same slot
-- A trip-level photo gallery section would be nice
-
-### 10. Animations & Transitions
-- Page transitions (route changes feel abrupt)
-- Card hover/tap states
-- Loading skeleton screens instead of plain spinners
-- Toast notifications could slide in/out
+1. `src/pages/ExplorePage.tsx` — trip card redesign, filter pills
+2. `src/pages/TripDetailPage.tsx` — hero, author row, timeline itinerary
+3. `src/pages/ProfilePage.tsx` — centered header, trip grid
+4. `src/pages/FeedPage.tsx` — richer feed items
+5. `src/pages/ItineraryPage.tsx` — day headers, slot card tightening (CAREFUL — this file has complex logic, only change styling classes)
+6. `src/pages/SettingsPage.tsx` — larger avatar preview, tighter grouping
+7. `src/pages/HomePage.tsx` — already cleaned up, minor polish only
 
 ## What NOT to Change
-
-- **Component structure** — Don't restructure React components or move files
-- **State management** — Don't change stores, contexts, or data flow
-- **Supabase integration** — Don't modify lib/ files that call Supabase
-- **Functionality** — Don't add or remove features, just improve how they look
-- **Theme variable names** — Keep all `--td-*` CSS variables as-is
-
-## Tech Stack Reference
-
-| Tech | Version |
-|------|---------|
-| React | 19 |
-| TypeScript | 5.9 |
-| Vite | 8 |
-| Tailwind CSS | 4 |
-| React Router | 7 |
-| Supabase JS | 2.x |
-
-## File Structure (pages to focus on)
-
-```
-src/
-  pages/
-    HomePage.tsx          — Landing page
-    IntakePage.tsx        — 7-step wizard (longest file)
-    ItineraryPage.tsx     — Main trip view (most complex)
-    ExplorePage.tsx       — Public trip search
-    TripDetailPage.tsx    — Public trip detail
-    FeedPage.tsx          — Activity feed
-    ProfilePage.tsx       — User profile
-    TripsPage.tsx         — Saved trips list
-    SettingsPage.tsx      — Settings + profile editor
-    AuthPage.tsx          — Sign in/up
-    ThemePage.tsx         — Theme picker
-    JoinPage.tsx          — Join via invite
-  components/
-    UserAvatar.tsx        — Shared avatar component
-    itinerary/
-      SlotPhotos.tsx      — Per-slot photo strip + upload
-      ItineraryMap.tsx    — Google Maps embed
-      InviteModal.tsx     — Email invite modal
-      WriteInOption.tsx   — Write-in form
-    intake/
-      CalendarPicker.tsx  — Date picker
-      GroupPresetPicker.tsx
-    settings/
-      TravelPartnersSection.tsx
-```
+- `src/lib/*` — all library files, Supabase calls, AI generation
+- `src/store/*` — all state management
+- `src/components/gamification/*` — leave as-is (used minimally)
+- `src/components/BottomTabBar.tsx` — working well, don't change
+- Route structure in App.tsx
+- Any `import` statements that import from lib/ or store/
 
 ## How to Test
-
 ```bash
 npm install
 npm run dev
 # Open http://localhost:5173
-# Resize browser to ~390px wide for iPhone viewport
+# Check: HomePage, ExplorePage, TripDetailPage, ProfilePage, FeedPage
+# Switch themes at /theme — try Default, Grand Budapest, Moonrise Kingdom
 ```
-
-Switch themes at `/theme` to verify your changes work across all 10 palettes.
