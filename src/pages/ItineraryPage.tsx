@@ -542,14 +542,14 @@ export default function ItineraryPage() {
     );
   }
 
-  if (!activeItinerary && !loading) {
-    const saved = loadSavedTrips();
-    navigate(saved.length > 0 ? "/trips" : "/", { replace: true });
-    return null;
-  }
-
-  // Still loading but no itinerary yet — show the spinner
   if (!activeItinerary) {
+    // If not loading and no error, redirect to trips/home
+    if (!loading && !error) {
+      const saved = loadSavedTrips();
+      navigate(saved.length > 0 ? "/trips" : "/", { replace: true });
+      return null;
+    }
+    // Otherwise show spinner (loading or brief transition state)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6"
         style={{ backgroundColor: "var(--td-bg)" }}>
@@ -563,8 +563,14 @@ export default function ItineraryPage() {
             </svg>
           </div>
           <h2 className="text-[22px] font-bold mb-1" style={{ color: "var(--td-label)" }}>
-            Loading trip…
+            Building your trip…
           </h2>
+          <p className="text-[15px]" style={{ color: "var(--td-secondary)" }}>
+            {activeForm.destination?.name}
+          </p>
+          <p className="text-[13px] mt-2" style={{ color: "var(--td-fill)" }}>
+            This can take up to 30 seconds
+          </p>
         </div>
       </div>
     );

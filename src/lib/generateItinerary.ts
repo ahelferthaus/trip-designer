@@ -13,92 +13,90 @@ export async function generateItinerary(form: IntakeFormData): Promise<Generated
     .map(m => m.type === "child" ? `child age ${m.age ?? "?"}` : "adult")
     .join(", ");
 
-  const systemPrompt = `You are a world-class travel planner. Return ONLY valid JSON — no markdown, no explanation.`;
+  const systemPrompt = `You are a travel planner. Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
 
   const userPrompt = `Plan a ${days}-day trip to ${form.destination?.name}.
 
-CRITICAL: You MUST return EXACTLY ${days} days in the "days" array. No more, no less.
-
 Group: ${form.group_members.length} people (${groupDesc})
-Budget: ${form.budget_level}${form.budget_amount ? ` — ${form.budget_currency ?? "USD"} ${form.budget_amount}${form.budget_per_person ? " per person" : " total"}` : ""}
+Budget: ${form.budget_level}${form.budget_amount ? ` — ${form.budget_currency ?? "USD"} ${form.budget_amount}${form.budget_per_person ? "/person" : " total"}` : ""}
 Vibe: ${form.vibes.join(", ")}
 Dates: ${form.start_date} to ${form.end_date}
-${form.must_haves ? `Must include: ${form.must_haves}` : ""}
+${form.must_haves ? `Must: ${form.must_haves}` : ""}
 ${form.avoid ? `Avoid: ${form.avoid}` : ""}
-${form.dietary ? `Dietary restrictions: ${form.dietary}` : ""}
-${form.mobility ? `Mobility/accessibility: ${form.mobility}` : ""}
+${form.dietary ? `Dietary: ${form.dietary}` : ""}
+${form.mobility ? `Mobility: ${form.mobility}` : ""}
 
-Return JSON in this exact shape:
+Return JSON:
 {
-  "title": "short trip title e.g. Florence Weekend",
+  "title": "short title",
   "days": [
     {
-      "id": "day-1",
-      "trip_id": "trip-1",
-      "date": "YYYY-MM-DD",
-      "day_number": 1,
-      "title": "optional day title",
+      "id": "day-1", "trip_id": "trip-1", "date": "${form.start_date}", "day_number": 1, "title": "day title",
       "slots": [
         {
-          "id": "slot-1-1",
-          "day_id": "day-1",
-          "slot_type": "morning",
-          "status": "open",
+          "id": "slot-1-1", "day_id": "day-1", "slot_type": "morning", "status": "open",
           "options": [
-            {
-              "id": "opt-1-1-1",
-              "slot_id": "slot-1-1",
-              "title": "Activity name",
-              "description": "2-3 sentence description",
-              "category": "attraction",
-              "estimated_cost_per_person": 20,
-              "duration_minutes": 90,
-              "location": { "name": "Place name", "address": "Address" },
-              "photo_url": "",
-              "booking_url": "",
-              "weather_sensitivity": "indoor",
-              "ai_generated": true,
-              "why_this_fits": "1 sentence explaining why this matches the trip vibe"
-            },
-            { "second option here with same fields" }
+            {"id":"opt-1-1-1","slot_id":"slot-1-1","title":"Name","description":"1 sentence","category":"attraction","estimated_cost_per_person":20,"duration_minutes":90,"location":{"name":"Place"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"short reason"},
+            {"id":"opt-1-1-2","slot_id":"slot-1-1","title":"Alt","description":"1 sentence","category":"food","estimated_cost_per_person":15,"duration_minutes":60,"location":{"name":"Place2"},"weather_sensitivity":"either","ai_generated":true,"why_this_fits":"short reason"}
           ]
         }
       ]
     }
-    // REPEAT FOR ALL ${days} DAYS — Day 2, Day 3, etc.
   ],
-  "hiddenGems": [
-    { "day_number": 1, "tip": "local secret tip", "location": "optional place name" }
-    // One hiddenGem per day for all ${days} days
-  ]
+  "hiddenGems": [{"day_number":1,"tip":"local secret","location":"place"}]
 }
 
 Rules:
-- EXACTLY ${days} days required — this is a ${days}-day trip
-- Day 1 = ${form.start_date}, Day ${days} = ${form.end_date}
-- 3 slots per day: morning, afternoon, evening
-- 2 options per slot
-- Each day should have different activities (don't repeat the same stuff)
-- category: food, attraction, adventure, rest, or transport
-- weather_sensitivity: indoor, outdoor, or either
-- estimated_cost_per_person in USD
-- Descriptions vivid and specific to ${form.destination?.name}
-- hiddenGems: one per day, genuine local secrets most tourists miss`;
+- EXACTLY ${days} days. Day 1=${form.start_date}, Day ${days}=${form.end_date}
+- 3 slots/day: morning, afternoon, evening
+- 2 options/slot. Keep descriptions to 1 sentence.
+- category: food|attraction|adventure|rest|transport
+- Don't repeat activities across days
+- 1 hiddenGem per day`;
 
-  const raw = await callLLM([
-    { role: "system", content: systemPrompt },
-    { role: "user", content: userPrompt },
-  ]);
+  console.log("Generating itinerary...", { days, destination: form.destination?.name });
+  const startTime = Date.now();
 
-  const result = JSON.parse(raw) as GeneratedItinerary;
-  
+  let raw: string;
+  try {
+    raw = await callLLM([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ]);
+  } catch (err) {
+    console.error("LLM call failed:", err);
+    throw new Error("AI generation failed. Check your API keys and try again.");
+  }
+
+  console.log(`LLM responded in ${((Date.now() - startTime) / 1000).toFixed(1)}s`);
+
+  // Clean response — strip markdown fences if present
+  let cleaned = raw.trim();
+  if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+  }
+
+  let result: GeneratedItinerary;
+  try {
+    result = JSON.parse(cleaned) as GeneratedItinerary;
+  } catch (err) {
+    console.error("JSON parse failed. Raw response:", cleaned.slice(0, 500));
+    throw new Error("AI returned invalid data. Please try again.");
+  }
+
+  if (!result.days || !Array.isArray(result.days) || result.days.length === 0) {
+    console.error("No days in response:", result);
+    throw new Error("AI returned an empty itinerary. Please try again.");
+  }
+
   // Ensure correct day count
   const paddedResult = padItineraryDays(result, days, form.start_date);
-  
+
   if (paddedResult.days.length !== days) {
     console.warn(`Day count mismatch: expected ${days}, got ${paddedResult.days.length}`);
   }
-  
+
+  console.log(`Itinerary generated: "${paddedResult.title}", ${paddedResult.days.length} days`);
   return paddedResult;
 }
 
@@ -122,7 +120,7 @@ function padItineraryDays(
   for (let i = itinerary.days.length + 1; i <= requiredDays; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i - 1);
-    
+
     paddedDays.push({
       ...baseDay,
       id: `day-${i}`,

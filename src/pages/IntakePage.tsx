@@ -104,8 +104,11 @@ export default function IntakePage() {
           // Cloud save failure is non-fatal
         }
       }
-    } catch {
-      itineraryStore.setError("Couldn't generate your itinerary. Please try again.");
+    } catch (err) {
+      console.error("Trip generation failed:", err);
+      itineraryStore.setError(
+        err instanceof Error ? err.message : "Couldn't generate your itinerary. Please try again."
+      );
     } finally {
       itineraryStore.setLoading(false);
     }

@@ -19,17 +19,24 @@ function getConfig(): LLMConfig {
 
 // Call secure Vercel API (key hidden server-side)
 async function callSecureAPI(messages: LLMMessage[], endpoint: "/api/generate" | "/api/refine"): Promise<string> {
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `API ${res.status}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `API ${res.status}`);
+    }
+    const data = await res.json();
+    return data.content;
+  } finally {
+    clearTimeout(timeout);
   }
-  const data = await res.json();
-  return data.content;
 }
 
 // Client-side fallbacks (only used if secure API fails or for local dev)
