@@ -77,6 +77,7 @@ CREATE POLICY "Delete own likes" ON trip_likes FOR DELETE USING (auth.uid() = us
 CREATE POLICY "Read feed" ON activity_feed FOR SELECT USING (true);
 CREATE POLICY "Insert feed" ON activity_feed FOR INSERT WITH CHECK (auth.uid() = actor_id);
 
--- Allow reading any public profile
+-- Allow reading any public profile (drop old restrictive policy if it exists)
 DROP POLICY IF EXISTS "Users read own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Read public profiles" ON user_profiles;
 CREATE POLICY "Read public profiles" ON user_profiles FOR SELECT USING (true);
