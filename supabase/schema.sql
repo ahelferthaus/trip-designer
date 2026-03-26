@@ -7,10 +7,6 @@ DROP TABLE IF EXISTS trips CASCADE;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE OR REPLACE FUNCTION immutable_to_tsvector(text) RETURNS tsvector AS $$
-  SELECT to_tsvector('english', $1);
-$$ LANGUAGE sql IMMUTABLE;
-
 CREATE TABLE trips (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   title text NOT NULL,
@@ -30,16 +26,26 @@ CREATE TABLE trips (
   cover_photo_url text,
   view_count int NOT NULL DEFAULT 0,
   clone_count int NOT NULL DEFAULT 0,
-  search_vector tsvector GENERATED ALWAYS AS (
-    immutable_to_tsvector(
-      coalesce(title, '') || ' ' ||
-      coalesce(destination, '') || ' ' ||
-      coalesce(description, '') || ' ' ||
-      coalesce(array_to_string(tags, ' '), '')
-    )
-  ) STORED,
+  search_vector tsvector,
   created_at timestamptz DEFAULT now()
 );
+
+CREATE OR REPLACE FUNCTION trips_search_vector_update() RETURNS trigger AS $$
+BEGIN
+  NEW.search_vector := to_tsvector('english',
+    coalesce(NEW.title, '') || ' ' ||
+    coalesce(NEW.destination, '') || ' ' ||
+    coalesce(NEW.description, '') || ' ' ||
+    coalesce(array_to_string(NEW.tags, ' '), '')
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trips_search_vector_trigger
+  BEFORE INSERT OR UPDATE ON trips
+  FOR EACH ROW
+  EXECUTE FUNCTION trips_search_vector_update();
 
 CREATE TABLE trip_members (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),

@@ -10,24 +10,38 @@ ALTER TABLE trips ADD COLUMN IF NOT EXISTS cover_photo_url text;
 ALTER TABLE trips ADD COLUMN IF NOT EXISTS view_count int NOT NULL DEFAULT 0;
 ALTER TABLE trips ADD COLUMN IF NOT EXISTS clone_count int NOT NULL DEFAULT 0;
 
--- Full-text search index
--- Create an immutable wrapper for to_tsvector (required for generated columns)
-CREATE OR REPLACE FUNCTION immutable_to_tsvector(text) RETURNS tsvector AS $$
-  SELECT to_tsvector('english', $1);
-$$ LANGUAGE sql IMMUTABLE;
-
-ALTER TABLE trips ADD COLUMN IF NOT EXISTS search_vector tsvector
-  GENERATED ALWAYS AS (
-    immutable_to_tsvector(
-      coalesce(title, '') || ' ' ||
-      coalesce(destination, '') || ' ' ||
-      coalesce(description, '') || ' ' ||
-      coalesce(array_to_string(tags, ' '), '')
-    )
-  ) STORED;
+-- Full-text search: use a regular column + trigger (avoids immutability issues with generated columns)
+ALTER TABLE trips ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
 CREATE INDEX IF NOT EXISTS trips_search_idx ON trips USING gin(search_vector);
 CREATE INDEX IF NOT EXISTS trips_published_idx ON trips (is_published, visibility) WHERE is_published = true;
+
+-- Trigger function to auto-update search_vector
+CREATE OR REPLACE FUNCTION trips_search_vector_update() RETURNS trigger AS $$
+BEGIN
+  NEW.search_vector := to_tsvector('english',
+    coalesce(NEW.title, '') || ' ' ||
+    coalesce(NEW.destination, '') || ' ' ||
+    coalesce(NEW.description, '') || ' ' ||
+    coalesce(array_to_string(NEW.tags, ' '), '')
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trips_search_vector_trigger ON trips;
+CREATE TRIGGER trips_search_vector_trigger
+  BEFORE INSERT OR UPDATE ON trips
+  FOR EACH ROW
+  EXECUTE FUNCTION trips_search_vector_update();
+
+-- Backfill search_vector for existing rows
+UPDATE trips SET search_vector = to_tsvector('english',
+  coalesce(title, '') || ' ' ||
+  coalesce(destination, '') || ' ' ||
+  coalesce(description, '') || ' ' ||
+  coalesce(array_to_string(tags, ' '), '')
+);
 
 -- Trip reviews
 CREATE TABLE IF NOT EXISTS trip_reviews (
