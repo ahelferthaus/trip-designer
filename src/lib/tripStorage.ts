@@ -1,5 +1,7 @@
 import type { GeneratedItinerary } from "./generateItinerary";
-import type { IntakeFormData } from "./types";
+import type { IntakeFormData, ActivityOption } from "./types";
+import { isSupabaseConfigured, saveCloudTrip, getTripsForUser } from "./supabaseTrips";
+import type { CloudTrip } from "./supabaseTrips";
 
 export interface SavedTrip {
   id: string;
@@ -13,6 +15,9 @@ export interface SavedTrip {
   itinerary: GeneratedItinerary;
   cloudTripId?: string;
   inviteCode?: string;
+  // New fields for custom options and booking
+  customOptions?: { [slotId: string]: ActivityOption[] };
+  bookedOptions?: string[];
 }
 
 const STORAGE_KEY = "td-saved-trips";
@@ -78,4 +83,66 @@ export function deleteTrip(id: string): void {
 
 export function getTripById(id: string): SavedTrip | null {
   return loadSavedTrips().find(t => t.id === id) ?? null;
+}
+
+/**
+ * Migrate orphaned local trips (without cloudTripId) to the cloud
+ * and tag them with the user's id. Called on first login.
+ */
+export async function migrateLocalTripsToCloud(userId: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const local = loadSavedTrips();
+  const orphaned = local.filter(t => !t.cloudTripId);
+  for (const trip of orphaned) {
+    try {
+      const passcode = localStorage.getItem("td-passcode") ?? "1234";
+      const cloud = await saveCloudTrip(trip.form, trip.itinerary, trip.created_by, passcode, userId);
+      updateTripCloudData(trip.id, cloud.id, cloud.invite_code);
+    } catch {
+      // Non-fatal — trip stays local-only
+    }
+  }
+}
+
+/**
+ * Load trips from cloud + localStorage, merging and deduplicating.
+ * Cloud trips that aren't in localStorage are added as SavedTrip entries.
+ */
+export async function loadMergedTrips(userId: string): Promise<SavedTrip[]> {
+  const local = loadSavedTrips();
+  if (!isSupabaseConfigured()) return local;
+
+  const cloudTrips = await getTripsForUser(userId);
+  const localCloudIds = new Set(local.map(t => t.cloudTripId).filter(Boolean));
+  const newFromCloud: SavedTrip[] = [];
+
+  for (const ct of cloudTrips) {
+    if (!localCloudIds.has(ct.id)) {
+      newFromCloud.push(cloudTripToSaved(ct));
+    }
+  }
+
+  if (newFromCloud.length > 0) {
+    const merged = [...newFromCloud, ...local];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    return merged;
+  }
+
+  return local;
+}
+
+function cloudTripToSaved(ct: CloudTrip): SavedTrip {
+  return {
+    id: `cloud-${ct.id}`,
+    title: ct.title,
+    destination: ct.destination,
+    start_date: ct.start_date,
+    end_date: ct.end_date,
+    created_at: ct.created_at,
+    created_by: ct.created_by,
+    form: ct.form_data,
+    itinerary: ct.itinerary_data,
+    cloudTripId: ct.id,
+    inviteCode: ct.invite_code,
+  };
 }

@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAvailableProviders } from "../lib/llmClient";
+import { useAuth } from "../store/authStore";
+import { upsertProfile } from "../lib/userProfile";
+import TravelPartnersSection from "../components/settings/TravelPartnersSection";
 
 const ALL_PROVIDERS = [
   { name: "GPT-4o", envKey: "VITE_OPENAI_API_KEY" },
@@ -8,19 +11,40 @@ const ALL_PROVIDERS = [
   { name: "Gemini", envKey: "VITE_GEMINI_API_KEY" },
 ];
 
+const EMOJI_OPTIONS = ["😎", "🧳", "🌍", "🏖️", "🎒", "✈️", "🗺️", "🧭", "🌸", "🐾", "🎵", "🔥"];
+
 export default function SettingsPage() {
   const navigate = useNavigate();
   const configured = getAvailableProviders();
+  const { user, profile, refreshProfile } = useAuth();
 
   const [passcode, setPasscode] = useState(localStorage.getItem("td-passcode") ?? "1234");
   const [passcodeInput, setPasscodeInput] = useState(passcode);
   const [saved, setSaved] = useState(false);
+
+  // Profile state
+  const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
+  const [avatarType, setAvatarType] = useState(profile?.avatar_type ?? "initials");
+  const [avatarValue, setAvatarValue] = useState(profile?.avatar_value ?? "");
+  const [profileSaved, setProfileSaved] = useState(false);
 
   const handleSavePasscode = () => {
     localStorage.setItem("td-passcode", passcodeInput);
     setPasscode(passcodeInput);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    await upsertProfile(user.id, {
+      display_name: displayName,
+      avatar_type: avatarType as "initials" | "emoji" | "upload",
+      avatar_value: avatarValue,
+    });
+    await refreshProfile();
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 2000);
   };
 
   return (
@@ -46,6 +70,84 @@ export default function SettingsPage() {
       </div>
 
       <div className="px-4 py-6 flex flex-col gap-6">
+        {/* Profile (auth only) */}
+        {user && (
+          <section>
+            <p className="text-[12px] uppercase tracking-wide mb-2 px-1" style={{ color: "var(--td-secondary)" }}>
+              Profile
+            </p>
+            <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
+              {/* Display name */}
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--td-separator)" }}>
+                <span className="text-[12px] block mb-1" style={{ color: "var(--td-secondary)" }}>Display Name</span>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full text-[15px] bg-transparent focus:outline-none"
+                  style={{ color: "var(--td-label)" }}
+                />
+              </div>
+
+              {/* Avatar type */}
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--td-separator)" }}>
+                <span className="text-[12px] block mb-2" style={{ color: "var(--td-secondary)" }}>Avatar</span>
+                <div className="flex gap-2 mb-2">
+                  {(["initials", "emoji"] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => { setAvatarType(t); setAvatarValue(""); }}
+                      className="px-3 py-1.5 rounded-full text-[13px] font-medium"
+                      style={{
+                        backgroundColor: avatarType === t ? "var(--td-accent)" : "var(--td-fill)",
+                        color: avatarType === t ? "var(--td-accent-text)" : "var(--td-label)",
+                      }}
+                    >
+                      {t === "initials" ? "Initials" : "Emoji"}
+                    </button>
+                  ))}
+                </div>
+                {avatarType === "emoji" && (
+                  <div className="flex flex-wrap gap-2">
+                    {EMOJI_OPTIONS.map(e => (
+                      <button
+                        key={e}
+                        onClick={() => setAvatarValue(e)}
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-xl"
+                        style={{
+                          backgroundColor: avatarValue === e ? "var(--td-accent)" : "var(--td-fill)",
+                        }}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {avatarType === "initials" && (
+                  <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
+                    Uses first 2 letters of your name
+                  </p>
+                )}
+              </div>
+
+              {/* Save */}
+              <div className="px-4 py-3 flex justify-end">
+                <button
+                  onClick={handleSaveProfile}
+                  className="px-4 py-2 rounded-xl text-[13px] font-semibold active:opacity-70"
+                  style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
+                >
+                  {profileSaved ? "Saved!" : "Save Profile"}
+                </button>
+              </div>
+            </div>
+            <p className="text-[12px] mt-2 px-1" style={{ color: "var(--td-secondary)" }}>
+              {user.email}
+            </p>
+          </section>
+        )}
+
         {/* AI Providers */}
         <section>
           <p className="text-[12px] uppercase tracking-wide mb-2 px-1" style={{ color: "var(--td-secondary)" }}>
@@ -79,7 +181,7 @@ export default function SettingsPage() {
               onClick={() => navigate("/theme")}
               className="w-full px-4 py-3 flex items-center justify-between active:opacity-70"
             >
-              <span className="text-[15px]" style={{ color: "var(--td-label)" }}>🎨 Theme</span>
+              <span className="text-[15px]" style={{ color: "var(--td-label)" }}>Theme</span>
               <span className="text-[13px]" style={{ color: "var(--td-secondary)" }}>›</span>
             </button>
           </div>
@@ -118,6 +220,9 @@ export default function SettingsPage() {
             Share this with your travel group
           </p>
         </section>
+
+        {/* Travel Partners (auth only) */}
+        {user && <TravelPartnersSection userId={user.id} />}
       </div>
     </div>
   );

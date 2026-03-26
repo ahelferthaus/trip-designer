@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../store/themeStore";
+import { useAuth } from "../store/authStore";
 import { loadSavedTrips } from "../lib/tripStorage";
+import UserAvatar from "../components/UserAvatar";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { user, profile, signOut } = useAuth();
   const savedCount = loadSavedTrips().length;
 
   return (
@@ -12,7 +15,33 @@ export default function HomePage() {
       <div className="h-14" />
 
       {/* Top-right buttons */}
-      <div className="px-6 flex justify-end gap-2">
+      <div className="px-6 flex justify-end gap-2 items-center">
+        {user ? (
+          <div className="flex items-center gap-2">
+            <UserAvatar
+              name={profile?.display_name || user.email?.split("@")[0] || "U"}
+              profile={profile}
+              size="sm"
+              showLabel={false}
+              onClick={() => navigate("/settings")}
+            />
+            <button
+              onClick={() => signOut()}
+              className="text-[13px] px-3 py-1.5 rounded-full"
+              style={{ backgroundColor: "var(--td-card)", color: "var(--td-secondary)" }}
+            >
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate("/auth")}
+            className="text-[13px] px-3 py-1.5 rounded-full"
+            style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
+          >
+            Sign In
+          </button>
+        )}
         <button
           onClick={() => navigate("/theme")}
           className="text-[13px] px-3 py-1.5 rounded-full"
@@ -79,7 +108,7 @@ export default function HomePage() {
           </button>
         )}
         <p className="text-center text-[13px]" style={{ color: "var(--td-secondary)" }}>
-          No account needed to get started
+          {user ? user.email : "No account needed to get started"}
         </p>
       </div>
     </div>

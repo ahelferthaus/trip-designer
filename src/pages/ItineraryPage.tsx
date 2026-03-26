@@ -3,6 +3,7 @@ const ItineraryMap = lazy(() => import("../components/itinerary/ItineraryMap"));
 import { useNavigate, useParams } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
+import { useAuth } from "../store/authStore";
 import { getActivityLink, getPhotosLink } from "../lib/activityLinks";
 import { getLodgingLinks, getFlightsLink } from "../lib/lodgingLinks";
 import { refineItinerary } from "../lib/refineItinerary";
@@ -10,6 +11,13 @@ import {
   saveCloudSelection,
   getAllCloudSelections,
   subscribeToSelections,
+  saveCustomOption,
+  getCustomOptions,
+  saveMemorableMoment,
+  getMemorableMoments,
+  saveBookedSlot,
+  getBookedSlots,
+  subscribeToTripExtras,
 } from "../lib/supabaseTrips";
 import {
   getCurrentUser,
@@ -20,6 +28,8 @@ import {
   clearCurrentUser,
 } from "../lib/userSession";
 import { getTripById, loadSavedTrips } from "../lib/tripStorage";
+import UserAvatar from "../components/UserAvatar";
+import InviteModal from "../components/itinerary/InviteModal";
 import type { SavedTrip } from "../lib/tripStorage";
 import type { ActivityOption } from "../lib/types";
 
@@ -29,6 +39,16 @@ const CATEGORY_ICONS: Record<string, string> = {
 const SLOT_LABELS: Record<string, string> = {
   morning: "Morning", afternoon: "Afternoon", evening: "Evening", flex: "Flex",
 };
+
+type ViewTab = "all" | "food" | "attraction" | "adventure" | "rest" | "transport";
+const VIEW_TABS: { id: ViewTab; label: string; icon: string }[] = [
+  { id: "all", label: "Full Trip", icon: "📋" },
+  { id: "food", label: "Food", icon: "🍽️" },
+  { id: "attraction", label: "Sights", icon: "🏛️" },
+  { id: "adventure", label: "Adventure", icon: "🧗" },
+  { id: "rest", label: "Lodging", icon: "🛋️" },
+  { id: "transport", label: "Travel", icon: "🚌" },
+];
 
 const TRIP_PASSCODE = localStorage.getItem("td-passcode") ?? "1234";
 
@@ -45,6 +65,8 @@ function OptionCard({
   link,
   photosLink,
   voters,
+  booked,
+  onBook,
 }: {
   option: ActivityOption;
   selected: boolean;
@@ -52,11 +74,19 @@ function OptionCard({
   link: { url: string; label: string } | null;
   photosLink: { url: string; label: string };
   voters: string[];
+  booked?: boolean;
+  onBook?: () => void;
 }) {
   return (
     <div
       className="w-full text-left px-4 py-4 flex items-start gap-3"
-      style={{ backgroundColor: selected ? "color-mix(in srgb, var(--td-accent) 8%, var(--td-card))" : "var(--td-card)" }}
+      style={{
+        backgroundColor: booked
+          ? "color-mix(in srgb, #34C759 10%, var(--td-card))"
+          : selected
+            ? "color-mix(in srgb, var(--td-accent) 8%, var(--td-card))"
+            : "var(--td-card)",
+      }}
     >
       <button
         onClick={onSelect}
@@ -74,32 +104,44 @@ function OptionCard({
           <span className="font-semibold text-[15px] truncate" style={{ color: "var(--td-label)" }}>
             {option.title}
           </span>
+          {booked && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "#34C75930", color: "#34C759" }}>
+              Booked
+            </span>
+          )}
+          {option.isCustom && !booked && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
+              write-in
+            </span>
+          )}
         </div>
         <p className="text-[13px] leading-snug mb-1" style={{ color: "var(--td-secondary)" }}>
           {option.description}
         </p>
-        <div className="flex flex-wrap gap-3 mb-1">
-          {link && (
+        {!option.isCustom && (
+          <div className="flex flex-wrap gap-3 mb-1">
+            {link && (
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[12px] underline active:opacity-70"
+                style={{ color: "var(--td-accent)" }}
+              >
+                {link.label} ↗
+              </a>
+            )}
             <a
-              href={link.url}
+              href={photosLink.url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-[12px] underline active:opacity-70"
               style={{ color: "var(--td-accent)" }}
             >
-              {link.label} ↗
+              {photosLink.label} ↗
             </a>
-          )}
-          <a
-            href={photosLink.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[12px] underline active:opacity-70"
-            style={{ color: "var(--td-accent)" }}
-          >
-            {photosLink.label} ↗
-          </a>
-        </div>
+          </div>
+        )}
         <div className="flex gap-3 mt-1 text-[12px]" style={{ color: "var(--td-secondary)" }}>
           {option.estimated_cost_per_person != null && (
             <span>~${option.estimated_cost_per_person}/person</span>
@@ -113,45 +155,98 @@ function OptionCard({
           )}
           {option.location?.name && <span className="truncate">📍 {option.location.name}</span>}
         </div>
-        {voters.length > 0 && (
-          <div className="flex gap-1 mt-1.5 flex-wrap">
-            {voters.map(v => (
-              <span
-                key={v}
-                className="w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center"
-                style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
-                title={v}
-              >
-                {v.slice(0, 2).toUpperCase()}
-              </span>
-            ))}
-          </div>
+        {option.why_this_fits && (
+          <p className="text-[12px] italic mt-1" style={{ color: "var(--td-accent)", opacity: 0.8 }}>
+            {option.why_this_fits}
+          </p>
         )}
+        {option.createdBy && (
+          <p className="text-[11px] mt-0.5" style={{ color: "var(--td-secondary)" }}>
+            Added by {option.createdBy}
+          </p>
+        )}
+        <div className="flex items-center gap-2 mt-2">
+          {voters.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap items-center">
+              {voters.map(v => (
+                <UserAvatar key={v} name={v} size="sm" showLabel={false} />
+              ))}
+            </div>
+          )}
+          {onBook && !booked && (
+            <button
+              onClick={e => { e.stopPropagation(); onBook(); }}
+              className="ml-auto text-[11px] px-2.5 py-1 rounded-full font-semibold active:opacity-70"
+              style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
+            >
+              Book this
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function Avatar({ name, active, onClick }: { name: string; active?: boolean; onClick?: () => void }) {
+// Write-in form inline within a slot
+function WriteInForm({
+  slotId,
+  slotCategory,
+  onAdd,
+}: {
+  slotId: string;
+  slotCategory: string;
+  onAdd: (title: string, description: string) => void;
+}) {
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+
+  const handleAdd = () => {
+    if (!title.trim()) return;
+    onAdd(title.trim(), desc.trim() || "Custom activity");
+    setTitle("");
+    setDesc("");
+  };
+
+  void slotId;
+  void slotCategory;
+
   return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-1 active:opacity-70 transition-opacity"
-    >
-      <div
-        className="w-12 h-12 rounded-full flex items-center justify-center text-[15px] font-semibold"
-        style={{
-          backgroundColor: active ? "var(--td-accent)" : "var(--td-fill)",
-          color: active ? "var(--td-accent-text)" : "var(--td-label)",
-          border: active ? "2px solid var(--td-accent)" : "2px solid transparent",
-        }}
-      >
-        {name.slice(0, 2).toUpperCase()}
+    <div className="px-4 py-3 border-t" style={{ borderColor: "var(--td-separator)" }}>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="Write in your own option..."
+          className="flex-1 px-3 py-2 rounded-xl text-[14px] border bg-transparent"
+          style={{ borderColor: "var(--td-separator)", color: "var(--td-label)" }}
+          onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!title.trim()}
+          className="px-3 py-2 rounded-xl text-[13px] font-semibold active:opacity-70"
+          style={{
+            backgroundColor: title.trim() ? "var(--td-accent)" : "var(--td-fill)",
+            color: title.trim() ? "var(--td-accent-text)" : "var(--td-secondary)",
+          }}
+        >
+          Add
+        </button>
       </div>
-      <span className="text-[11px] truncate max-w-[60px]" style={{ color: "var(--td-secondary)" }}>
-        {name}
-      </span>
-    </button>
+      {title.trim() && (
+        <input
+          type="text"
+          value={desc}
+          onChange={e => setDesc(e.target.value)}
+          placeholder="Short description (optional)"
+          className="w-full mt-2 px-3 py-2 rounded-xl text-[13px] border bg-transparent"
+          style={{ borderColor: "var(--td-separator)", color: "var(--td-label)" }}
+          onKeyDown={e => { if (e.key === "Enter") handleAdd(); }}
+        />
+      )}
+    </div>
   );
 }
 
@@ -159,6 +254,7 @@ export default function ItineraryPage() {
   const itineraryStore = useItineraryStore();
   const { itinerary, loading, error, cloudTripId: storeCloudTripId, cloudInviteCode: storeCloudInviteCode, setItinerary: storeSetItinerary, setCloudTripInfo } = itineraryStore;
   const { form } = useTripStore();
+  const { user: authUser, profile: authProfile } = useAuth();
   const navigate = useNavigate();
   const { tripId } = useParams();
   const [savedTrip, setSavedTrip] = useState<SavedTrip | null>(null);
@@ -169,6 +265,9 @@ export default function ItineraryPage() {
   const [passcodeVerified, setPasscodeVerified] = useState(false);
   const [currentUser, setCurrentUserState] = useState(getCurrentUser());
   const [userSelections, setUserSelections] = useState<Record<string, string>>({});
+
+  // View tab state
+  const [activeTab, setActiveTab] = useState<ViewTab>("all");
 
   // Map section state
   const [mapOpen, setMapOpen] = useState(false);
@@ -182,8 +281,23 @@ export default function ItineraryPage() {
   const [refining, setRefining] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  // Invite modal
+  const [inviteOpen, setInviteOpen] = useState(false);
+
   // Cloud / real-time state
   const [cloudSelections, setCloudSelections] = useState<Record<string, Record<string, string>>>({});
+
+  // Custom write-in options from cloud
+  const [cloudCustomOptions, setCloudCustomOptions] = useState<Record<string, Array<{ id: string; title: string; description: string; category: string; createdBy: string }>>>({});
+
+  // Memorable moments
+  const [moments, setMoments] = useState<Record<string, string>>({});
+  const [myMoment, setMyMoment] = useState("");
+  const [momentsOpen, setMomentsOpen] = useState(false);
+  const [momentSaving, setMomentSaving] = useState(false);
+
+  // Booked options: slotId -> optionId
+  const [bookedSlots, setBookedSlots] = useState<Record<string, string>>({});
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -216,6 +330,28 @@ export default function ItineraryPage() {
     const unsub = subscribeToSelections(activeCloudTripId, setCloudSelections);
     return unsub;
   }, [activeCloudTripId]);
+
+  // Load custom options + moments + booked slots from cloud
+  const refreshCloudData = useCallback(() => {
+    if (!activeCloudTripId) return;
+    getCustomOptions(activeCloudTripId).then(setCloudCustomOptions);
+    getBookedSlots(activeCloudTripId).then(setBookedSlots);
+    getMemorableMoments(activeCloudTripId).then(m => {
+      setMoments(m);
+      if (currentUser) setMyMoment(m[currentUser.name] ?? "");
+    });
+  }, [activeCloudTripId, currentUser]);
+
+  useEffect(() => {
+    refreshCloudData();
+  }, [refreshCloudData]);
+
+  // Subscribe to trip extras (custom options, moments, booked slots) real-time
+  useEffect(() => {
+    if (!activeCloudTripId) return;
+    const unsub = subscribeToTripExtras(activeCloudTripId, refreshCloudData);
+    return unsub;
+  }, [activeCloudTripId, refreshCloudData]);
 
   // Suppress unused warning for setCloudTripInfo (used in JoinPage via store)
   void setCloudTripInfo;
@@ -253,6 +389,48 @@ export default function ItineraryPage() {
     return userSelections[slotId] ?? options[0]?.id;
   };
 
+  const handleAddWriteIn = async (slotId: string, slotCategory: string, title: string, description: string) => {
+    if (!currentUser) return;
+    const optionId = `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const option = {
+      id: optionId,
+      title,
+      description,
+      category: slotCategory,
+      createdBy: currentUser.name,
+    };
+
+    // Optimistic local update
+    setCloudCustomOptions(prev => ({
+      ...prev,
+      [slotId]: [...(prev[slotId] ?? []), option],
+    }));
+
+    // Persist to cloud
+    if (activeCloudTripId) {
+      await saveCustomOption(activeCloudTripId, slotId, option);
+    }
+
+    showToast("Option added!");
+  };
+
+  const handleSaveMoment = async () => {
+    if (!currentUser || !activeCloudTripId) return;
+    setMomentSaving(true);
+    await saveMemorableMoment(activeCloudTripId, currentUser.name, myMoment);
+    setMoments(prev => ({ ...prev, [currentUser.name]: myMoment }));
+    setMomentSaving(false);
+    showToast("Moment saved!");
+  };
+
+  const handleBookSlot = async (slotId: string, optionId: string) => {
+    setBookedSlots(prev => ({ ...prev, [slotId]: optionId }));
+    if (activeCloudTripId) {
+      await saveBookedSlot(activeCloudTripId, slotId, optionId, currentUser?.name ?? "");
+    }
+    showToast("Booked!");
+  };
+
   const handleRefine = async () => {
     if (!refineText.trim() || !activeItinerary) return;
     setRefining(true);
@@ -278,7 +456,11 @@ export default function ItineraryPage() {
   };
 
   const localSelections = getAllUsersSelections(tripId ?? savedTrip?.id ?? itinerary?.days[0]?.trip_id ?? "temp");
-  const activeSelections = activeCloudTripId ? cloudSelections : localSelections;
+  // Merge current user's local selections into the active set so their votes appear immediately
+  const baseSelections = activeCloudTripId ? cloudSelections : localSelections;
+  const activeSelections = currentUser
+    ? { ...baseSelections, [currentUser.name]: { ...(baseSelections[currentUser.name] ?? {}), ...userSelections } }
+    : baseSelections;
   const groupMembers = savedTrip?.form.group_members ?? form.group_members ?? [];
   const activeItinerary = savedTrip?.itinerary ?? itinerary;
   const activeForm = savedTrip?.form ?? form;
@@ -337,6 +519,17 @@ export default function ItineraryPage() {
     navigate(saved.length > 0 ? "/trips" : "/", { replace: true });
     return null;
   }
+
+  // Auto-login for Supabase-authenticated users: skip passcode, use email-derived name
+  useEffect(() => {
+    if (authUser && !currentUser) {
+      const displayName = authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "User";
+      const activeTripId = tripId ?? savedTrip?.id ?? itinerary?.days[0]?.trip_id ?? "temp";
+      setCurrentUser(displayName, activeTripId);
+      setCurrentUserState({ name: displayName, tripId: activeTripId });
+      setUserSelections(getUserSelections(activeTripId, displayName));
+    }
+  }, [authUser, currentUser, tripId, savedTrip?.id, itinerary]);
 
   // Login modal
   if (!passcodeVerified && !currentUser) {
@@ -408,7 +601,7 @@ export default function ItineraryPage() {
 
         <div className="flex flex-wrap gap-4">
           {groupMembers.map(member => (
-            <Avatar
+            <UserAvatar
               key={member.name}
               name={member.name}
               onClick={() => selectUser(member.name)}
@@ -429,6 +622,22 @@ export default function ItineraryPage() {
       </div>
     );
   }
+
+  // Build merged options per slot: AI options + cloud custom options
+  const getMergedOptions = (slot: { id: string; options: ActivityOption[] }): ActivityOption[] => {
+    const customs = (cloudCustomOptions[slot.id] ?? []).map(c => ({
+      id: c.id,
+      slot_id: slot.id,
+      title: c.title,
+      description: c.description,
+      category: c.category as ActivityOption["category"],
+      weather_sensitivity: "either" as const,
+      ai_generated: false,
+      isCustom: true,
+      createdBy: c.createdBy,
+    }));
+    return [...slot.options, ...customs];
+  };
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--td-bg)" }}>
@@ -461,9 +670,19 @@ export default function ItineraryPage() {
         </div>
       )}
 
+      {/* Invite modal */}
+      {inviteOpen && activeCloudTripId && activeInviteCode && authUser && (
+        <InviteModal
+          tripId={activeCloudTripId}
+          invitedBy={authUser.id}
+          inviteCode={activeInviteCode}
+          onClose={() => setInviteOpen(false)}
+        />
+      )}
+
       {/* Sticky nav */}
       <div className="sticky top-0 z-10" style={{
-        backgroundColor: "var(--td-nav-bg)",
+        backgroundColor: "var(--td-nav-bg, var(--td-accent))",
         borderBottom: "1px solid var(--td-separator)"
       }}>
         <div className="px-4 safe-top pt-3 pb-3">
@@ -471,16 +690,25 @@ export default function ItineraryPage() {
             <button
               onClick={() => navigate("/")}
               className="text-[17px] active:opacity-70"
-              style={{ color: "var(--td-accent-text)" }}
+              style={{ color: "var(--td-label)" }}
             >
               ‹ Home
             </button>
             <div className="flex items-center gap-3">
+              {activeInviteCode && authUser && activeCloudTripId && (
+                <button
+                  onClick={() => setInviteOpen(true)}
+                  className="text-[13px] active:opacity-70 font-medium"
+                  style={{ color: "var(--td-accent)" }}
+                >
+                  Invite
+                </button>
+              )}
               {activeInviteCode && (
                 <button
                   onClick={handleShare}
                   className="text-[13px] active:opacity-70 font-medium"
-                  style={{ color: "var(--td-accent-text)" }}
+                  style={{ color: "var(--td-accent)" }}
                 >
                   Share
                 </button>
@@ -491,22 +719,27 @@ export default function ItineraryPage() {
                   setCurrentUserState(null);
                 }}
                 className="text-[13px] active:opacity-70"
-                style={{ color: "var(--td-accent-text)", opacity: 0.75 }}
+                style={{ color: "var(--td-secondary)" }}
               >
-                Logout
+                Switch User
               </button>
             </div>
           </div>
-          <h1 className="text-[20px] font-bold" style={{ color: "var(--td-accent-text)" }}>
+          <h1 className="text-[20px] font-bold" style={{ color: "var(--td-label)" }}>
             {activeItinerary.title || `${activeForm.destination?.name} Trip`}
           </h1>
           <div className="flex items-center justify-between">
-            <p className="text-[13px]" style={{ color: "var(--td-accent-text)", opacity: 0.75 }}>
+            <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
               {activeForm.destination?.name} · {activeItinerary.days.length} days
             </p>
-            <p className="text-[13px] font-semibold" style={{ color: "var(--td-accent-text)" }}>
-              {currentUser?.name} logged in
-            </p>
+            {currentUser && (
+              <div className="flex items-center gap-1.5">
+                <UserAvatar name={currentUser.name} profile={authProfile} size="sm" showLabel={false} active />
+                <span className="text-[13px] font-semibold" style={{ color: "var(--td-label)" }}>
+                  {authProfile?.display_name || currentUser.name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -518,12 +751,32 @@ export default function ItineraryPage() {
         </p>
         <div className="flex gap-3 overflow-x-auto">
           {groupMembers.map(member => (
-            <Avatar
+            <UserAvatar
               key={member.name}
               name={member.name}
+              profile={member.name === currentUser?.name ? authProfile : undefined}
               active={member.name === currentUser?.name}
               onClick={() => selectUser(member.name)}
             />
+          ))}
+        </div>
+      </div>
+
+      {/* Category tabs */}
+      <div className="px-4 py-2 border-b overflow-x-auto" style={{ borderColor: "var(--td-separator)" }}>
+        <div className="flex gap-2 min-w-max">
+          {VIEW_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="px-3 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap active:opacity-70 transition-colors"
+              style={{
+                backgroundColor: activeTab === tab.id ? "var(--td-accent)" : "var(--td-fill)",
+                color: activeTab === tab.id ? "var(--td-accent-text)" : "var(--td-label)",
+              }}
+            >
+              {tab.icon} {tab.label}
+            </button>
           ))}
         </div>
       </div>
@@ -669,9 +922,106 @@ export default function ItineraryPage() {
         )}
       </div>
 
+      {/* Most Memorable Moment */}
+      {activeCloudTripId && (
+        <div className="border-b" style={{ borderColor: "var(--td-separator)" }}>
+          <button
+            className="w-full px-4 py-3 flex items-center justify-between active:opacity-70"
+            onClick={() => setMomentsOpen(o => !o)}
+          >
+            <span className="text-[15px] font-semibold" style={{ color: "var(--td-label)" }}>
+              ⭐ Most Memorable Moment
+            </span>
+            <span className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
+              {momentsOpen ? "▲" : "▼"}
+            </span>
+          </button>
+          {momentsOpen && (
+            <div className="px-4 pb-4">
+              <p className="text-[13px] mb-3" style={{ color: "var(--td-secondary)" }}>
+                Share your favorite moment from the trip — everyone can see it!
+              </p>
+
+              {/* My moment input */}
+              {currentUser && (
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={myMoment}
+                    onChange={e => setMyMoment(e.target.value)}
+                    placeholder="What was your most memorable moment?"
+                    className="flex-1 px-4 py-3 rounded-2xl text-[14px] bg-transparent focus:outline-none"
+                    style={{
+                      backgroundColor: "var(--td-card)",
+                      color: "var(--td-label)",
+                      border: "1px solid var(--td-separator)",
+                    }}
+                    onKeyDown={e => { if (e.key === "Enter") handleSaveMoment(); }}
+                  />
+                  <button
+                    onClick={handleSaveMoment}
+                    disabled={momentSaving || !myMoment.trim()}
+                    className="px-4 py-3 rounded-2xl text-[13px] font-semibold active:opacity-70"
+                    style={{
+                      backgroundColor: myMoment.trim() ? "var(--td-accent)" : "var(--td-fill)",
+                      color: myMoment.trim() ? "var(--td-accent-text)" : "var(--td-secondary)",
+                    }}
+                  >
+                    {momentSaving ? "..." : "Save"}
+                  </button>
+                </div>
+              )}
+
+              {/* Everyone's moments */}
+              {Object.entries(moments).filter(([, m]) => m.trim()).length > 0 && (
+                <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
+                  style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
+                  {Object.entries(moments).filter(([, m]) => m.trim()).map(([name, moment]) => (
+                    <div key={name} className="px-4 py-3 flex items-start gap-3">
+                      <UserAvatar name={name} size="sm" showLabel={false} />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[13px] font-semibold" style={{ color: "var(--td-label)" }}>
+                          {name}
+                        </span>
+                        <p className="text-[14px] mt-0.5" style={{ color: "var(--td-secondary)" }}>
+                          "{moment}"
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Days */}
       <div className="py-6 flex flex-col gap-6">
-        {activeItinerary.days.map(day => (
+        {activeItinerary.days.map(day => {
+          // For category tabs: show all time slots but filter options within each slot
+          // For Lodging and Travel tabs: only show slots that have matching options
+          const isTimeBased = activeTab === "all" || activeTab === "food" || activeTab === "attraction" || activeTab === "adventure";
+
+          const slotsToRender = isTimeBased
+            ? day.slots.map(slot => {
+                const merged = getMergedOptions(slot);
+                const filtered = activeTab === "all"
+                  ? merged
+                  : merged.filter(opt => opt.category === activeTab);
+                return { ...slot, options: filtered, _allOptions: merged };
+              }).filter(slot => activeTab === "all" || slot.options.length > 0)
+            : day.slots
+                .map(slot => {
+                  const merged = getMergedOptions(slot);
+                  const filtered = merged.filter(opt => opt.category === activeTab);
+                  return { ...slot, options: filtered, _allOptions: merged };
+                })
+                .filter(slot => slot.options.length > 0);
+
+          if (slotsToRender.length === 0) return null;
+
+          return (
           <div key={day.id} className="px-4">
             <div className="flex items-center gap-2 mb-3 px-1">
               <div className="w-7 h-7 rounded-full text-[13px] font-bold flex items-center justify-center"
@@ -689,25 +1039,45 @@ export default function ItineraryPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              {day.slots.map(slot => {
+              {slotsToRender.map(slot => {
+                const allMerged = slot.options;
+                const bookedOptionId = bookedSlots[slot.id];
+                // On Full Trip, if a slot is booked, only show the booked option
+                const displayOpts = (activeTab === "all" && bookedOptionId)
+                  ? allMerged.filter(opt => opt.id === bookedOptionId)
+                  : allMerged;
                 const allUsers = Object.keys(activeSelections);
                 const thisSlotVotes = allUsers.filter(u => activeSelections[u]?.[slot.id]).length;
+                // Determine the primary category for write-ins (use the full slot options, not filtered)
+                const fullSlotOpts = getMergedOptions(slot);
+                const primaryCategory = fullSlotOpts[0]?.category ?? "attraction";
+                // Only show write-in for food/attraction/adventure categories, and not if booked on full trip
+                const showWriteIn = ["food", "attraction", "adventure"].includes(primaryCategory)
+                  && !(activeTab === "all" && bookedOptionId);
                 return (
                   <div key={slot.id}>
                     <div className="flex items-center justify-between px-1 mb-1.5">
                       <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--td-secondary)" }}>
                         {SLOT_LABELS[slot.slot_type]}
                       </p>
-                      {thisSlotVotes > 0 && (
-                        <span className="text-[11px] px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
-                          {thisSlotVotes} voted
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {bookedOptionId && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                            style={{ backgroundColor: "#34C75930", color: "#34C759" }}>
+                            Booked
+                          </span>
+                        )}
+                        {thisSlotVotes > 0 && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
+                            {thisSlotVotes} voted
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
                       style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
-                      {slot.options.map(opt => {
+                      {displayOpts.map(opt => {
                         const voters = Object.entries(activeSelections)
                           .filter(([, slotSels]) => slotSels[slot.id] === opt.id)
                           .map(([name]) => name);
@@ -715,14 +1085,24 @@ export default function ItineraryPage() {
                           <OptionCard
                             key={opt.id}
                             option={opt}
-                            selected={getSlotSelection(slot.id, slot.options) === opt.id}
+                            selected={getSlotSelection(slot.id, allMerged) === opt.id}
                             onSelect={() => selectOption(slot.id, opt.id)}
-                            link={getActivityLink(opt, activeForm.destination?.name)}
+                            link={opt.isCustom ? null : getActivityLink(opt, activeForm.destination?.name)}
                             photosLink={getPhotosLink(opt, activeForm.destination?.name)}
                             voters={voters}
+                            booked={bookedOptionId === opt.id}
+                            onBook={!bookedOptionId ? () => handleBookSlot(slot.id, opt.id) : undefined}
                           />
                         );
                       })}
+                      {/* Write-in forms */}
+                      {showWriteIn && (
+                        <WriteInForm
+                          slotId={slot.id}
+                          slotCategory={primaryCategory}
+                          onAdd={(title, description) => handleAddWriteIn(slot.id, primaryCategory, title, description)}
+                        />
+                      )}
                     </div>
                   </div>
                 );
@@ -752,7 +1132,8 @@ export default function ItineraryPage() {
               })()}
             </div>
           </div>
-        ))}
+          );
+        })}
 
         <div className="text-center pb-8 safe-bottom">
           <button onClick={() => navigate("/")} className="text-[17px]"

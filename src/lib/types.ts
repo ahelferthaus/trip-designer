@@ -66,6 +66,16 @@ export interface ActivityOption {
   booking_url?: string;
   weather_sensitivity: WeatherSensitivity;
   ai_generated: boolean;
+  why_this_fits?: string;
+  // New fields for write-in and booking
+  isCustom?: boolean;
+  isBooked?: boolean;
+  bookedBy?: string;
+  createdBy?: string;
+}
+
+export interface SlotOptions {
+  [slotId: string]: ActivityOption[];
 }
 
 export interface Vote {
@@ -104,6 +114,43 @@ export interface LodgingOption {
   checkOut: string;
 }
 
+export type Currency = "USD" | "EUR" | "GBP" | "JPY" | "CAD" | "AUD";
+
+export type AvatarType = "initials" | "emoji" | "upload";
+
+export interface UserProfile {
+  id: string;
+  display_name: string;
+  avatar_type: AvatarType;
+  avatar_value: string;
+  default_passcode: string;
+}
+
+export interface TravelPartner {
+  id: string;
+  user_id: string;
+  name: string;
+  type: "adult" | "child";
+  age?: number;
+}
+
+export interface PartnerGroup {
+  id: string;
+  user_id: string;
+  name: string;
+  partner_ids: string[];
+}
+
+export interface TripInvitation {
+  id: string;
+  trip_id: string;
+  invited_by: string;
+  invited_email: string;
+  status: "pending" | "accepted" | "expired";
+  token: string;
+  expires_at: string;
+}
+
 export interface IntakeFormData {
   destination: Location | null;
   start_date: string;
@@ -111,7 +158,11 @@ export interface IntakeFormData {
   group_members: GroupMember[];
   budget_level: BudgetLevel | null;
   budget_amount?: number;
+  budget_currency?: Currency;
+  budget_per_person?: boolean;
   vibes: TripVibe[];
   must_haves?: string;
   avoid?: string;
+  dietary?: string;
+  mobility?: string;
 }

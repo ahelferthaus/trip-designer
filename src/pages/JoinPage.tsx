@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
+import { useAuth } from "../store/authStore";
 import { getTripByInviteCode, joinTrip } from "../lib/supabaseTrips";
+import { getInvitationByToken, acceptInvitation } from "../lib/tripInvitations";
 import { setCurrentUser } from "../lib/userSession";
 import type { CloudTrip } from "../lib/supabaseTrips";
 
@@ -10,9 +12,12 @@ type Step = "loading" | "passcode" | "name" | "joining";
 
 export default function JoinPage() {
   const { inviteCode } = useParams<{ inviteCode: string }>();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get("token");
   const navigate = useNavigate();
   const itineraryStore = useItineraryStore();
   const tripStore = useTripStore();
+  const { user: authUser } = useAuth();
 
   const [trip, setTrip] = useState<CloudTrip | null>(null);
   const [step, setStep] = useState<Step>("loading");
@@ -27,16 +32,36 @@ export default function JoinPage() {
       navigate("/", { replace: true });
       return;
     }
-    getTripByInviteCode(inviteCode).then(t => {
+
+    (async () => {
+      const t = await getTripByInviteCode(inviteCode);
       if (!t) {
         setFetchError("Trip not found. Check the invite link.");
         setStep("passcode");
-      } else {
-        setTrip(t);
-        setStep("passcode");
+        return;
       }
-    });
-  }, [inviteCode, navigate]);
+      setTrip(t);
+
+      // If there's a token and user is authenticated, try auto-accept
+      if (token && authUser) {
+        const invitation = await getInvitationByToken(token);
+        if (invitation && invitation.invited_email === authUser.email) {
+          await acceptInvitation(invitation.id);
+          const displayName = authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "User";
+          setStep("joining");
+          await joinTrip(t.id, displayName, authUser.id);
+          setCurrentUser(displayName, t.id);
+          itineraryStore.setItinerary(t.itinerary_data, t.form_data);
+          itineraryStore.setCloudTripInfo(t.id, t.invite_code);
+          tripStore.loadForm(t.form_data);
+          navigate("/itinerary", { replace: true });
+          return;
+        }
+      }
+
+      setStep("passcode");
+    })();
+  }, [inviteCode, navigate, authUser, token]);
 
   const handlePasscode = () => {
     if (trip && passcode === trip.passcode) {
@@ -53,7 +78,7 @@ export default function JoinPage() {
       return;
     }
     setStep("joining");
-    await joinTrip(trip.id, name.trim());
+    await joinTrip(trip.id, name.trim(), authUser?.id);
     setCurrentUser(name.trim(), trip.id);
     itineraryStore.setItinerary(trip.itinerary_data, trip.form_data);
     itineraryStore.setCloudTripInfo(trip.id, trip.invite_code);

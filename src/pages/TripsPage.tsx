@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
-import { loadSavedTrips, deleteTrip } from "../lib/tripStorage";
+import { useAuth } from "../store/authStore";
+import { loadSavedTrips, loadMergedTrips, deleteTrip } from "../lib/tripStorage";
 import type { SavedTrip } from "../lib/tripStorage";
 
 function daysBetween(start: string, end: string) {
@@ -20,8 +21,23 @@ export default function TripsPage() {
   const navigate = useNavigate();
   const { setItinerary } = useItineraryStore();
   const store = useTripStore();
+  const { user } = useAuth();
   const [trips, setTrips] = useState<SavedTrip[]>(loadSavedTrips);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [loadingCloud, setLoadingCloud] = useState(false);
+
+  // When authenticated, merge cloud trips
+  useEffect(() => {
+    if (user) {
+      setLoadingCloud(true);
+      loadMergedTrips(user.id).then(merged => {
+        setTrips(merged);
+        setLoadingCloud(false);
+      });
+    } else {
+      setTrips(loadSavedTrips());
+    }
+  }, [user]);
 
   const openTrip = (trip: SavedTrip) => {
     // Restore form + itinerary state then navigate
@@ -60,7 +76,12 @@ export default function TripsPage() {
       </div>
 
       <div className="flex-1 px-4 pt-4">
-        {trips.length === 0 ? (
+        {loadingCloud && (
+          <p className="text-[13px] text-center mb-3" style={{ color: "var(--td-secondary)" }}>
+            Syncing trips...
+          </p>
+        )}
+        {trips.length === 0 && !loadingCloud ? (
           <div className="flex flex-col items-center justify-center pt-24 text-center">
             <div className="text-5xl mb-4">🗺️</div>
             <h3 className="text-[20px] font-semibold mb-2" style={{ color: "var(--td-label)" }}>
@@ -114,6 +135,12 @@ export default function TripsPage() {
                             style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
                             {trip.form.budget_level}
                           </span>
+                          {trip.cloudTripId && (
+                            <span className="text-[11px] px-2 py-0.5 rounded-full"
+                              style={{ backgroundColor: "#34C75920", color: "#34C759" }}>
+                              synced
+                            </span>
+                          )}
                         </div>
                       </div>
                       <span className="text-[20px] mt-1">›</span>

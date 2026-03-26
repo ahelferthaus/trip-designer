@@ -1,60 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { geocodeAll } from "../../lib/geocode";
+import { useState, useMemo } from "react";
 import type { GeneratedItinerary } from "../../lib/generateItinerary";
-
-// Fix leaflet default marker icon broken by bundlers
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
-
-function createNumberedIcon(number: number, color: string) {
-  return L.divIcon({
-    html: `<div style="
-      background: ${color};
-      color: white;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      border: 2px solid white;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      font-family: -apple-system, sans-serif;
-    ">${number}</div>`,
-    className: "",
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-}
-
-function FitBounds({ positions }: { positions: [number, number][] }) {
-  const map = useMap();
-  useEffect(() => {
-    if (positions.length > 0) {
-      const bounds = L.latLngBounds(positions.map(p => L.latLng(p[0], p[1])));
-      map.fitBounds(bounds, { padding: [40, 40] });
-    }
-  }, [map, positions]);
-  return null;
-}
-
-interface MapPoint {
-  id: string;
-  label: string;
-  lat: number;
-  lng: number;
-  day: number;
-  color: string;
-}
 
 interface ItineraryMapProps {
   itinerary: GeneratedItinerary;
@@ -67,136 +12,150 @@ const DAY_COLORS = [
   "#3B9AB2", "#E27505", "#5F7470", "#D93954", "#A42820",
 ];
 
-export default function ItineraryMap({ itinerary, destination, accentColor }: ItineraryMapProps) {
-  const [points, setPoints] = useState<MapPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const geocoded = useRef(false);
+interface MapActivity {
+  title: string;
+  location: string;
+  day: number;
+  slotType: string;
+  color: string;
+}
 
-  useEffect(() => {
-    if (geocoded.current) return;
-    geocoded.current = true;
+export default function ItineraryMap({ itinerary, destination }: ItineraryMapProps) {
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
-    const queries: { id: string; name: string; destination?: string }[] = [];
-
+  // Extract all activities with locations
+  const activities = useMemo(() => {
+    const acts: MapActivity[] = [];
     for (const day of itinerary.days) {
+      const color = DAY_COLORS[(day.day_number - 1) % DAY_COLORS.length];
       for (const slot of day.slots) {
-        // Use the first option's location (default selection)
         const opt = slot.options[0];
-        if (opt?.location?.name) {
-          queries.push({
-            id: `${day.day_number}-${slot.slot_type}`,
-            name: opt.location.name,
-            destination,
-          });
-        } else if (opt?.title) {
-          queries.push({
-            id: `${day.day_number}-${slot.slot_type}`,
-            name: opt.title,
-            destination,
+        if (opt) {
+          const loc = opt.location?.name || opt.title;
+          acts.push({
+            title: opt.title,
+            location: loc,
+            day: day.day_number,
+            slotType: slot.slot_type,
+            color,
           });
         }
       }
     }
+    return acts;
+  }, [itinerary]);
 
-    if (queries.length === 0) {
-      setLoading(false);
-      return;
+  // Filter by selected day
+  const filtered = selectedDay
+    ? activities.filter(a => a.day === selectedDay)
+    : activities;
+
+  // Build Google Maps embed URL — use a place search for the destination
+  const embedUrl = useMemo(() => {
+    const query = destination || itinerary.title || "trip";
+    return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed&z=12`;
+  }, [destination, itinerary.title]);
+
+  // Build Google Maps directions URL with waypoints for "Open in Maps"
+  const mapsDirectionsUrl = useMemo(() => {
+    const waypoints = filtered
+      .map(a => `${a.location}, ${destination || ""}`)
+      .slice(0, 10); // Google Maps supports max ~10 waypoints in URL
+
+    if (waypoints.length === 0) return null;
+    if (waypoints.length === 1) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(waypoints[0])}`;
     }
-
-    geocodeAll(queries).then(results => {
-      const pts: MapPoint[] = [];
-      let idx = 1;
-
-      for (const day of itinerary.days) {
-        const color = DAY_COLORS[(day.day_number - 1) % DAY_COLORS.length];
-        for (const slot of day.slots) {
-          const key = `${day.day_number}-${slot.slot_type}`;
-          const geo = results.get(key);
-          const opt = slot.options[0];
-          if (geo && opt) {
-            pts.push({
-              id: key,
-              label: opt.title,
-              lat: geo.lat,
-              lng: geo.lng,
-              day: day.day_number,
-              color,
-            });
-            idx++;
-          }
-        }
-      }
-
-      setPoints(pts);
-      setLoading(false);
-    });
-  }, [itinerary, destination]);
-
-  const positions: [number, number][] = points.map(p => [p.lat, p.lng]);
-
-  if (loading) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-2xl"
-        style={{ height: 220, backgroundColor: "var(--td-fill)" }}
-      >
-        <div className="text-center">
-          <svg className="animate-spin w-6 h-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24"
-            style={{ color: "var(--td-accent)" }}>
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-          </svg>
-          <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>Mapping your trip…</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (points.length === 0) {
-    return (
-      <div
-        className="flex items-center justify-center rounded-2xl"
-        style={{ height: 120, backgroundColor: "var(--td-fill)" }}
-      >
-        <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>No mappable locations found</p>
-      </div>
-    );
-  }
+    const origin = encodeURIComponent(waypoints[0]);
+    const dest = encodeURIComponent(waypoints[waypoints.length - 1]);
+    const middle = waypoints.slice(1, -1).map(w => encodeURIComponent(w)).join("|");
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}${middle ? `&waypoints=${middle}` : ""}&travelmode=walking`;
+  }, [filtered, destination]);
 
   return (
-    <div className="rounded-2xl overflow-hidden shadow-sm" style={{ height: 300 }}>
-      <MapContainer
-        style={{ height: "100%", width: "100%" }}
-        center={[points[0].lat, points[0].lng]}
-        zoom={12}
-        scrollWheelZoom={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <div className="rounded-2xl overflow-hidden shadow-sm">
+      {/* Embedded Google Map */}
+      <div style={{ height: 220, position: "relative" }}>
+        <iframe
+          title="Trip Map"
+          src={embedUrl}
+          style={{ width: "100%", height: "100%", border: "none" }}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          allowFullScreen
         />
-        <FitBounds positions={positions} />
-        {/* Route polyline */}
-        <Polyline
-          positions={positions}
-          pathOptions={{ color: accentColor ?? "#007AFF", weight: 3, opacity: 0.7, dashArray: "6 4" }}
-        />
-        {/* Numbered markers */}
-        {points.map((pt, i) => (
-          <Marker
-            key={pt.id}
-            position={[pt.lat, pt.lng]}
-            icon={createNumberedIcon(i + 1, pt.color)}
+      </div>
+
+      {/* Day filter pills */}
+      <div className="px-3 py-2 flex gap-1.5 overflow-x-auto" style={{ backgroundColor: "var(--td-card)" }}>
+        <button
+          onClick={() => setSelectedDay(null)}
+          className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap active:opacity-70"
+          style={{
+            backgroundColor: selectedDay === null ? "var(--td-accent)" : "var(--td-fill)",
+            color: selectedDay === null ? "var(--td-accent-text)" : "var(--td-label)",
+          }}
+        >
+          All Days
+        </button>
+        {itinerary.days.map(day => (
+          <button
+            key={day.day_number}
+            onClick={() => setSelectedDay(day.day_number)}
+            className="px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap active:opacity-70"
+            style={{
+              backgroundColor: selectedDay === day.day_number
+                ? DAY_COLORS[(day.day_number - 1) % DAY_COLORS.length]
+                : "var(--td-fill)",
+              color: selectedDay === day.day_number ? "#fff" : "var(--td-label)",
+            }}
           >
-            <Popup>
-              <div style={{ fontFamily: "-apple-system, sans-serif", fontSize: 13 }}>
-                <strong>Day {pt.day}</strong><br />
-                {pt.label}
-              </div>
-            </Popup>
-          </Marker>
+            Day {day.day_number}
+          </button>
         ))}
-      </MapContainer>
+      </div>
+
+      {/* Activity list with locations */}
+      <div className="max-h-48 overflow-y-auto divide-y" style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
+        {filtered.map((act, i) => (
+          <a
+            key={`${act.day}-${act.slotType}-${i}`}
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${act.location}, ${destination || ""}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 px-3 py-2 active:opacity-70"
+          >
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+              style={{ backgroundColor: act.color, color: "#fff" }}
+            >
+              {act.day}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-medium truncate" style={{ color: "var(--td-label)" }}>
+                {act.title}
+              </p>
+              <p className="text-[11px] truncate" style={{ color: "var(--td-secondary)" }}>
+                {act.location}
+              </p>
+            </div>
+            <span className="text-[11px] flex-shrink-0" style={{ color: "var(--td-accent)" }}>Map ↗</span>
+          </a>
+        ))}
+      </div>
+
+      {/* Open full route in Google Maps */}
+      {mapsDirectionsUrl && (
+        <a
+          href={mapsDirectionsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center py-2.5 text-[13px] font-semibold active:opacity-70"
+          style={{ backgroundColor: "var(--td-fill)", color: "var(--td-accent)" }}
+        >
+          Open full route in Google Maps ↗
+        </a>
+      )}
     </div>
   );
 }
