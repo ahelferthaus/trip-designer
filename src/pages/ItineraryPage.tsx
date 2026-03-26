@@ -30,7 +30,10 @@ import {
 import { getTripById, loadSavedTrips } from "../lib/tripStorage";
 import UserAvatar from "../components/UserAvatar";
 import InviteModal from "../components/itinerary/InviteModal";
+import SlotPhotos from "../components/itinerary/SlotPhotos";
 import { publishTrip, unpublishTrip } from "../lib/publicTrips";
+import { getPhotosForTrip } from "../lib/tripPhotos";
+import type { TripPhoto } from "../lib/tripPhotos";
 import type { SavedTrip } from "../lib/tripStorage";
 import type { ActivityOption } from "../lib/types";
 
@@ -303,6 +306,9 @@ export default function ItineraryPage() {
   // Publish state
   const [isPublished, setIsPublished] = useState(false);
 
+  // Photos per slot
+  const [slotPhotos, setSlotPhotos] = useState<Record<string, TripPhoto[]>>({});
+
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2000);
@@ -335,11 +341,12 @@ export default function ItineraryPage() {
     return unsub;
   }, [activeCloudTripId]);
 
-  // Load custom options + moments + booked slots from cloud
+  // Load custom options + moments + booked slots + photos from cloud
   const refreshCloudData = useCallback(() => {
     if (!activeCloudTripId) return;
     getCustomOptions(activeCloudTripId).then(setCloudCustomOptions);
     getBookedSlots(activeCloudTripId).then(setBookedSlots);
+    getPhotosForTrip(activeCloudTripId).then(setSlotPhotos);
     getMemorableMoments(activeCloudTripId).then(m => {
       setMoments(m);
       if (currentUser) setMyMoment(m[currentUser.name] ?? "");
@@ -1157,6 +1164,16 @@ export default function ItineraryPage() {
                         />
                       )}
                     </div>
+                    {/* Slot photos */}
+                    {activeCloudTripId && (
+                      <SlotPhotos
+                        tripId={activeCloudTripId}
+                        slotId={slot.id}
+                        userId={authUser?.id ?? null}
+                        photos={slotPhotos[slot.id] ?? []}
+                        onPhotoAdded={refreshCloudData}
+                      />
+                    )}
                   </div>
                 );
               })}
