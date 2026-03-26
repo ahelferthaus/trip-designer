@@ -9,6 +9,7 @@ import { updateTripCloudData } from "../lib/tripStorage";
 import CalendarPicker from "../components/intake/CalendarPicker";
 import GroupPresetPicker from "../components/intake/GroupPresetPicker";
 import type { BudgetLevel, TripVibe, GroupMember, Currency } from "../lib/types";
+import { useGamification } from "../store/gamificationStore";
 
 const CURRENCIES: { id: Currency; label: string; symbol: string }[] = [
   { id: "USD", label: "USD", symbol: "$" },
@@ -60,6 +61,7 @@ export default function IntakePage() {
   const { form } = store;
   const itineraryStore = useItineraryStore();
   const { user: authUser } = useAuth();
+  const { addXP, incrementStat } = useGamification();
 
   const [step, setStep] = useState(1);
   const [destinationText, setDestinationText] = useState(form.destination?.name ?? "");
@@ -103,6 +105,16 @@ export default function IntakePage() {
         } catch {
           // Cloud save failure is non-fatal
         }
+      }
+      // Award XP for trip creation
+      if (authUser) {
+        let xpReward = 50; // Base XP
+        if (form.must_haves || form.avoid || form.dietary || form.mobility) xpReward += 10;
+        if (form.vibes.length >= 3) xpReward += 15;
+        if (days >= 7) xpReward += 20;
+        addXP(xpReward);
+        incrementStat("tripsCreated");
+        incrementStat("daysPlanned");
       }
     } catch (err) {
       console.error("Trip generation failed:", err);

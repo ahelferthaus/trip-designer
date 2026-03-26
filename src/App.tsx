@@ -15,6 +15,7 @@ import ExplorePage from "./pages/ExplorePage";
 import TripDetailPage from "./pages/TripDetailPage";
 import FeedPage from "./pages/FeedPage";
 import ProfilePage from "./pages/ProfilePage";
+import BottomTabBar from "./components/BottomTabBar";
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
                 <Route path="/feed" element={<FeedPage />} />
                 <Route path="/profile/:userId" element={<ProfilePage />} />
               </Routes>
+              <BottomTabBar />
             </BrowserRouter>
           </ItineraryStoreProvider>
         </TripStoreProvider>
