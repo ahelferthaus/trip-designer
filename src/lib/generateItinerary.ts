@@ -20,11 +20,13 @@ export async function generateItinerary(form: IntakeFormData): Promise<Generated
 CRITICAL: You MUST return EXACTLY ${days} days in the "days" array. No more, no less.
 
 Group: ${form.group_members.length} people (${groupDesc})
-Budget: ${form.budget_level}
+Budget: ${form.budget_level}${form.budget_amount ? ` — ${form.budget_currency ?? "USD"} ${form.budget_amount}${form.budget_per_person ? " per person" : " total"}` : ""}
 Vibe: ${form.vibes.join(", ")}
 Dates: ${form.start_date} to ${form.end_date}
 ${form.must_haves ? `Must include: ${form.must_haves}` : ""}
 ${form.avoid ? `Avoid: ${form.avoid}` : ""}
+${form.dietary ? `Dietary restrictions: ${form.dietary}` : ""}
+${form.mobility ? `Mobility/accessibility: ${form.mobility}` : ""}
 
 Return JSON in this exact shape:
 {
@@ -55,7 +57,8 @@ Return JSON in this exact shape:
               "photo_url": "",
               "booking_url": "",
               "weather_sensitivity": "indoor",
-              "ai_generated": true
+              "ai_generated": true,
+              "why_this_fits": "1 sentence explaining why this matches the trip vibe"
             },
             { "second option here with same fields" }
           ]

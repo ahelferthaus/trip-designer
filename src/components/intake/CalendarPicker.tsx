@@ -51,13 +51,13 @@ export default function CalendarPicker({ value, onChange, label }: CalendarPicke
       
       {open && (
         <>
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
             onClick={() => setOpen(false)}
           />
-          <div 
-            className="absolute z-50 left-4 right-4 mt-2 rounded-2xl shadow-xl p-4"
+          <div
+            className="fixed z-50 left-4 right-4 top-1/2 -translate-y-1/2 max-w-sm mx-auto rounded-2xl shadow-xl p-4"
             style={{ backgroundColor: "var(--td-card)" }}
           >
             {/* Header */}
