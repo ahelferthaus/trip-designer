@@ -1,54 +1,76 @@
 # TripDesigner
 
-AI-powered group trip planner. Plan together, vote on activities, collaborate in real time.
+AI-powered collaborative trip planning. Generate day-by-day itineraries, vote on activities with your travel group, write in your own options, and book what's confirmed.
 
-**Live Demo**: [trip-designer.vercel.app](https://trip-designer.vercel.app) *(replace with your Vercel URL)*
+**Live Demo**: [trip-designer.vercel.app](https://trip-designer.vercel.app)
 
 ---
 
 ## What It Is
 
-TripDesigner generates complete day-by-day itineraries using AI. Enter your destination, dates, group, budget, and vibe — it creates morning, afternoon, and evening slots with 2 curated options each. Your group logs in, votes on favorites, and builds the perfect trip together.
+TripDesigner generates complete day-by-day itineraries using AI. Enter your destination, dates, group, budget, and vibe — it creates morning, afternoon, and evening slots with 2-3 curated options each. Your group logs in, votes on favorites, writes in their own suggestions, books confirmed plans, and builds the perfect trip together.
 
-**Core differentiator**: Real-time collaborative itinerary design, not just AI suggestions.
+**Core differentiator**: Real-time collaborative itinerary design with write-ins, booking, and persistence — not just AI suggestions.
 
 ---
 
 ## Feature Overview
 
 ### AI Itinerary Generation
-- **GPT-4o** generates structured itineraries (day → slot → 2 options each)
-- **Multi-LLM fallback**: Claude → Gemini if OpenAI fails or rate-limits
-- **AI refinement**: Natural language edits — "make Day 2 more relaxed"
+- **Multi-LLM**: GPT-4o (primary), Claude, Gemini (automatic fallback)
+- **Structured output**: Day → time slot → 2-3 options each with cost, duration, location
+- **AI refinement**: Natural language edits — "Make Day 2 more relaxed", "Add more food options"
 - **Hidden gems**: One local secret per day, auto-generated
 
 ### Trip Planning
-- **6-step intake**: destination, dates, group composition, budget, vibes, notes
+- **7-step intake**: Destination, dates, group composition, budget, vibes, notes, review
+- **Travel partner presets**: Save frequent companions + named groups. Load with one tap.
 - **Lodging links**: Airbnb, VRBO, Hotels.com, Expedia (with check-in/out dates)
 - **Flights link**: Google Flights (with destination + travel dates)
 - **Activity links**: Wikipedia, Google Maps, Viator, Rome2Rio, Booking.com
 
 ### Maps
-- **Interactive map**: Leaflet + OpenStreetMap (free, no API key)
-- **Numbered markers**: Shows each stop in itinerary order
-- **Route polyline**: Dashed line connecting all locations
-- **Auto-fits**: Map zooms to show all points
-- **Collapsible**: Starts closed, tap "🗺️ Trip Map" to open
-- **Lazy-loaded**: Doesn't bloat initial page load
+- **Google Maps embed**: Instant load, always works, centered on destination
+- **Per-activity links**: Tap any activity to open it in Google Maps
+- **Day filter**: Filter map activities by day number
+- **Full route view**: "Open full route in Google Maps" with waypoints
 
 ### Collaboration
-- **Simple login**: Passcode (default: 1234) → pick your name from group
-- **Per-user selections**: Each person's activity picks saved separately
-- **Real-time voting**: See who picked what (avatar initials on each option)
-- **Supabase cloud trips**: Share via invite link (`/join/{code}`)
-- **Live updates**: Votes sync across all connected users instantly
+- **User profiles**: Sign up for persistent trips. Display name + avatar (initials or emoji).
+- **Passcode login**: Simple passcode (default: 1234) → pick your name from group
+- **Auto-login**: Supabase-authenticated users skip the passcode
+- **Per-user voting**: Each person picks their favorite activities per slot
+- **Real-time sync**: Votes, write-ins, bookings, and moments update instantly for all users
+- **Voter bubbles**: See who voted for what — avatar bubbles appear next to each option
+- **Share via link**: Invite code URL (`/join/{code}`)
+- **Email invitations**: Send invite emails with token-based auto-accept
+
+### Write-in Options
+- **Add your own**: Every food/activity/adventure slot has a write-in form
+- **Persisted**: Stored in dedicated `trip_custom_options` table (not fragile JSON)
+- **Attributed**: Shows "Added by [name]" with a "write-in" badge
+- **Shared**: Visible to all trip members in real-time
+
+### Booking
+- **"Book this" button**: Mark any option as confirmed
+- **Full Trip view**: Only the booked option shows for that slot (clean, final itinerary)
+- **Category tabs**: Still show all options for comparison
+- **Green "Booked" badge**: Visual confirmation on locked options
+
+### Most Memorable Moment
+- **Per-person entry**: Each member writes their trip highlight
+- **Shared view**: Everyone sees all moments with avatar + quote
+- **Persisted**: Stored in dedicated `trip_moments` table
 
 ### Persistence
-- **LocalStorage**: Trips auto-save; My Trips page lists all saved
-- **Supabase**: Optional cloud storage for shared trips
-- **Theme**: 10 Wes Anderson film palettes + iOS default, saved to localStorage
+- **Authenticated**: localStorage (cache) + Supabase (source of truth, keyed by user_id)
+- **Anonymous**: localStorage only (no account needed to get started)
+- **First login**: Existing local trips migrate to cloud automatically
+- **Cross-device**: Sign in on any device to see all your trips
 
 ### Themes
+10 Wes Anderson film palettes + iOS default:
+
 | Theme | Vibe |
 |-------|------|
 | Default | Classic, clean, predictable. Like a ham sandwich. |
@@ -69,138 +91,103 @@ TripDesigner generates complete day-by-day itineraries using AI. Enter your dest
 ### Tech Stack
 | Layer | Tech |
 |-------|------|
-| Framework | React 19 + TypeScript (strict) |
-| Build | Vite 8 |
-| Styling | Tailwind CSS v4 |
-| Router | React Router v7 |
-| State | React Context (lightweight) |
-| Maps | Leaflet + react-leaflet + OpenStreetMap |
-| AI | OpenAI GPT-4o (primary), Claude/Gemini (fallback) |
-| Backend | Supabase (optional) — Postgres + real-time subscriptions |
-| Icons | Native emoji + inline SVG |
+| Frontend | React 18 + TypeScript, Vite, Tailwind CSS |
+| Backend | Supabase (Postgres, Auth, Realtime, Edge Functions) |
+| AI | OpenAI GPT-4o, Anthropic Claude, Google Gemini (priority fallback) |
+| Hosting | Vercel (serverless API routes) |
+| Maps | Google Maps Embed (no API key required) |
+| State | React Context (lightweight stores) |
 
-### Folder Structure
+### Project Structure
 ```
 src/
-├── components/
-│   └── itinerary/
-│       └── ItineraryMap.tsx      # Interactive map component (lazy-loaded)
-├── lib/
-│   ├── types.ts                  # All TypeScript interfaces
-│   ├── themes.ts                 # 10 Wes Anderson palettes
-│   ├── generateItinerary.ts      # GPT-4o prompt + parser
-│   ├── refineItinerary.ts        # AI refinement (edit existing trip)
-│   ├── llmClient.ts              # Multi-LLM fallback client
-│   ├── geocode.ts                # Nominatim geocoding (OpenStreetMap)
-│   ├── activityLinks.ts          # Category-specific booking links
-│   ├── lodgingLinks.ts           # Airbnb/VRBO/Hotels/Expedia links
-│   ├── tripStorage.ts            # LocalStorage CRUD for trips
-│   ├── userSession.ts            # Current user + per-user selections
-│   ├── supabase.ts               # Supabase client init
-│   └── supabaseTrips.ts          # Cloud trip CRUD + real-time subscriptions
-├── pages/
-│   ├── HomePage.tsx              # Landing + feature cards + nav buttons
-│   ├── IntakePage.tsx            # 6-step wizard
-│   ├── ItineraryPage.tsx         # Full itinerary + map + voting + refinement
-│   ├── TripsPage.tsx             # Saved trips list
-│   ├── JoinPage.tsx              # Join shared trip via invite code
-│   ├── ThemePage.tsx             # Color theme picker
-│   └── SettingsPage.tsx          # AI providers, passcode, theme link
-├── store/
-│   ├── tripStore.ts              # Intake form state
-│   ├── itineraryStore.ts         # Generated itinerary state
-│   └── themeStore.ts             # Active theme + CSS variables
-└── App.tsx                       # Router + providers
+  components/
+    UserAvatar.tsx              # Shared avatar (initials/emoji)
+    intake/
+      CalendarPicker.tsx        # Date range picker
+      GroupPresetPicker.tsx      # Load saved travel groups
+    itinerary/
+      ItineraryMap.tsx          # Google Maps embed + activity links
+      InviteModal.tsx           # Email invite modal
+      WriteInOption.tsx         # Write-in form component
+    settings/
+      TravelPartnersSection.tsx # Manage partners + groups
+  lib/
+    supabase.ts                 # Supabase client init
+    supabaseTrips.ts            # Cloud CRUD: trips, selections, write-ins, moments, bookings
+    tripStorage.ts              # localStorage + cloud merge
+    tripInvitations.ts          # Email invitation helpers
+    travelPartners.ts           # Partner/group CRUD
+    userProfile.ts              # Profile get/upsert
+    userSession.ts              # Local session (current user, selections)
+    generateItinerary.ts        # AI itinerary generation
+    refineItinerary.ts          # AI refinement
+    llmClient.ts                # Multi-provider LLM abstraction
+    types.ts                    # All TypeScript interfaces
+    themes.ts                   # 10 Wes Anderson color themes
+  pages/
+    HomePage.tsx                # Landing page with avatar + trip count
+    AuthPage.tsx                # Sign in / sign up
+    IntakePage.tsx              # 7-step trip wizard
+    ItineraryPage.tsx           # Main trip view (voting, write-ins, booking)
+    TripsPage.tsx               # Saved trips list (local + cloud)
+    JoinPage.tsx                # Join via invite link
+    SettingsPage.tsx            # Profile, partners, passcode, AI providers
+    ThemePage.tsx               # Theme picker
+  store/
+    authStore.ts                # Auth context + profile
+    tripStore.ts                # Intake form state
+    itineraryStore.ts           # Itinerary + cloud state
+    themeStore.ts               # Theme context
+supabase/
+  schema.sql                    # Full database schema
+  migrations/
+    001_user_features.sql       # User profiles, partners, groups, invitations
+    002_trip_extras.sql         # Write-ins, moments, booked slots
+  functions/
+    send-trip-invite/           # Edge Function: email invites
+api/
+  generate.ts                   # Vercel serverless: AI generation
+  refine.ts                     # Vercel serverless: AI refinement
 ```
 
 ### Key Design Decisions
 1. **Mobile-first**: Built for iPhone viewport; PWA-ready with `viewport-fit=cover`
-2. **iOS-native**: SF Pro font, grouped lists, active:opacity-70 feedback
+2. **iOS-native feel**: SF Pro font, grouped lists, active:opacity-70 feedback
 3. **CSS variables for themes**: All colors use `--td-*` vars; instant theme switching
-4. **Lazy-loaded map**: Leaflet is ~150KB; loaded on demand via `React.lazy`
+4. **Dedicated tables for user data**: Write-ins, moments, bookings each get their own table (no fragile JSON mutation)
 5. **LocalStorage fallback**: Works 100% offline without Supabase keys
 6. **Multi-LLM resilience**: Rotates through GPT-4o → Claude → Gemini automatically
 
 ---
 
-## Environment Variables
+## Database Schema
 
-Create `.env` in project root:
+| Table | Purpose |
+|-------|---------|
+| `trips` | Trip metadata, form data, itinerary JSON, user_id FK |
+| `trip_members` | Who joined each trip (display name + optional user_id) |
+| `slot_selections` | Per-user votes on activity slots (real-time) |
+| `trip_custom_options` | Write-in activities added by members (real-time) |
+| `trip_moments` | "Most Memorable Moment" per member (real-time) |
+| `trip_booked_slots` | Which option is locked/booked per slot (real-time) |
+| `user_profiles` | Display name, avatar type/value |
+| `travel_partners` | Saved travel companions |
+| `partner_groups` | Named groups of partners |
+| `trip_invitations` | Email invite tokens + status |
 
-```env
-# Required: at least one LLM provider
-VITE_OPENAI_API_KEY=sk-...
-VITE_ANTHROPIC_API_KEY=sk-ant-...      # optional fallback
-VITE_GEMINI_API_KEY=AIza...            # optional fallback
-
-# Optional: Supabase for cloud trips + real-time collaboration
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
-
----
-
-## Deploy to Vercel (Secure)
-
-Your API keys stay hidden on Vercel's servers. Users can use the app but cannot steal your keys.
-
-### 1. Push to GitHub
-Already done if you're reading this.
-
-### 2. Connect to Vercel
-1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
-2. Click **"Add New Project"**
-3. Import `trip-designer`
-
-### 3. Add Environment Variables (CRITICAL)
-
-In the Vercel dashboard, before clicking Deploy, add these:
-
-**Required (at least one LLM):**
-```
-OPENAI_API_KEY=sk-...           # No VITE_ prefix! Server-side only
-```
-
-**Optional (for redundancy):**
-```
-ANTHROPIC_API_KEY=sk-ant-...
-GEMINI_API_KEY=AIza...
-```
-
-**Optional (for cloud trips):**
-```
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
-```
-
-⚠️ **Important**: Use `OPENAI_API_KEY` not `VITE_OPENAI_API_KEY`. The `VITE_` prefix exposes keys to the browser. Without it, the key stays server-side secure.
-
-### 4. Deploy
-Click **Deploy**. Vercel builds and gives you a URL like:
-```
-https://trip-designer-abc123.vercel.app
-```
-
-### 5. Add to iPhone Home Screen
-1. Open the Vercel URL in Safari on your iPhone
-2. Tap **Share** → **Add to Home Screen**
-3. Now it launches full-screen like a native app
+All trip-scoped tables use public RLS (anyone with the link can participate). User-scoped tables are restricted to the owning user.
 
 ---
 
-## How the Security Works
+## Getting Started
 
-| Before (insecure) | After (secure) |
-|-------------------|----------------|
-| Key in browser JS bundle | Key only on Vercel servers |
-| Anyone can open DevTools → steal key | Key never sent to browser |
-| Share URL = share your API key | Share URL = people use your app, can't steal key |
+### Prerequisites
+- Node.js 18+
+- A Supabase project (free tier works)
+- At least one AI API key (OpenAI, Anthropic, or Gemini)
 
-The app has two API endpoints (`/api/generate` and `/api/refine`) that call OpenAI with your server-side key. Rate limited to 10 requests/minute per IP.
-
----
-
-## Local Development
+### Setup
 
 ```bash
 git clone https://github.com/ahelferthaus/trip-designer.git
@@ -208,21 +195,49 @@ cd trip-designer
 npm install
 ```
 
-Create `.env`:
-```
-# For local dev (falls back to client-side if API not running)
+Create `.env` in the project root:
+
+```env
+# Supabase (required for collaboration features)
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+
+# At least one AI provider (priority: OpenAI > Claude > Gemini)
 VITE_OPENAI_API_KEY=sk-...
+VITE_ANTHROPIC_API_KEY=sk-ant-...
+VITE_GEMINI_API_KEY=AIza...
 ```
+
+### Database Setup
+
+Run the full schema against your Supabase project (paste into the SQL Editor):
+
+```bash
+psql $DATABASE_URL < supabase/schema.sql
+```
+
+Or run migrations incrementally:
+
+```bash
+psql $DATABASE_URL < supabase/migrations/001_user_features.sql
+psql $DATABASE_URL < supabase/migrations/002_trip_extras.sql
+```
+
+### Run Locally
 
 ```bash
 npm run dev
 ```
 
-The app tries `/api/generate` first. If that fails (no Vercel dev server), it falls back to `VITE_OPENAI_API_KEY` directly.
+Open [http://localhost:5173](http://localhost:5173).
 
----
+### Deploy to Vercel
 
-## Environment Variable Reference
+```bash
+vercel --prod
+```
+
+Set environment variables in Vercel project settings. For production, use server-side keys (without the `VITE_` prefix) in `api/` routes:
 
 | Variable | Where | Purpose |
 |----------|-------|---------|
@@ -231,88 +246,30 @@ The app tries `/api/generate` first. If that fails (no Vercel dev server), it fa
 | `GEMINI_API_KEY` | Vercel only | Server-side Gemini fallback (secure) |
 | `VITE_OPENAI_API_KEY` | `.env` local | Client-side fallback for local dev |
 | `VITE_SUPABASE_URL` | Both | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Both | Supabase anon key |
+| `VITE_SUPABASE_ANON_KEY` | Both | Supabase anon key (safe to expose) |
 
-**Rule**: `VITE_` = browser can see it. No prefix = server-side only.
+**Rule**: `VITE_` = browser can see it. No prefix = server-side only on Vercel.
 
----
-
-## Supabase Setup (Optional)
-
-For cloud trips + real-time voting:
-
-1. Create project at [supabase.com](https://supabase.com)
-2. Run SQL in `supabase/schema.sql` (or copy below)
-3. Copy URL + anon key to `.env`
-
-```sql
-create extension if not exists "uuid-ossp";
-
-create table trips (
-  id uuid primary key default uuid_generate_v4(),
-  title text not null,
-  destination text not null,
-  start_date date not null,
-  end_date date not null,
-  invite_code text unique not null default substr(md5(random()::text), 1, 8),
-  passcode text not null default '1234',
-  form_data jsonb not null,
-  itinerary_data jsonb not null,
-  created_by text not null,
-  created_at timestamptz default now()
-);
-
-create table trip_members (
-  id uuid primary key default uuid_generate_v4(),
-  trip_id uuid references trips(id) on delete cascade,
-  display_name text not null,
-  joined_at timestamptz default now(),
-  unique(trip_id, display_name)
-);
-
-create table slot_selections (
-  id uuid primary key default uuid_generate_v4(),
-  trip_id uuid references trips(id) on delete cascade,
-  member_name text not null,
-  slot_id text not null,
-  option_id text not null,
-  updated_at timestamptz default now(),
-  unique(trip_id, member_name, slot_id)
-);
-
--- Public access policies (simpler than auth for family/friends)
-alter table trips enable row level security;
-alter table trip_members enable row level security;
-alter table slot_selections enable row level security;
-
-create policy "Public" on trips for all using (true) with check (true);
-create policy "Public" on trip_members for all using (true) with check (true);
-create policy "Public" on slot_selections for all using (true) with check (true);
-```
+### Add to iPhone Home Screen
+1. Open the Vercel URL in Safari
+2. Tap **Share** → **Add to Home Screen**
+3. Launches full-screen like a native app
 
 ---
 
 ## Wiki
 
-Full documentation at: [github.com/ahelferthaus/trip-designer/wiki](https://github.com/ahelferthaus/trip-designer/wiki)
-
-Includes:
-- Architecture deep-dive
-- Data model reference
-- AI prompt design
-- Theme system guide
-- PWA & mobile setup
-- Environment setup
-- Phase-by-phase roadmap
+Full documentation: [github.com/ahelferthaus/trip-designer/wiki](https://github.com/ahelferthaus/trip-designer/wiki)
 
 ---
 
 ## Roadmap
 
-**Phase 1 ✅** — Intake + AI generation + mobile
-**Phase 2 ✅** — Photos (via Google Images), booking links, AI refinement, maps
-**Phase 3 ✅** — Supabase collab, real-time voting, share links
-**Phase 4 🎯** — Split itineraries, conflict detection, post-trip memory book
+- **Phase 1** ✅ — Intake + AI generation + mobile UI
+- **Phase 2** ✅ — Booking links, AI refinement, maps
+- **Phase 3** ✅ — Supabase collab, real-time voting, share links
+- **Phase 4** ✅ — User profiles, persistent trips, write-ins, booking, email invites
+- **Phase 5** 🎯 — iOS wrapper (Capacitor), camera, HealthKit, post-trip memory book
 
 ---
 
