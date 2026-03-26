@@ -124,6 +124,8 @@ export interface UserProfile {
   avatar_type: AvatarType;
   avatar_value: string;
   default_passcode: string;
+  bio: string;
+  is_public: boolean;
 }
 
 export interface TravelPartner {

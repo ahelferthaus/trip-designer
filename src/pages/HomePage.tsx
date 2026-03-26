@@ -105,6 +105,15 @@ export default function HomePage() {
         >
           Explore Public Trips
         </button>
+        {user && (
+          <button
+            onClick={() => navigate("/feed")}
+            className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70 transition-opacity"
+            style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
+          >
+            My Feed
+          </button>
+        )}
         {savedCount > 0 && (
           <button
             onClick={() => navigate("/trips")}

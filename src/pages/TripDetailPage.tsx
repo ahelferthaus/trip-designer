@@ -4,8 +4,9 @@ import { useAuth } from "../store/authStore";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
 import { getPublicTrip, cloneTrip, getReviews, submitReview } from "../lib/publicTrips";
-import { updateTripCloudData } from "../lib/tripStorage";
-import { saveTrip } from "../lib/tripStorage";
+import { updateTripCloudData, saveTrip } from "../lib/tripStorage";
+import { getComments, addComment, hasLiked, likeTrip, unlikeTrip, getLikeCount } from "../lib/social";
+import type { Comment } from "../lib/social";
 import UserAvatar from "../components/UserAvatar";
 import type { PublicTrip, TripReview } from "../lib/publicTrips";
 
@@ -43,6 +44,13 @@ export default function TripDetailPage() {
   const [myReview, setMyReview] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  // Like + Comment state
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+
   useEffect(() => {
     if (!tripId) return;
     getPublicTrip(tripId).then(t => {
@@ -50,6 +58,9 @@ export default function TripDetailPage() {
       setLoading(false);
     });
     getReviews(tripId).then(setReviews);
+    getComments(tripId).then(setComments);
+    getLikeCount(tripId).then(setLikeCount);
+    hasLiked(tripId).then(setLiked);
   }, [tripId]);
 
   const handleClone = async () => {
@@ -76,6 +87,27 @@ export default function TripDetailPage() {
     setReviews(updated);
     setSubmittingReview(false);
     setMyReview("");
+  };
+
+  const handleLike = async () => {
+    if (!tripId) return;
+    if (liked) {
+      await unlikeTrip(tripId);
+      setLiked(false);
+      setLikeCount(c => Math.max(0, c - 1));
+    } else {
+      await likeTrip(tripId);
+      setLiked(true);
+      setLikeCount(c => c + 1);
+    }
+  };
+
+  const handleComment = async () => {
+    if (!tripId || !commentText.trim()) return;
+    await addComment(tripId, commentText.trim(), replyTo ?? undefined);
+    setCommentText("");
+    setReplyTo(null);
+    getComments(tripId).then(setComments);
   };
 
   if (loading) {
@@ -135,8 +167,13 @@ export default function TripDetailPage() {
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-4">
-        {/* Stats row */}
+        {/* Stats row + like */}
         <div className="flex items-center gap-4 text-[13px]" style={{ color: "var(--td-secondary)" }}>
+          <button onClick={handleLike} disabled={!user}
+            className="flex items-center gap-1 active:opacity-70"
+            style={{ color: liked ? "#FF3B30" : "var(--td-secondary)" }}>
+            {liked ? "❤️" : "🤍"} {likeCount}
+          </button>
           {avgRating > 0 && (
             <span className="flex items-center gap-1">
               <Stars rating={Math.round(avgRating)} size={13} /> {avgRating} ({reviews.length})
@@ -144,6 +181,10 @@ export default function TripDetailPage() {
           )}
           {trip.clone_count > 0 && <span>{trip.clone_count} cloned</span>}
           {trip.view_count > 0 && <span>{trip.view_count} views</span>}
+          <button onClick={() => navigate(`/profile/${trip.user_id}`)}
+            className="ml-auto text-[12px] active:opacity-70" style={{ color: "var(--td-accent)" }}>
+            by {trip.created_by} ›
+          </button>
         </div>
 
         {/* Description */}
@@ -272,6 +313,88 @@ export default function TripDetailPage() {
                     </div>
                     {r.body && <p className="text-[13px] mt-0.5" style={{ color: "var(--td-secondary)" }}>{r.body}</p>}
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Comments */}
+        <div className="flex flex-col gap-3">
+          <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--td-secondary)" }}>
+            Comments ({comments.reduce((n, c) => n + 1 + (c.replies?.length ?? 0), 0)})
+          </p>
+
+          {/* Comment input */}
+          {user && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                placeholder={replyTo ? "Write a reply..." : "Add a comment..."}
+                className="flex-1 px-4 py-2.5 rounded-2xl text-[14px] bg-transparent focus:outline-none"
+                style={{ backgroundColor: "var(--td-card)", color: "var(--td-label)", border: "1px solid var(--td-separator)" }}
+                onKeyDown={e => { if (e.key === "Enter") handleComment(); }}
+              />
+              <button onClick={handleComment} disabled={!commentText.trim()}
+                className="px-4 py-2.5 rounded-2xl text-[13px] font-semibold active:opacity-70"
+                style={{
+                  backgroundColor: commentText.trim() ? "var(--td-accent)" : "var(--td-fill)",
+                  color: commentText.trim() ? "var(--td-accent-text)" : "var(--td-secondary)",
+                }}>
+                Post
+              </button>
+            </div>
+          )}
+          {replyTo && (
+            <button onClick={() => setReplyTo(null)} className="text-[12px]" style={{ color: "var(--td-secondary)" }}>
+              Cancel reply
+            </button>
+          )}
+
+          {/* Comment list */}
+          {comments.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {comments.map(c => (
+                <div key={c.id}>
+                  <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
+                    <div className="flex items-start gap-2.5">
+                      <UserAvatar name={c.author_name} size="sm" showLabel={false}
+                        onClick={() => navigate(`/profile/${c.user_id}`)} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[13px] font-semibold" style={{ color: "var(--td-label)" }}>{c.author_name}</span>
+                          <span className="text-[11px]" style={{ color: "var(--td-secondary)" }}>
+                            {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                        <p className="text-[14px] mt-0.5" style={{ color: "var(--td-label)" }}>{c.body}</p>
+                        {user && (
+                          <button onClick={() => setReplyTo(c.id)}
+                            className="text-[12px] mt-1 active:opacity-70" style={{ color: "var(--td-accent)" }}>
+                            Reply
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Replies */}
+                  {c.replies && c.replies.length > 0 && (
+                    <div className="ml-8 mt-1 flex flex-col gap-1">
+                      {c.replies.map(r => (
+                        <div key={r.id} className="rounded-xl px-3 py-2" style={{ backgroundColor: "var(--td-fill)" }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] font-semibold" style={{ color: "var(--td-label)" }}>{r.author_name}</span>
+                            <span className="text-[10px]" style={{ color: "var(--td-secondary)" }}>
+                              {new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          </div>
+                          <p className="text-[13px]" style={{ color: "var(--td-label)" }}>{r.body}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

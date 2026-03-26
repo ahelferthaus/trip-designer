@@ -26,6 +26,8 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
   const [avatarType, setAvatarType] = useState(profile?.avatar_type ?? "initials");
   const [avatarValue, setAvatarValue] = useState(profile?.avatar_value ?? "");
+  const [bio, setBio] = useState(profile?.bio ?? "");
+  const [isPublic, setIsPublic] = useState(profile?.is_public ?? true);
   const [profileSaved, setProfileSaved] = useState(false);
 
   const handleSavePasscode = () => {
@@ -41,6 +43,8 @@ export default function SettingsPage() {
       display_name: displayName,
       avatar_type: avatarType as "initials" | "emoji" | "upload",
       avatar_value: avatarValue,
+      bio,
+      is_public: isPublic,
     });
     await refreshProfile();
     setProfileSaved(true);
@@ -130,6 +134,42 @@ export default function SettingsPage() {
                   </p>
                 )}
               </div>
+
+              {/* Bio */}
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--td-separator)" }}>
+                <span className="text-[12px] block mb-1" style={{ color: "var(--td-secondary)" }}>Bio</span>
+                <input
+                  type="text"
+                  value={bio}
+                  onChange={e => setBio(e.target.value)}
+                  placeholder="Tell others about yourself"
+                  maxLength={160}
+                  className="w-full text-[15px] bg-transparent focus:outline-none"
+                  style={{ color: "var(--td-label)" }}
+                />
+              </div>
+
+              {/* Public profile toggle */}
+              <button
+                onClick={() => setIsPublic(!isPublic)}
+                className="w-full px-4 py-3 flex items-center justify-between active:opacity-70"
+                style={{ borderBottom: "1px solid var(--td-separator)" }}
+              >
+                <span className="text-[15px]" style={{ color: "var(--td-label)" }}>Public profile</span>
+                <span className="text-xl" style={{ color: isPublic ? "var(--td-accent)" : "var(--td-fill)" }}>
+                  {isPublic ? "✓" : "○"}
+                </span>
+              </button>
+
+              {/* View profile link */}
+              <button
+                onClick={() => navigate(`/profile/${user.id}`)}
+                className="w-full px-4 py-3 flex items-center justify-between active:opacity-70"
+                style={{ borderBottom: "1px solid var(--td-separator)" }}
+              >
+                <span className="text-[15px]" style={{ color: "var(--td-accent)" }}>View my profile</span>
+                <span className="text-[13px]" style={{ color: "var(--td-secondary)" }}>›</span>
+              </button>
 
               {/* Save */}
               <div className="px-4 py-3 flex justify-end">

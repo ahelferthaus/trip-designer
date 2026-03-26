@@ -13,6 +13,8 @@ import SettingsPage from "./pages/SettingsPage";
 import AuthPage from "./pages/AuthPage";
 import ExplorePage from "./pages/ExplorePage";
 import TripDetailPage from "./pages/TripDetailPage";
+import FeedPage from "./pages/FeedPage";
+import ProfilePage from "./pages/ProfilePage";
 
 export default function App() {
   return (
@@ -32,6 +34,8 @@ export default function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/trip/:tripId" element={<TripDetailPage />} />
+                <Route path="/feed" element={<FeedPage />} />
+                <Route path="/profile/:userId" element={<ProfilePage />} />
               </Routes>
             </BrowserRouter>
           </ItineraryStoreProvider>
