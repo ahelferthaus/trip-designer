@@ -7,6 +7,10 @@ DROP TABLE IF EXISTS trips CASCADE;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE OR REPLACE FUNCTION immutable_to_tsvector(text) RETURNS tsvector AS $$
+  SELECT to_tsvector('english', $1);
+$$ LANGUAGE sql IMMUTABLE;
+
 CREATE TABLE trips (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   title text NOT NULL,
@@ -27,7 +31,7 @@ CREATE TABLE trips (
   view_count int NOT NULL DEFAULT 0,
   clone_count int NOT NULL DEFAULT 0,
   search_vector tsvector GENERATED ALWAYS AS (
-    to_tsvector('english',
+    immutable_to_tsvector(
       coalesce(title, '') || ' ' ||
       coalesce(destination, '') || ' ' ||
       coalesce(description, '') || ' ' ||

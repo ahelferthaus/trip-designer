@@ -11,9 +11,14 @@ ALTER TABLE trips ADD COLUMN IF NOT EXISTS view_count int NOT NULL DEFAULT 0;
 ALTER TABLE trips ADD COLUMN IF NOT EXISTS clone_count int NOT NULL DEFAULT 0;
 
 -- Full-text search index
+-- Create an immutable wrapper for to_tsvector (required for generated columns)
+CREATE OR REPLACE FUNCTION immutable_to_tsvector(text) RETURNS tsvector AS $$
+  SELECT to_tsvector('english', $1);
+$$ LANGUAGE sql IMMUTABLE;
+
 ALTER TABLE trips ADD COLUMN IF NOT EXISTS search_vector tsvector
   GENERATED ALWAYS AS (
-    to_tsvector('english',
+    immutable_to_tsvector(
       coalesce(title, '') || ' ' ||
       coalesce(destination, '') || ' ' ||
       coalesce(description, '') || ' ' ||
