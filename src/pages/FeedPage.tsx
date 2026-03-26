@@ -131,9 +131,9 @@ export default function FeedPage() {
                         {item.trip_destination ? ` — ${item.trip_destination}` : ""}
                       </p>
                     )}
-                    {item.action_type === "commented" && item.metadata.body && (
+                    {item.action_type === "commented" && typeof item.metadata.body === "string" && item.metadata.body && (
                       <p className="text-[13px] mt-0.5 italic" style={{ color: "var(--td-secondary)" }}>
-                        "{String(item.metadata.body)}"
+                        "{item.metadata.body}"
                       </p>
                     )}
                     <p className="text-[11px] mt-1" style={{ color: "var(--td-secondary)" }}>
