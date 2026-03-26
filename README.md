@@ -1,4 +1,4 @@
-# TripDesigner
+# VYBR
 
 AI-powered collaborative trip planning. Generate day-by-day itineraries, vote on activities with your travel group, write in your own options, and book what's confirmed.
 
@@ -8,7 +8,7 @@ AI-powered collaborative trip planning. Generate day-by-day itineraries, vote on
 
 ## What It Is
 
-TripDesigner generates complete day-by-day itineraries using AI. Enter your destination, dates, group, budget, and vibe — it creates morning, afternoon, and evening slots with 2-3 curated options each. Your group logs in, votes on favorites, writes in their own suggestions, books confirmed plans, and builds the perfect trip together.
+VYBR generates complete day-by-day itineraries using AI. Enter your destination, dates, group, budget, and vibe — it creates morning, afternoon, and evening slots with 2-3 curated options each. Your group logs in, votes on favorites, writes in their own suggestions, books confirmed plans, and builds the perfect trip together.
 
 **Core differentiator**: Real-time collaborative itinerary design with write-ins, booking, and persistence — not just AI suggestions.
 

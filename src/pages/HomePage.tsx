@@ -61,7 +61,7 @@ export default function HomePage() {
       <div className="px-6 pt-6 pb-6">
         <p className="text-base mb-1" style={{ color: "var(--td-secondary)" }}>Welcome to</p>
         <h1 className="text-4xl font-bold tracking-tight" style={{ color: "var(--td-label)" }}>
-          TripDesigner
+          VYBR
         </h1>
         <p className="text-base mt-2 leading-relaxed" style={{ color: "var(--td-secondary)" }}>
           AI-powered itineraries. Plan together.

@@ -15,7 +15,7 @@ export async function geocodeLocation(name: string, destination?: string): Promi
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
-      { headers: { "User-Agent": "TripDesigner/1.0" } }
+      { headers: { "User-Agent": "VYBR/1.0" } }
     );
     const data = await res.json();
     if (data.length > 0) {
@@ -36,7 +36,7 @@ export async function geocodeLocation(name: string, destination?: string): Promi
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(destination)}&format=json&limit=1`,
-        { headers: { "User-Agent": "TripDesigner/1.0" } }
+        { headers: { "User-Agent": "VYBR/1.0" } }
       );
       const data = await res.json();
       if (data.length > 0) {

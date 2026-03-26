@@ -1,4 +1,4 @@
--- Trip Designer Schema
+-- VYBR Schema
 -- Safe to re-run: drops and recreates everything
 
 DROP TABLE IF EXISTS slot_selections CASCADE;
