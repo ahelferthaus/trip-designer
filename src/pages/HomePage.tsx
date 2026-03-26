@@ -98,6 +98,13 @@ export default function HomePage() {
         >
           Plan a Trip
         </button>
+        <button
+          onClick={() => navigate("/explore")}
+          className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70 transition-opacity"
+          style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
+        >
+          Explore Public Trips
+        </button>
         {savedCount > 0 && (
           <button
             onClick={() => navigate("/trips")}

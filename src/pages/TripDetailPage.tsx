@@ -1,0 +1,283 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../store/authStore";
+import { useItineraryStore } from "../store/itineraryStore";
+import { useTripStore } from "../store/tripStore";
+import { getPublicTrip, cloneTrip, getReviews, submitReview } from "../lib/publicTrips";
+import { updateTripCloudData } from "../lib/tripStorage";
+import { saveTrip } from "../lib/tripStorage";
+import UserAvatar from "../components/UserAvatar";
+import type { PublicTrip, TripReview } from "../lib/publicTrips";
+
+const SLOT_LABELS: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", flex: "Flex" };
+const CAT_ICONS: Record<string, string> = { food: "🍽️", attraction: "🏛️", adventure: "🧗", rest: "🛋️", transport: "🚌" };
+
+function daysBetween(start: string, end: string) {
+  return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000));
+}
+
+function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
+  return (
+    <span style={{ fontSize: size }}>
+      {[1, 2, 3, 4, 5].map(i => (
+        <span key={i} style={{ color: i <= rating ? "#F5A623" : "var(--td-fill)" }}>★</span>
+      ))}
+    </span>
+  );
+}
+
+export default function TripDetailPage() {
+  const { tripId } = useParams<{ tripId: string }>();
+  const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const itineraryStore = useItineraryStore();
+  const tripStore = useTripStore();
+
+  const [trip, setTrip] = useState<PublicTrip | null>(null);
+  const [reviews, setReviews] = useState<TripReview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cloning, setCloning] = useState(false);
+
+  // Review form
+  const [myRating, setMyRating] = useState(0);
+  const [myReview, setMyReview] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
+  useEffect(() => {
+    if (!tripId) return;
+    getPublicTrip(tripId).then(t => {
+      setTrip(t);
+      setLoading(false);
+    });
+    getReviews(tripId).then(setReviews);
+  }, [tripId]);
+
+  const handleClone = async () => {
+    if (!user || !trip) return;
+    setCloning(true);
+    const displayName = profile?.display_name || user.email?.split("@")[0] || "Me";
+    const cloned = await cloneTrip(trip.id, user.id, displayName);
+    if (cloned) {
+      const saved = saveTrip(cloned.form_data, cloned.itinerary_data, displayName);
+      updateTripCloudData(saved.id, cloned.id, cloned.invite_code);
+      itineraryStore.setItinerary(cloned.itinerary_data, cloned.form_data);
+      itineraryStore.setCloudTripInfo(cloned.id, cloned.invite_code);
+      tripStore.loadForm(cloned.form_data);
+      navigate("/itinerary");
+    }
+    setCloning(false);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user || !tripId || myRating === 0) return;
+    setSubmittingReview(true);
+    await submitReview(tripId, user.id, myRating, myReview);
+    const updated = await getReviews(tripId);
+    setReviews(updated);
+    setSubmittingReview(false);
+    setMyReview("");
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--td-bg)" }}>
+        <svg className="animate-spin w-8 h-8" fill="none" viewBox="0 0 24 24" style={{ color: "var(--td-accent)" }}>
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ backgroundColor: "var(--td-bg)" }}>
+        <div className="text-4xl mb-4">🔗</div>
+        <h2 className="text-[22px] font-bold mb-2" style={{ color: "var(--td-label)" }}>Trip not found</h2>
+        <button onClick={() => navigate("/explore")} className="mt-4 px-6 py-3 rounded-2xl text-[17px] font-semibold"
+          style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}>
+          Browse Trips
+        </button>
+      </div>
+    );
+  }
+
+  const days = daysBetween(trip.start_date, trip.end_date);
+  const itinerary = trip.itinerary_data;
+  const avgRating = reviews.length > 0
+    ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length * 10) / 10
+    : 0;
+
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: "var(--td-bg)" }}>
+      {/* Cover */}
+      <div
+        className="h-44 flex items-end px-4 pb-4 relative"
+        style={{
+          background: trip.cover_photo_url
+            ? `url(${trip.cover_photo_url}) center/cover`
+            : `linear-gradient(135deg, var(--td-accent), var(--td-fill))`,
+        }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute top-4 left-4 safe-top w-8 h-8 rounded-full flex items-center justify-center active:opacity-70"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+        >
+          <span className="text-white text-[17px]">‹</span>
+        </button>
+        <div>
+          <h1 className="text-[24px] font-bold text-white drop-shadow-md">{trip.title}</h1>
+          <p className="text-[14px] text-white/80 drop-shadow-sm">
+            📍 {trip.destination} · {days} days · by {trip.created_by}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-4 py-4 flex flex-col gap-4">
+        {/* Stats row */}
+        <div className="flex items-center gap-4 text-[13px]" style={{ color: "var(--td-secondary)" }}>
+          {avgRating > 0 && (
+            <span className="flex items-center gap-1">
+              <Stars rating={Math.round(avgRating)} size={13} /> {avgRating} ({reviews.length})
+            </span>
+          )}
+          {trip.clone_count > 0 && <span>{trip.clone_count} cloned</span>}
+          {trip.view_count > 0 && <span>{trip.view_count} views</span>}
+        </div>
+
+        {/* Description */}
+        {trip.description && (
+          <p className="text-[15px] leading-relaxed" style={{ color: "var(--td-label)" }}>
+            {trip.description}
+          </p>
+        )}
+
+        {/* Tags */}
+        {trip.tags?.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            {trip.tags.map(t => (
+              <span key={t} className="text-[12px] px-2.5 py-1 rounded-full"
+                style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Clone CTA */}
+        <button
+          onClick={handleClone}
+          disabled={!user || cloning}
+          className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70"
+          style={{
+            backgroundColor: user ? "var(--td-accent)" : "var(--td-fill)",
+            color: user ? "var(--td-accent-text)" : "var(--td-secondary)",
+          }}
+        >
+          {cloning ? "Cloning..." : !user ? "Sign in to clone this trip" : "Clone this trip"}
+        </button>
+
+        {/* Itinerary preview (read-only) */}
+        <div className="flex flex-col gap-5">
+          <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--td-secondary)" }}>Itinerary</p>
+          {itinerary.days.map(day => (
+            <div key={day.id}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-full text-[12px] font-bold flex items-center justify-center"
+                  style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}>
+                  {day.day_number}
+                </div>
+                <span className="font-semibold text-[15px]" style={{ color: "var(--td-label)" }}>
+                  {day.title ?? `Day ${day.day_number}`}
+                </span>
+                <span className="text-[12px]" style={{ color: "var(--td-secondary)" }}>{day.date}</span>
+              </div>
+              <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
+                style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
+                {day.slots.map(slot => {
+                  const opt = slot.options[0];
+                  if (!opt) return null;
+                  return (
+                    <div key={slot.id} className="px-4 py-3">
+                      <p className="text-[11px] uppercase tracking-wide mb-0.5" style={{ color: "var(--td-secondary)" }}>
+                        {SLOT_LABELS[slot.slot_type]}
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm">{CAT_ICONS[opt.category] ?? "📍"}</span>
+                        <span className="text-[14px] font-medium" style={{ color: "var(--td-label)" }}>{opt.title}</span>
+                      </div>
+                      <p className="text-[12px] mt-0.5" style={{ color: "var(--td-secondary)" }}>{opt.description}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Reviews */}
+        <div className="flex flex-col gap-3">
+          <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--td-secondary)" }}>
+            Reviews ({reviews.length})
+          </p>
+
+          {/* Write review */}
+          {user && (
+            <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
+              <div className="px-4 py-3 flex flex-col gap-2">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <button key={i} onClick={() => setMyRating(i)} className="text-[22px] active:opacity-70"
+                      style={{ color: i <= myRating ? "#F5A623" : "var(--td-fill)" }}>
+                      ★
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={myReview}
+                  onChange={e => setMyReview(e.target.value)}
+                  placeholder="Write a review (optional)"
+                  className="px-3 py-2 rounded-xl text-[14px] bg-transparent border focus:outline-none"
+                  style={{ borderColor: "var(--td-separator)", color: "var(--td-label)" }}
+                  onKeyDown={e => { if (e.key === "Enter") handleSubmitReview(); }}
+                />
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={myRating === 0 || submittingReview}
+                  className="self-end px-4 py-2 rounded-xl text-[13px] font-semibold active:opacity-70"
+                  style={{
+                    backgroundColor: myRating > 0 ? "var(--td-accent)" : "var(--td-fill)",
+                    color: myRating > 0 ? "var(--td-accent-text)" : "var(--td-secondary)",
+                  }}
+                >
+                  {submittingReview ? "..." : "Submit"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Review list */}
+          {reviews.length > 0 && (
+            <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
+              style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
+              {reviews.map(r => (
+                <div key={r.id} className="px-4 py-3 flex items-start gap-3">
+                  <UserAvatar name={r.reviewer_name ?? "?"} size="sm" showLabel={false} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-semibold" style={{ color: "var(--td-label)" }}>{r.reviewer_name}</span>
+                      <Stars rating={r.rating} size={11} />
+                    </div>
+                    {r.body && <p className="text-[13px] mt-0.5" style={{ color: "var(--td-secondary)" }}>{r.body}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

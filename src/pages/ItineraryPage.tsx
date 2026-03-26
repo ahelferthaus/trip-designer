@@ -30,6 +30,7 @@ import {
 import { getTripById, loadSavedTrips } from "../lib/tripStorage";
 import UserAvatar from "../components/UserAvatar";
 import InviteModal from "../components/itinerary/InviteModal";
+import { publishTrip, unpublishTrip } from "../lib/publicTrips";
 import type { SavedTrip } from "../lib/tripStorage";
 import type { ActivityOption } from "../lib/types";
 
@@ -299,6 +300,9 @@ export default function ItineraryPage() {
   // Booked options: slotId -> optionId
   const [bookedSlots, setBookedSlots] = useState<Record<string, string>>({});
 
+  // Publish state
+  const [isPublished, setIsPublished] = useState(false);
+
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2000);
@@ -429,6 +433,23 @@ export default function ItineraryPage() {
       await saveBookedSlot(activeCloudTripId, slotId, optionId, currentUser?.name ?? "");
     }
     showToast("Booked!");
+  };
+
+  const handlePublish = async () => {
+    if (!activeCloudTripId) return;
+    if (isPublished) {
+      await unpublishTrip(activeCloudTripId);
+      setIsPublished(false);
+      showToast("Trip unpublished");
+    } else {
+      await publishTrip(activeCloudTripId, {
+        description: `${activeForm.destination?.name} — ${activeItinerary?.days.length} day trip`,
+        tags: activeForm.vibes ?? [],
+        visibility: "public",
+      });
+      setIsPublished(true);
+      showToast("Trip published! Visible on Explore.");
+    }
   };
 
   const handleRefine = async () => {
@@ -695,6 +716,15 @@ export default function ItineraryPage() {
               ‹ Home
             </button>
             <div className="flex items-center gap-3">
+              {activeCloudTripId && authUser && (
+                <button
+                  onClick={handlePublish}
+                  className="text-[13px] active:opacity-70 font-medium"
+                  style={{ color: isPublished ? "#34C759" : "var(--td-accent)" }}
+                >
+                  {isPublished ? "Published" : "Publish"}
+                </button>
+              )}
               {activeInviteCode && authUser && activeCloudTripId && (
                 <button
                   onClick={() => setInviteOpen(true)}

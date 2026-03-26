@@ -19,6 +19,21 @@ CREATE TABLE trips (
   itinerary_data jsonb NOT NULL,
   created_by text NOT NULL,
   user_id uuid REFERENCES auth.users(id),
+  is_published boolean NOT NULL DEFAULT false,
+  visibility text NOT NULL DEFAULT 'private',
+  description text NOT NULL DEFAULT '',
+  tags text[] NOT NULL DEFAULT '{}',
+  cover_photo_url text,
+  view_count int NOT NULL DEFAULT 0,
+  clone_count int NOT NULL DEFAULT 0,
+  search_vector tsvector GENERATED ALWAYS AS (
+    to_tsvector('english',
+      coalesce(title, '') || ' ' ||
+      coalesce(destination, '') || ' ' ||
+      coalesce(description, '') || ' ' ||
+      coalesce(array_to_string(tags, ' '), '')
+    )
+  ) STORED,
   created_at timestamptz DEFAULT now()
 );
 
@@ -108,6 +123,19 @@ CREATE TABLE trip_booked_slots (
   PRIMARY KEY (trip_id, slot_id)
 );
 
+CREATE TABLE trip_reviews (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  trip_id uuid NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  rating int NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  body text NOT NULL DEFAULT '',
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(trip_id, user_id)
+);
+
+CREATE INDEX trips_search_idx ON trips USING gin(search_vector);
+CREATE INDEX trips_published_idx ON trips (is_published, visibility) WHERE is_published = true;
+
 ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE slot_selections ENABLE ROW LEVEL SECURITY;
@@ -138,9 +166,15 @@ CREATE POLICY "Read invitations by token" ON trip_invitations FOR SELECT USING (
 CREATE POLICY "Auth users insert invitations" ON trip_invitations FOR INSERT WITH CHECK (auth.uid() = invited_by);
 CREATE POLICY "Auth users update invitations" ON trip_invitations FOR UPDATE USING (true);
 
+ALTER TABLE trip_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_custom_options ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_moments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trip_booked_slots ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read reviews" ON trip_reviews FOR SELECT USING (true);
+CREATE POLICY "Auth insert reviews" ON trip_reviews FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Auth update own reviews" ON trip_reviews FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Auth delete own reviews" ON trip_reviews FOR DELETE USING (auth.uid() = user_id);
 
 CREATE POLICY "Public read custom options" ON trip_custom_options FOR SELECT USING (true);
 CREATE POLICY "Public insert custom options" ON trip_custom_options FOR INSERT WITH CHECK (true);
