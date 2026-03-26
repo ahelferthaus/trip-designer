@@ -19,6 +19,10 @@ export interface DailyReward {
 }
 
 interface GamificationState {
+  // User preference
+  enabled: boolean;
+  setEnabled: (v: boolean) => void;
+
   // XP & Level
   xp: number;
   level: number;
@@ -143,6 +147,9 @@ const XP_PER_LEVEL = [0, 100, 250, 500, 1000, 1750, 3000, 5000, 8000, 12000];
 export const useGamification = create<GamificationState>()(
   persist(
     (set, get) => ({
+      enabled: false,
+      setEnabled: (v: boolean) => set({ enabled: v }),
+
       xp: 0,
       level: 1,
       currentStreak: 0,

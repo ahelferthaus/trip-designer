@@ -4,6 +4,7 @@ import { getAvailableProviders } from "../lib/llmClient";
 import { useAuth } from "../store/authStore";
 import { upsertProfile } from "../lib/userProfile";
 import TravelPartnersSection from "../components/settings/TravelPartnersSection";
+import { useGamification } from "../store/gamificationStore";
 
 const ALL_PROVIDERS = [
   { name: "GPT-4o", envKey: "VITE_OPENAI_API_KEY" },
@@ -226,6 +227,29 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
+
+        {/* Gamification toggle */}
+        {user && (
+          <section>
+            <p className="text-[12px] uppercase tracking-wide mb-2 px-1" style={{ color: "var(--td-secondary)" }}>
+              Achievements & Rewards
+            </p>
+            <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
+              <button
+                onClick={() => useGamification.getState().setEnabled(!useGamification.getState().enabled)}
+                className="w-full px-4 py-3 flex items-center justify-between active:opacity-70"
+              >
+                <div>
+                  <span className="text-[15px] block" style={{ color: "var(--td-label)" }}>Show achievements</span>
+                  <span className="text-[12px]" style={{ color: "var(--td-secondary)" }}>XP, badges, streaks on your home screen</span>
+                </div>
+                <span className="text-xl" style={{ color: useGamification.getState().enabled ? "var(--td-accent)" : "var(--td-fill)" }}>
+                  {useGamification.getState().enabled ? "✓" : "○"}
+                </span>
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Trip Passcode */}
         <section>

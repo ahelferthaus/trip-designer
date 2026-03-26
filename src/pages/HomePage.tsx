@@ -3,13 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { loadSavedTrips } from "../lib/tripStorage";
 import UserAvatar from "../components/UserAvatar";
-import { useDailyCheckIn } from "../store/gamificationStore";
+import { useGamification, useDailyCheckIn } from "../store/gamificationStore";
+import { StreakDisplay, XPProgressBar, BadgeShowcase } from "../components/gamification";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
   const savedCount = loadSavedTrips().length;
   const dailyCheckIn = useDailyCheckIn();
+  const { enabled: gamificationEnabled, currentStreak, badges } = useGamification();
+  const unlockedBadges = badges.filter(b => b.unlockedAt).length;
 
   useEffect(() => {
     if (user) dailyCheckIn();
@@ -102,6 +105,15 @@ export default function HomePage() {
               <div className="text-[11px] font-medium" style={{ color: "var(--td-secondary)" }}>Feed</div>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Gamification (opt-in via Settings) */}
+      {user && gamificationEnabled && (
+        <div className="px-4 pt-4 flex flex-col gap-3">
+          {currentStreak > 0 && <StreakDisplay />}
+          <XPProgressBar />
+          {unlockedBadges > 0 && <BadgeShowcase />}
         </div>
       )}
 
