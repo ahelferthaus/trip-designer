@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { migrateLocalTripsToCloud } from "../lib/tripStorage";
-import { upsertProfile } from "../lib/userProfile";
 import { supabase } from "../lib/supabase";
 
 export default function AuthPage() {
@@ -25,14 +24,12 @@ export default function AuthPage() {
         if (confirmEmail) {
           setConfirmationSent(true);
         } else {
-          // Auto-create profile + migrate trips
+          // New signup → onboarding
           const user = (await supabase?.auth.getUser())?.data?.user;
           if (user) {
-            const displayName = user.email?.split("@")[0] || "";
-            await upsertProfile(user.id, { display_name: displayName });
             await migrateLocalTripsToCloud(user.id);
           }
-          navigate("/");
+          navigate("/onboarding");
         }
       } else {
         await signIn(email, password);

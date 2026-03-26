@@ -121,11 +121,15 @@ export type AvatarType = "initials" | "emoji" | "upload";
 export interface UserProfile {
   id: string;
   display_name: string;
+  username: string;
   avatar_type: AvatarType;
   avatar_value: string;
+  avatar_url: string;
+  home_location: string;
   default_passcode: string;
   bio: string;
   is_public: boolean;
+  onboarded: boolean;
 }
 
 export interface TravelPartner {

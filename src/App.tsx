@@ -14,6 +14,7 @@ import AuthPage from "./pages/AuthPage";
 import ExplorePage from "./pages/ExplorePage";
 import TripDetailPage from "./pages/TripDetailPage";
 import FeedPage from "./pages/FeedPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import ProfilePage from "./pages/ProfilePage";
 import BottomTabBar from "./components/BottomTabBar";
 
@@ -36,6 +37,7 @@ export default function App() {
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/trip/:tripId" element={<TripDetailPage />} />
                 <Route path="/feed" element={<FeedPage />} />
+                <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/profile/:userId" element={<ProfilePage />} />
               </Routes>
               <BottomTabBar />
