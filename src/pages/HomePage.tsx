@@ -5,6 +5,7 @@ import { loadSavedTrips } from "../lib/tripStorage";
 import UserAvatar from "../components/UserAvatar";
 import { useGamification, useDailyCheckIn } from "../store/gamificationStore";
 import { StreakDisplay, XPProgressBar, BadgeShowcase } from "../components/gamification";
+import { useReveal } from "../lib/useReveal";
 
 // Unsplash travel photos (free, no API key needed for static URLs)
 const DEST_PHOTOS = [
@@ -21,12 +22,14 @@ export default function HomePage() {
   const { enabled: gamificationEnabled, currentStreak, badges } = useGamification();
   const unlockedBadges = badges.filter(b => b.unlockedAt).length;
 
+  useReveal();
+
   useEffect(() => {
     if (user) dailyCheckIn();
   }, [user]);
 
   return (
-    <div className="min-h-screen flex flex-col pb-20" style={{ backgroundColor: "var(--td-bg)" }}>
+    <div className="min-h-screen flex flex-col pb-20 page-enter" style={{ backgroundColor: "var(--td-bg)" }}>
       {/* === HERO === */}
       <div
         className="relative overflow-hidden"
@@ -113,7 +116,7 @@ export default function HomePage() {
           {DEST_PHOTOS.map((url, i) => (
             <div
               key={i}
-              className="relative z-10 w-24 h-24 rounded-2xl overflow-hidden shadow-lg flex-shrink-0"
+              className="relative z-10 w-24 h-24 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 breathe"
               style={{
                 transform: `rotate(${(i - 1) * 5}deg) translateY(${i === 1 ? -8 : 4}px)`,
                 border: "3px solid rgba(255,255,255,0.3)",
@@ -160,9 +163,10 @@ export default function HomePage() {
         <div className="relative z-10 px-6 mt-6 pb-8">
           <button
             onClick={() => navigate("/intake")}
-            className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
+            className="w-full py-4 rounded-2xl text-[17px] font-bold btn-spring gradient-animate"
             style={{
-              background: "linear-gradient(135deg, #E63956, #D42E4A)",
+              background: "linear-gradient(135deg, #E63956, #D42E4A, #E63956)",
+              backgroundSize: "200% 200%",
               color: "white",
               boxShadow: "0 4px 20px rgba(230, 57, 86, 0.4)",
             }}
@@ -176,7 +180,7 @@ export default function HomePage() {
 
       {/* Stats row (logged-in only) */}
       {user && savedCount > 0 && (
-        <div className="px-4 -mt-5">
+        <div className="px-4 -mt-5 reveal">
           <div
             className="rounded-2xl px-5 py-4 flex items-center justify-around shadow-md"
             style={{ backgroundColor: "var(--td-card)" }}
@@ -210,7 +214,7 @@ export default function HomePage() {
 
       {/* How it works — only for new/logged-out users */}
       {!user && (
-        <div className="px-4 pt-6 flex flex-col gap-2.5">
+        <div className="px-4 pt-6 flex flex-col gap-2.5 reveal">
           <p className="text-[12px] uppercase tracking-widest px-1 font-semibold" style={{ color: "var(--td-secondary)" }}>
             How it works
           </p>

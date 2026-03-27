@@ -4,6 +4,7 @@ import { useAuth } from "../store/authStore";
 import { getFeed } from "../lib/social";
 import type { FeedItem } from "../lib/social";
 import UserAvatar from "../components/UserAvatar";
+import { useReveal } from "../lib/useReveal";
 
 const ACTION_LABELS: Record<string, string> = {
   published: "published a trip",
@@ -36,6 +37,7 @@ function timeAgo(iso: string): string {
 export default function FeedPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  useReveal();
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -110,7 +112,7 @@ export default function FeedPage() {
               <button
                 key={item.id}
                 onClick={() => item.trip_id ? navigate(`/trip/${item.trip_id}`) : undefined}
-                className="rounded-2xl px-4 py-3 text-left active:opacity-70 shadow-sm"
+                className="rounded-2xl px-4 py-3 text-left active:opacity-70 shadow-sm reveal"
                 style={{ backgroundColor: "var(--td-card)" }}
               >
                 <div className="flex items-start gap-3">

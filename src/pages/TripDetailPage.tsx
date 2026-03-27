@@ -141,7 +141,7 @@ export default function TripDetailPage() {
     : 0;
 
   return (
-    <div className="min-h-screen pb-20" style={{ backgroundColor: "var(--td-bg)" }}>
+    <div className="min-h-screen pb-20 page-enter" style={{ backgroundColor: "var(--td-bg)" }}>
       {/* === HERO COVER === */}
       <div
         className="relative flex flex-col justify-end"
@@ -241,7 +241,7 @@ export default function TripDetailPage() {
         <button
           onClick={handleClone}
           disabled={!user || cloning}
-          className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
+          className="w-full py-4 rounded-2xl text-[17px] font-bold btn-spring reveal"
           style={{
             backgroundColor: user ? "var(--td-accent)" : "var(--td-fill)",
             color: user ? "var(--td-accent-text)" : "var(--td-secondary)",

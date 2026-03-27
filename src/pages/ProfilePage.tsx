@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../store/authStore";
+import { useReveal } from "../lib/useReveal";
 import {
   getPublicProfile,
   getFollowCounts,
@@ -27,6 +28,7 @@ export default function ProfilePage() {
   const [trips, setTrips] = useState<Array<{ id: string; title: string; destination: string; start_date: string; end_date: string; likes_count: number; clone_count: number }>>([]);
   const [loading, setLoading] = useState(true);
 
+  useReveal();
   const isOwnProfile = authUser?.id === userId;
 
   useEffect(() => {

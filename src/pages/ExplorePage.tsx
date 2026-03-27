@@ -4,6 +4,7 @@ import { useAuth } from "../store/authStore";
 import { searchPublicTrips } from "../lib/publicTrips";
 import type { PublicTrip } from "../lib/publicTrips";
 import type { BudgetLevel } from "../lib/types";
+import { useReveal } from "../lib/useReveal";
 
 function daysBetween(start: string, end: string) {
   if (!start || !end) return 0;
@@ -15,6 +16,7 @@ const BUDGET_LABELS: Record<string, string> = { budget: "Budget", mid: "Mid-rang
 export default function ExplorePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  useReveal();
   const [query, setQuery] = useState("");
   const [budget, setBudget] = useState<BudgetLevel | "">("");
   const [sortBy, setSortBy] = useState<"newest" | "most_cloned" | "highest_rated">("newest");
@@ -135,7 +137,7 @@ export default function ExplorePage() {
                 <button
                   key={trip.id}
                   onClick={() => navigate(`/trip/${trip.id}`)}
-                  className="rounded-2xl overflow-hidden shadow-sm text-left active:opacity-70"
+                  className="rounded-2xl overflow-hidden shadow-sm text-left active:opacity-70 reveal tilt-hover"
                   style={{ backgroundColor: "var(--td-card)" }}
                 >
                   {/* Cover photo or gradient */}
