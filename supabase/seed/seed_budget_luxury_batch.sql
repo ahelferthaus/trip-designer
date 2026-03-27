@@ -21,7 +21,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Ginjinha Shots in Rossio (€1.50)","description":"Cherry liqueur shots from tiny hole-in-the-wall bars — Lisbon''s signature drink.","category":"food","estimated_cost_per_person":3,"duration_minutes":15,"location":{"name":"A Ginjinha, Rossio"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"€1.50 for liquid Lisbon"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Dinner at a Tasca (€10-15)","description":"Traditional Portuguese tavern — grilled fish, bifana sandwiches, house wine by the carafe.","category":"food","estimated_cost_per_person":12,"duration_minutes":60,"location":{"name":"Any tasca in Alfama"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"Eat like a local for under €15 including wine"}]}
-    ]],"hiddenGems":[{"day_number":1,"tip":"Lisbon''s miradouros (viewpoints) are all free — there are 10+ across the city. Each one is different and stunning.","location":"Various miradouros"}]}'::jsonb,
+    ]}],"hiddenGems":[{"day_number":1,"tip":"Lisbon''s miradouros (viewpoints) are all free — there are 10+ across the city. Each one is different and stunning.","location":"Various miradouros"}]}'::jsonb,
   'VYBR', uid, true, 'public', '5-day Lisbon budget trip: Free walking tours, €1 pastéis de nata, tram 28, fado, and dinner for under €15.',
   ARRAY['lisbon', 'portugal', 'europe', 'budget-friendly', 'culture', 'food']
 );
@@ -41,7 +41,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Rooftop Bar at Sky Bar (one splurge)","description":"The bar from ''The Hangover Part II'' — cocktails overlooking the Chao Phraya River. $15 for the view of a lifetime.","category":"food","estimated_cost_per_person":15,"duration_minutes":60,"location":{"name":"Sky Bar, Lebua"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"One cocktail at the world''s most famous rooftop bar — worth the splurge"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Night Market at Rot Fai","description":"Vintage market with street food, live music, retro cars, and local craft beer. Free entry.","category":"attraction","estimated_cost_per_person":5,"duration_minutes":120,"location":{"name":"Rot Fai Night Market"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"Bangkok''s coolest night market — all under $5"}]}
-    ]],"hiddenGems":[{"day_number":1,"tip":"BTS Skytrain + river boats = $1-2 to get anywhere. Never take a tuk-tuk from a tourist area — they''ll quote 10x the real price.","location":"Bangkok transit"}]}'::jsonb,
+    ]}],"hiddenGems":[{"day_number":1,"tip":"BTS Skytrain + river boats = $1-2 to get anywhere. Never take a tuk-tuk from a tourist area — they''ll quote 10x the real price.","location":"Bangkok transit"}]}'::jsonb,
   'VYBR', uid, true, 'public', '7-day Bangkok budget trip: Grand Palace, $2 pad Thai, Chinatown street food, temples, and nights out for under $5.',
   ARRAY['bangkok', 'thailand', 'asia', 'budget-friendly', 'food', 'culture', 'street-food']
 );
@@ -61,7 +61,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Mezcal Tasting at Bósforo","description":"Speakeasy-style mezcal bar — flights of artisan mezcal, dim lighting, and great music.","category":"food","estimated_cost_per_person":12,"duration_minutes":90,"location":{"name":"Bósforo, Centro"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"Discover mezcal beyond the worm — smoky, complex, and cheap in CDMX"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Street Tacos in Roma Norte","description":"Taco stand hop through the hippest neighborhood — suadero, cabeza, lengua. $0.50-1 each.","category":"food","estimated_cost_per_person":5,"duration_minutes":60,"location":{"name":"Roma Norte"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"Every corner has a taco stand better than most restaurants"}]}
-    ]],"hiddenGems":[{"day_number":1,"tip":"Mexico City''s museums are free on Sundays — plan accordingly. The Museo de Arte Popular and Palacio de Bellas Artes are also free.","location":"Various museums"}]}'::jsonb,
+    ]}],"hiddenGems":[{"day_number":1,"tip":"Mexico City''s museums are free on Sundays — plan accordingly. The Museo de Arte Popular and Palacio de Bellas Artes are also free.","location":"Various museums"}]}'::jsonb,
   'VYBR', uid, true, 'public', '5-day Mexico City budget trip: Free museums on Sundays, $1 tacos al pastor, Aztec ruins, mezcal bars, and Roma Norte.',
   ARRAY['cdmx', 'mexico-city', 'mexico', 'budget-friendly', 'food', 'culture', 'tacos']
 );
@@ -83,7 +83,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Underwater Restaurant","description":"Dine 5 meters below sea level surrounded by reef fish — multi-course tasting menu with wine pairing.","category":"food","estimated_cost_per_person":200,"duration_minutes":120,"location":{"name":"Underwater restaurant"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"Dinner surrounded by fish — the most unique restaurant on Earth"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Private Beach Dinner","description":"Candlelit table on the sand, personal chef, Maldivian-inspired tasting menu under the stars.","category":"food","estimated_cost_per_person":150,"duration_minutes":120,"location":{"name":"Private beach"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"Just you, the ocean, and a private chef under a billion stars"}]}
-    ]],"hiddenGems":[{"day_number":1,"tip":"Ask about the resort''s marine biologist — most luxury resorts offer free guided snorkel tours with a biologist who identifies species.","location":"Resort marine center"}]}'::jsonb,
+    ]}],"hiddenGems":[{"day_number":1,"tip":"Ask about the resort''s marine biologist — most luxury resorts offer free guided snorkel tours with a biologist who identifies species.","location":"Resort marine center"}]}'::jsonb,
   'VYBR', uid, true, 'public', '7-day Maldives luxury: Overwater villa, seaplane transfer, underwater restaurant, dolphin cruise, and private beach dinners.',
   ARRAY['maldives', 'asia', 'luxury', 'beach', 'honeymoon', 'romance', 'snorkeling']
 );
@@ -103,7 +103,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Oia Sunset at Castle Ruins","description":"The most famous sunset in the world — arrive 1 hour early for a spot at the castle ruins.","category":"attraction","estimated_cost_per_person":0,"duration_minutes":60,"location":{"name":"Oia Castle ruins"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"Hundreds of people applaud when the sun disappears — it''s that good"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Dinner at Ammoudi Bay","description":"Climb 300 steps down to the tiny fishing port — grilled octopus and white wine at the water''s edge.","category":"food","estimated_cost_per_person":40,"duration_minutes":90,"location":{"name":"Ammoudi Bay, below Oia"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"The most romantic dinner setting in Greece — octopus drying on the line, boats bobbing"}]}
-    ]],"hiddenGems":[{"day_number":1,"tip":"Skip the crowds at Oia sunset — watch from the Fira side instead, or from a caldera restaurant terrace with a glass of Assyrtiko wine.","location":"Fira caldera restaurants"}]}'::jsonb,
+    ]}],"hiddenGems":[{"day_number":1,"tip":"Skip the crowds at Oia sunset — watch from the Fira side instead, or from a caldera restaurant terrace with a glass of Assyrtiko wine.","location":"Fira caldera restaurants"}]}'::jsonb,
   'VYBR', uid, true, 'public', '7-day Santorini luxury: Cave hotel, caldera infinity pool, Oia sunset, catamaran cruise, and seaside Greek dining.',
   ARRAY['santorini', 'greece', 'europe', 'luxury', 'honeymoon', 'romance', 'beach']
 );
@@ -123,7 +123,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Kaiseki Dinner at Kikunoi","description":"3-Michelin-star kaiseki — 12-course seasonal tasting menu in a traditional tatami room.","category":"food","estimated_cost_per_person":200,"duration_minutes":150,"location":{"name":"Kikunoi Honten"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"The pinnacle of Japanese culinary art"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Geisha Spotting in Gion","description":"Walk the lantern-lit streets of the geisha district at dusk — you might spot a maiko heading to an engagement.","category":"attraction","estimated_cost_per_person":0,"duration_minutes":60,"location":{"name":"Gion, Hanami-koji"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"The living tradition of geisha culture"}]}
-    ]],"hiddenGems":[{"day_number":1,"tip":"At Fushimi Inari, most tourists stop at the first overlook. Keep climbing — the top has almost no one and the views are better.","location":"Fushimi Inari summit"}]}'::jsonb,
+    ]}],"hiddenGems":[{"day_number":1,"tip":"At Fushimi Inari, most tourists stop at the first overlook. Keep climbing — the top has almost no one and the views are better.","location":"Fushimi Inari summit"}]}'::jsonb,
   'VYBR', uid, true, 'public', '7-day Kyoto luxury: Cherry blossoms, 10,000 torii gates, Michelin kaiseki, golden temples, bamboo groves, and geisha district.',
   ARRAY['kyoto', 'japan', 'asia', 'luxury', 'culture', 'food', 'cherry-blossoms']
 );
