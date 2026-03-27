@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 const ItineraryMap = lazy(() => import("../components/itinerary/ItineraryMap"));
+const TripHeroMap = lazy(() => import("../components/itinerary/TripHeroMap"));
 import { useNavigate, useParams } from "react-router-dom";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
@@ -25,7 +26,6 @@ import {
   getUserSelections,
   saveUserSelection,
   getAllUsersSelections,
-  clearCurrentUser,
 } from "../lib/userSession";
 import { getTripById, loadSavedTrips } from "../lib/tripStorage";
 import UserAvatar from "../components/UserAvatar";
@@ -764,87 +764,74 @@ export default function ItineraryPage() {
         />
       )}
 
-      {/* Sticky nav */}
-      <div className="sticky top-0 z-10" style={{
-        backgroundColor: "var(--td-nav-bg, var(--td-accent))",
-        borderBottom: "1px solid var(--td-separator)"
-      }}>
-        <div className="px-4 safe-top pt-3 pb-3">
-          <div className="flex items-center justify-between mb-1">
+      {/* === HERO MAP === */}
+      <div className="relative">
+        <Suspense fallback={
+          <div style={{ height: 380, backgroundColor: "#0B1D33" }} className="flex items-center justify-center">
+            <svg className="animate-spin w-7 h-7" fill="none" viewBox="0 0 24 24" style={{ color: "white" }}>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          </div>
+        }>
+          <TripHeroMap
+            itinerary={activeItinerary}
+            form={activeForm}
+            profile={authProfile}
+            userName={currentUser?.name}
+          />
+        </Suspense>
+
+        {/* Floating nav buttons over the map */}
+        <div className="absolute top-0 left-0 right-0 z-10 safe-top">
+          <div className="flex items-center justify-between px-4 pt-3">
             <button
               onClick={() => navigate("/")}
-              className="text-[17px] active:opacity-70"
-              style={{ color: "var(--td-label)" }}
+              className="w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+              style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
             >
-              ‹ Home
+              <span className="text-white text-[17px] font-semibold">‹</span>
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {activeCloudTripId && authUser && (
                 <button
                   onClick={handlePublish}
-                  className="text-[13px] active:opacity-70 font-medium"
-                  style={{ color: isPublished ? "#34C759" : "var(--td-accent)" }}
+                  className="px-3 py-1.5 rounded-full text-[12px] font-semibold active:opacity-70"
+                  style={{
+                    backgroundColor: isPublished ? "rgba(52,199,89,0.8)" : "rgba(0,0,0,0.4)",
+                    backdropFilter: "blur(8px)",
+                    color: "white",
+                  }}
                 >
                   {isPublished ? "Published" : "Publish"}
-                </button>
-              )}
-              {activeInviteCode && authUser && activeCloudTripId && (
-                <button
-                  onClick={() => setInviteOpen(true)}
-                  className="text-[13px] active:opacity-70 font-medium"
-                  style={{ color: "var(--td-accent)" }}
-                >
-                  Invite
                 </button>
               )}
               {activeInviteCode && (
                 <button
                   onClick={handleShare}
-                  className="text-[13px] active:opacity-70 font-medium"
-                  style={{ color: "var(--td-accent)" }}
+                  className="px-3 py-1.5 rounded-full text-[12px] font-semibold active:opacity-70"
+                  style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", color: "white" }}
                 >
                   Share
                 </button>
               )}
-              {!authUser && (
+              {activeInviteCode && authUser && activeCloudTripId && (
                 <button
-                  onClick={() => {
-                    clearCurrentUser();
-                    setCurrentUserState(null);
-                  }}
-                  className="text-[13px] active:opacity-70"
-                  style={{ color: "var(--td-secondary)" }}
+                  onClick={() => setInviteOpen(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+                  style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
                 >
-                  Switch User
+                  <span className="text-white text-[14px]">+</span>
                 </button>
               )}
             </div>
           </div>
-          <h1 className="text-[20px] font-bold" style={{ color: "var(--td-label)" }}>
-            {activeItinerary.title || `${activeForm.destination?.name} Trip`}
-          </h1>
-          <div className="flex items-center justify-between">
-            <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
-              {activeForm.destination?.name} · {activeItinerary.days.length} days
-            </p>
-            {currentUser && (
-              <div className="flex items-center gap-1.5">
-                <UserAvatar name={currentUser.name} profile={authProfile} size="sm" showLabel={false} active />
-                <span className="text-[13px] font-semibold" style={{ color: "var(--td-label)" }}>
-                  {authProfile?.display_name || currentUser.name}
-                </span>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
-      {/* User avatars row (display-only, no user switching) */}
+      {/* Trip members row */}
       <div className="px-4 py-3 border-b" style={{ borderColor: "var(--td-separator)" }}>
-        <p className="text-[12px] uppercase tracking-wide mb-2" style={{ color: "var(--td-secondary)" }}>
-          Trip members
-        </p>
-        <div className="flex gap-3 overflow-x-auto">
+        <div className="flex gap-3 overflow-x-auto hide-scrollbar">
           {groupMembers.map(member => (
             <UserAvatar
               key={member.name}
@@ -875,16 +862,16 @@ export default function ItineraryPage() {
         </div>
       </div>
 
-      {/* Map section */}
-      <div className="px-4 mb-4">
+      {/* Detailed map (collapsible, for deeper exploration) */}
+      <div className="px-4 mb-2">
         <button
           onClick={() => setMapOpen(o => !o)}
           className="w-full flex items-center justify-between py-3 active:opacity-70"
         >
-          <span className="text-[17px] font-semibold" style={{ color: "var(--td-label)" }}>
-            🗺️ Trip Map
+          <span className="text-[15px] font-semibold" style={{ color: "var(--td-label)" }}>
+            Detailed Map & Directions
           </span>
-          <span style={{ color: "var(--td-accent)" }}>{mapOpen ? "▲" : "▼"}</span>
+          <span className="text-[13px]" style={{ color: "var(--td-secondary)" }}>{mapOpen ? "▲" : "▼"}</span>
         </button>
         {mapOpen && (
           <Suspense fallback={
