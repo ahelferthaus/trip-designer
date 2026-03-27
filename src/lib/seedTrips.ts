@@ -131,9 +131,65 @@ export const SOCCER_TRIPS: SeedTrip[] = [
   { destination: "Buenos Aires, Argentina", days: 7, startDay: "saturday", budget: "mid", vibes: ["culture", "food", "nightlife"], theme: "sports-soccer", must_haves: "La Bombonera tour, check for Boca Juniors match", tags: ["buenos-aires", "argentina", "soccer", "sports"] },
 ];
 
+// === FAMILY SPRING BREAK ===
+export const FAMILY_SPRING_BREAK: SeedTrip[] = [
+  { destination: "Orlando, FL", days: 7, startDay: "saturday", budget: "mid", vibes: ["family", "adventure"], must_haves: "Walt Disney World, Universal Studios", tags: ["orlando", "usa", "family", "spring-break", "theme-park"] },
+  { destination: "Cancun, Mexico", days: 7, startDay: "saturday", budget: "mid", vibes: ["family", "relaxed", "adventure"], must_haves: "Kid-friendly resort, snorkeling, Xcaret park", tags: ["cancun", "mexico", "family", "spring-break", "beach"] },
+  { destination: "San Diego, CA", days: 7, startDay: "saturday", budget: "mid", vibes: ["family", "nature", "relaxed"], must_haves: "San Diego Zoo, LEGOLAND, beach day", tags: ["san-diego", "usa", "family", "spring-break"] },
+  { destination: "Maui, Hawaii", days: 7, startDay: "saturday", budget: "splurge", vibes: ["family", "nature", "relaxed"], must_haves: "Road to Hana, snorkeling, luau", tags: ["maui", "hawaii", "usa", "family", "spring-break", "beach"] },
+  { destination: "Costa Rica", days: 7, startDay: "saturday", budget: "mid", vibes: ["family", "adventure", "nature"], must_haves: "Zip-lining, wildlife, hot springs, beach", tags: ["costa-rica", "family", "spring-break", "adventure"] },
+  { destination: "Riviera Maya, Mexico", days: 7, startDay: "saturday", budget: "mid", vibes: ["family", "culture", "relaxed"], must_haves: "Chichen Itza, cenotes, beach resort", tags: ["riviera-maya", "mexico", "family", "spring-break"] },
+  { destination: "Hilton Head, SC", days: 7, startDay: "saturday", budget: "mid", vibes: ["family", "relaxed", "nature"], tags: ["hilton-head", "usa", "family", "spring-break", "beach"] },
+  { destination: "Bahamas", days: 7, startDay: "saturday", budget: "splurge", vibes: ["family", "relaxed"], must_haves: "Atlantis resort, swimming with dolphins", tags: ["bahamas", "family", "spring-break", "beach"] },
+  { destination: "Washington DC", days: 7, startDay: "saturday", budget: "budget", vibes: ["family", "culture"], theme: "history", must_haves: "Smithsonian museums (free), monuments, National Zoo", tags: ["dc", "usa", "family", "spring-break", "history"] },
+  { destination: "Yellowstone, WY", days: 7, startDay: "saturday", budget: "mid", vibes: ["family", "nature", "adventure"], theme: "hiking-nature", must_haves: "Old Faithful, wildlife spotting, Grand Prismatic Spring", tags: ["yellowstone", "usa", "family", "spring-break", "nature"] },
+];
+
+// === COLLEGE SPRING BREAK ===
+export const COLLEGE_SPRING_BREAK: SeedTrip[] = [
+  { destination: "Cancun, Mexico", days: 5, startDay: "saturday", budget: "budget", vibes: ["nightlife", "relaxed"], must_haves: "Beach clubs, party zone, day trip to Isla Mujeres", tags: ["cancun", "mexico", "college", "spring-break", "party"] },
+  { destination: "Miami Beach, FL", days: 5, startDay: "saturday", budget: "mid", vibes: ["nightlife", "food", "relaxed"], must_haves: "South Beach, Wynwood, clubs on Ocean Drive", tags: ["miami", "usa", "college", "spring-break", "party", "beach"] },
+  { destination: "Cabo San Lucas, Mexico", days: 5, startDay: "saturday", budget: "mid", vibes: ["nightlife", "adventure", "relaxed"], must_haves: "El Arco, beach clubs, whale watching", tags: ["cabo", "mexico", "college", "spring-break", "party"] },
+  { destination: "Puerto Vallarta, Mexico", days: 5, startDay: "saturday", budget: "budget", vibes: ["nightlife", "food", "relaxed"], tags: ["puerto-vallarta", "mexico", "college", "spring-break", "beach"] },
+  { destination: "Nassau, Bahamas", days: 5, startDay: "saturday", budget: "mid", vibes: ["nightlife", "relaxed"], tags: ["nassau", "bahamas", "college", "spring-break", "beach"] },
+  { destination: "South Padre Island, TX", days: 4, startDay: "friday", budget: "budget", vibes: ["nightlife", "relaxed"], tags: ["south-padre", "usa", "college", "spring-break", "party"] },
+  { destination: "Panama City Beach, FL", days: 4, startDay: "friday", budget: "budget", vibes: ["nightlife", "relaxed"], tags: ["pcb", "usa", "college", "spring-break", "party"] },
+  { destination: "Punta Cana, Dominican Republic", days: 5, startDay: "saturday", budget: "mid", vibes: ["nightlife", "relaxed"], must_haves: "All-inclusive resort, catamaran party", tags: ["punta-cana", "dr", "college", "spring-break", "beach"] },
+  { destination: "Austin, TX", days: 4, startDay: "friday", budget: "budget", vibes: ["nightlife", "food"], theme: "nightlife-music", must_haves: "6th Street, live music, BBQ", tags: ["austin", "usa", "college", "spring-break", "music"] },
+  { destination: "New Orleans, LA", days: 4, startDay: "friday", budget: "budget", vibes: ["nightlife", "food", "culture"], must_haves: "Bourbon Street, jazz, beignets", tags: ["nola", "usa", "college", "spring-break", "party"] },
+];
+
+// === BUDGET TRIPS (under $1000 total) ===
+export const BUDGET_TRIPS: SeedTrip[] = [
+  { destination: "Lisbon, Portugal", days: 5, startDay: "friday", budget: "budget", vibes: ["culture", "food"], tags: ["lisbon", "portugal", "europe", "budget-friendly"] },
+  { destination: "Bangkok, Thailand", days: 7, startDay: "saturday", budget: "budget", vibes: ["food", "culture", "adventure"], tags: ["bangkok", "thailand", "asia", "budget-friendly"] },
+  { destination: "Mexico City, Mexico", days: 5, startDay: "friday", budget: "budget", vibes: ["food", "culture"], tags: ["cdmx", "mexico", "budget-friendly"] },
+  { destination: "Budapest, Hungary", days: 5, startDay: "friday", budget: "budget", vibes: ["culture", "nightlife"], theme: "wellness-spa", tags: ["budapest", "hungary", "europe", "budget-friendly"] },
+  { destination: "Krakow, Poland", days: 5, startDay: "friday", budget: "budget", vibes: ["culture", "food"], tags: ["krakow", "poland", "europe", "budget-friendly"] },
+  { destination: "Bali, Indonesia", days: 7, startDay: "saturday", budget: "budget", vibes: ["relaxed", "nature", "culture"], tags: ["bali", "indonesia", "asia", "budget-friendly"] },
+  { destination: "Marrakech, Morocco", days: 5, startDay: "friday", budget: "budget", vibes: ["culture", "food", "adventure"], tags: ["marrakech", "morocco", "africa", "budget-friendly"] },
+  { destination: "Bogota, Colombia", days: 5, startDay: "friday", budget: "budget", vibes: ["culture", "food", "adventure"], tags: ["bogota", "colombia", "budget-friendly"] },
+];
+
+// === LUXURY TRIPS (splurge, $5000+) ===
+export const LUXURY_TRIPS: SeedTrip[] = [
+  { destination: "Maldives", days: 7, startDay: "saturday", budget: "splurge", vibes: ["romance", "relaxed"], tags: ["maldives", "asia", "luxury", "beach", "honeymoon"] },
+  { destination: "Bora Bora, French Polynesia", days: 7, startDay: "saturday", budget: "splurge", vibes: ["romance", "relaxed"], tags: ["bora-bora", "luxury", "beach", "honeymoon"] },
+  { destination: "Amalfi Coast, Italy", days: 7, startDay: "saturday", budget: "splurge", vibes: ["romance", "food", "culture"], tags: ["amalfi", "italy", "europe", "luxury"] },
+  { destination: "Santorini, Greece", days: 7, startDay: "saturday", budget: "splurge", vibes: ["romance", "food", "relaxed"], tags: ["santorini", "greece", "europe", "luxury", "honeymoon"] },
+  { destination: "Swiss Alps, Switzerland", days: 7, startDay: "saturday", budget: "splurge", vibes: ["adventure", "nature", "relaxed"], theme: "skiing", tags: ["swiss-alps", "switzerland", "europe", "luxury"] },
+  { destination: "Kyoto, Japan", days: 7, startDay: "saturday", budget: "splurge", vibes: ["culture", "food", "relaxed"], tags: ["kyoto", "japan", "asia", "luxury"] },
+  { destination: "Safari — Serengeti, Tanzania", days: 7, startDay: "saturday", budget: "splurge", vibes: ["adventure", "nature"], tags: ["serengeti", "tanzania", "africa", "luxury", "safari"] },
+  { destination: "Patagonia, Argentina", days: 7, startDay: "saturday", budget: "splurge", vibes: ["adventure", "nature"], theme: "hiking-nature", tags: ["patagonia", "argentina", "luxury", "hiking"] },
+];
+
 export const ALL_SEED_TRIPS: SeedTrip[] = [
   ...EUROPE_TRIPS,
   ...US_WEEKEND_TRIPS,
   ...SKI_TRIPS,
   ...SOCCER_TRIPS,
+  ...FAMILY_SPRING_BREAK,
+  ...COLLEGE_SPRING_BREAK,
+  ...BUDGET_TRIPS,
+  ...LUXURY_TRIPS,
 ];
