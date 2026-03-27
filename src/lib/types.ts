@@ -157,6 +157,20 @@ export interface TripInvitation {
   expires_at: string;
 }
 
+export type TravelTheme =
+  | "none"
+  | "sports-soccer"
+  | "sports-general"
+  | "food-wine"
+  | "art-museums"
+  | "history"
+  | "beach-resort"
+  | "skiing"
+  | "hiking-nature"
+  | "nightlife-music"
+  | "wellness-spa"
+  | "photography";
+
 export interface IntakeFormData {
   destination: Location | null;
   start_date: string;
@@ -167,6 +181,7 @@ export interface IntakeFormData {
   budget_currency?: Currency;
   budget_per_person?: boolean;
   vibes: TripVibe[];
+  travel_theme?: TravelTheme;
   must_haves?: string;
   avoid?: string;
   dietary?: string;

@@ -15,13 +15,31 @@ export async function generateItinerary(form: IntakeFormData): Promise<Generated
 
   const systemPrompt = `You are a travel planner. Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
 
+  // Travel theme prompt injection
+  const themePrompts: Record<string, string> = {
+    "sports-soccer": "THEME: Sports/Soccer travel. If there are soccer/football matches happening during the trip dates, include them as options. Prioritize visits to famous stadiums, football museums, sports bars showing matches. Mix with standard tourism so it's not 100% sports.",
+    "sports-general": "THEME: Sports travel. Include local sporting events, stadium tours, sports museums, and sports bars. Mix with standard tourism.",
+    "food-wine": "THEME: Food & wine. Prioritize food markets, cooking classes, wine tastings, Michelin restaurants, local food tours, and regional specialties.",
+    "art-museums": "THEME: Art & museums. Prioritize major art museums, galleries, street art, architecture tours, and cultural landmarks.",
+    "history": "THEME: History. Prioritize historical sites, monuments, walking tours, battlefields, ancient ruins, and heritage museums.",
+    "beach-resort": "THEME: Beach & resort. Prioritize beach activities, water sports, seaside dining, sunset spots, and relaxation.",
+    "skiing": "THEME: Skiing & winter sports. Prioritize ski resorts, slopes, après-ski, mountain dining, and winter activities.",
+    "hiking-nature": "THEME: Hiking & nature. Prioritize trails, national parks, scenic viewpoints, nature reserves, and outdoor activities.",
+    "nightlife-music": "THEME: Nightlife & music. Prioritize live music venues, clubs, cocktail bars, jazz clubs, and late-night food spots.",
+    "wellness-spa": "THEME: Wellness & spa. Prioritize spas, thermal baths, yoga studios, meditation retreats, and healthy dining.",
+    "photography": "THEME: Photography. Prioritize the most photogenic locations, golden hour spots, iconic viewpoints, and unique architecture.",
+  };
+  const themeText = form.travel_theme && form.travel_theme !== "none"
+    ? themePrompts[form.travel_theme] || ""
+    : "";
+
   const userPrompt = `Plan a ${days}-day trip to ${form.destination?.name}.
 
 Group: ${form.group_members.length} people (${groupDesc})
 Budget: ${form.budget_level}${form.budget_amount ? ` — ${form.budget_currency ?? "USD"} ${form.budget_amount}${form.budget_per_person ? "/person" : " total"}` : ""}
 Vibe: ${form.vibes.join(", ")}
 Dates: ${form.start_date} to ${form.end_date}
-${form.must_haves ? `Must: ${form.must_haves}` : ""}
+${themeText ? `\n${themeText}\n` : ""}${form.must_haves ? `Must: ${form.must_haves}` : ""}
 ${form.avoid ? `Avoid: ${form.avoid}` : ""}
 ${form.dietary ? `Dietary: ${form.dietary}` : ""}
 ${form.mobility ? `Mobility: ${form.mobility}` : ""}
