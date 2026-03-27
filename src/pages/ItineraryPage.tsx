@@ -1250,7 +1250,7 @@ export default function ItineraryPage() {
               </button>
               <button
                 onClick={() => navigate(`/postcard?tripId=${activeCloudTripId}`)}
-                className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
+                className="w-full py-4 rounded-2xl text-[17px] font-bold btn-spring"
                 style={{
                   background: "linear-gradient(135deg, #E63956, #B82E44)",
                   color: "white",
@@ -1258,6 +1258,18 @@ export default function ItineraryPage() {
                 }}
               >
                 Send a Postcard
+              </button>
+              <button
+                onClick={() => navigate(`/movie?tripId=${activeCloudTripId}`)}
+                className="w-full py-4 rounded-2xl text-[17px] font-bold btn-spring"
+                style={{
+                  background: "linear-gradient(135deg, #0B1D33, #1B4332)",
+                  color: "white",
+                  boxShadow: "0 4px 16px rgba(11,29,51,0.4)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                Create Trip Movie
               </button>
             </>
           )}

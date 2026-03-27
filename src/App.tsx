@@ -17,6 +17,7 @@ import FeedPage from "./pages/FeedPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import PhotoBookPage from "./pages/PhotoBookPage";
 import PostcardPage from "./pages/PostcardPage";
+import TripMoviePage from "./pages/TripMoviePage";
 import ProfilePage from "./pages/ProfilePage";
 import BottomTabBar from "./components/BottomTabBar";
 
@@ -42,6 +43,7 @@ export default function App() {
                 <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/book/:tripId" element={<PhotoBookPage />} />
                 <Route path="/postcard" element={<PostcardPage />} />
+                <Route path="/movie" element={<TripMoviePage />} />
                 <Route path="/profile/:userId" element={<ProfilePage />} />
               </Routes>
               <BottomTabBar />
