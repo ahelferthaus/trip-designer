@@ -19,7 +19,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Coco Bongo Night Club","description":"Cirque du Soleil meets nightclub — acrobats, confetti, open bar, absolute chaos.","category":"attraction","estimated_cost_per_person":60,"duration_minutes":240,"location":{"name":"Coco Bongo, Hotel Zone"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"The most insane nightclub in Mexico"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Señor Frog''s Party","description":"Legendary spring break bar — yard-long drinks, dancing on tables, wet T-shirt contests.","category":"food","estimated_cost_per_person":30,"duration_minutes":180,"location":{"name":"Señor Frog''s, Hotel Zone"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"The name alone tells you everything"}]}
-    ],
+    },
     {"id":"day-2","trip_id":"t","date":"2026-03-15","day_number":2,"title":"Isla Mujeres & Party","slots":[
       {"id":"s-2-1","day_id":"day-2","slot_type":"morning","status":"open","options":[
         {"id":"o-2-1-1","slot_id":"s-2-1","title":"Ferry to Isla Mujeres","description":"20-min ferry to a chill island — rent a golf cart, hit Playa Norte (Mexico''s best beach).","category":"adventure","estimated_cost_per_person":15,"duration_minutes":300,"location":{"name":"Isla Mujeres"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"Paradise island escape from the party zone"},
@@ -50,7 +50,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Ocean Drive Dinner & Bar Hop","description":"Neon Art Deco, mojitos, people-watching — the strip that defines Miami nightlife.","category":"food","estimated_cost_per_person":35,"duration_minutes":120,"location":{"name":"Ocean Drive"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"The most iconic nightlife strip in Florida"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"LIV or E11EVEN Nightclub","description":"Miami''s mega clubs — celebrity DJs, bottle service, and dancing until sunrise.","category":"attraction","estimated_cost_per_person":50,"duration_minutes":240,"location":{"name":"LIV / E11EVEN"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"The clubs that made Miami the nightlife capital of the US"}]}
-    ],
+    },
     {"id":"day-2","trip_id":"t","date":"2026-03-15","day_number":2,"title":"Little Havana & Brickell","slots":[
       {"id":"s-2-1","day_id":"day-2","slot_type":"morning","status":"open","options":[
         {"id":"o-2-1-1","slot_id":"s-2-1","title":"Little Havana Food Walk","description":"Calle Ocho — empanadas, colada shots, fruit stands, and domino park with the abuelos.","category":"food","estimated_cost_per_person":15,"duration_minutes":120,"location":{"name":"Calle Ocho, Little Havana"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"Miami''s cultural soul — and the food is incredible"},
@@ -81,7 +81,7 @@ INSERT INTO trips (title, destination, start_date, end_date, passcode, form_data
       {"id":"s-1-3","day_id":"day-1","slot_type":"evening","status":"open","options":[
         {"id":"o-1-3-1","slot_id":"s-1-3","title":"Cabo Wabo Cantina","description":"Sammy Hagar''s legendary bar — live rock music, tequila flights, and a wild party every night.","category":"food","estimated_cost_per_person":30,"duration_minutes":180,"location":{"name":"Cabo Wabo Cantina, Marina"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"The bar that put Cabo on the party map"},
         {"id":"o-1-3-2","slot_id":"s-1-3","title":"Fish Tacos at Los Tacos de Baja","description":"$2 fish tacos with battered mahi-mahi, cabbage slaw, and chipotle crema.","category":"food","estimated_cost_per_person":6,"duration_minutes":20,"location":{"name":"Los Tacos de Baja, downtown"},"weather_sensitivity":"indoor","ai_generated":true,"why_this_fits":"Skip the resort food — eat where the locals eat"}]}
-    ],
+    },
     {"id":"day-2","trip_id":"t","date":"2026-03-15","day_number":2,"title":"ATV & Sunset Cruise","slots":[
       {"id":"s-2-1","day_id":"day-2","slot_type":"morning","status":"open","options":[
         {"id":"o-2-1-1","slot_id":"s-2-1","title":"ATV Desert Tour","description":"Ride ATVs through Baja desert to a remote beach — cactus fields, sand dunes, and Pacific views.","category":"adventure","estimated_cost_per_person":60,"duration_minutes":180,"location":{"name":"Baja desert, Cabo"},"weather_sensitivity":"outdoor","ai_generated":true,"why_this_fits":"Desert meets ocean — the Baja landscape is dramatic"},
