@@ -75,12 +75,11 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Earth/map background */}
+      {/* Earth/satellite background */}
       <div
         className="h-[40vh] min-h-[280px]"
         style={{
-          background: "linear-gradient(180deg, #0a1628 0%, #1a3a5c 40%, #2d6a4f 70%, #1a3a5c 100%)",
-          backgroundSize: "cover",
+          background: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80') center/cover, linear-gradient(180deg, #0a1628 0%, #1a3a5c 40%, #2d6a4f 70%, #0a1628 100%)",
         }}
       />
 
