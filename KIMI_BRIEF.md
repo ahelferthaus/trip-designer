@@ -1,106 +1,119 @@
-# VYBR — UI/UX Design Brief for Kimi (Pass 2)
+# VYBR — UI/UX Design Brief for Kimi (Pass 3)
 
 ## Context
 
-This is the second Kimi pass. Pass 1 added gamification (streaks, XP, badges, daily rewards) and a bottom tab bar. The gamification was too prominent and made the app look unprofessional. We've pulled it back — gamification components still exist in the codebase but are no longer shown on the home page.
+VYBR is a premium AI travel companion app. The functionality is complete — this pass is purely visual polish to make every screen feel consumer-grade and premium.
 
-**The target aesthetic is Polarsteps** — clean, photo-forward, spacious, travel-focused. Not gamified, not flashy. Professional and inviting.
+**Target aesthetic: Polarsteps meets Instagram meets Apple Maps.**
+Clean, photo-forward, spacious, cinematic. Not gamified, not flashy.
 
-## What's Already Done (Don't Redo)
-- Bottom tab bar (Home/Explore/Plan/Feed/Profile) — keep this, it works
-- Gamification store + components exist in code — leave them, just don't make them prominent
-- All 20+ CSS animations in index.css — keep available but use sparingly
-- All functionality (AI trips, voting, write-ins, booking, photos, social) — don't touch
+## What's Built (16 pages, all functional)
 
-## What Needs Work
+| Page | Route | Purpose |
+|------|-------|---------|
+| HomePage | `/` | Satellite earth hero, CTA, stats |
+| AuthPage | `/auth` | Sign in / sign up |
+| OnboardingPage | `/onboarding` | Polarsteps-style profile setup |
+| IntakePage | `/intake` | 7-step trip wizard |
+| ItineraryPage | `/itinerary` | Hero map + day-by-day activities |
+| TripsPage | `/trips` | Saved trips list |
+| ExplorePage | `/explore` | Public trip search + browse |
+| TripDetailPage | `/trip/:id` | Public trip with timeline itinerary |
+| FeedPage | `/feed` | Social activity feed |
+| ProfilePage | `/profile/:id` | User profile + trips |
+| PhotoBookPage | `/book/:id` | Book editor (dark UI) |
+| PostcardPage | `/postcard` | 7-step postcard composer (dark UI) |
+| TripMoviePage | `/movie` | Video generator (dark UI) |
+| JoinPage | `/join/:code` | Join via invite |
+| SettingsPage | `/settings` | Profile, partners, preferences |
+| ThemePage | `/theme` | 10 theme picker |
 
-### 1. Overall Visual Identity (HIGHEST PRIORITY)
-The app needs a cohesive, premium feel across all pages:
-- **Clean white space** — Polarsteps uses generous padding and spacing
-- **Typography hierarchy** — Clear distinction between headings, body, captions
-- **Subtle shadows** — Soft, almost invisible card shadows (not harsh)
-- **Rounded corners** — Keep `rounded-2xl` on cards, but ensure consistency
-- **No emoji overload** — Reduce emoji usage to icons/accents only, not as primary UI elements
-- **Color discipline** — Use `var(--td-accent)` for CTAs and highlights only, not everywhere
+## Design System Already in Place
 
-### 2. Explore Page (`/explore`) — Make It the Showpiece
-This is the discovery page — it should look like a travel magazine:
-- **Trip cards**: Larger cover areas with gradient overlay text, not stacked info
-- **Filter bar**: Replace `<select>` dropdowns with horizontal pill toggles (All / Budget / Mid / Splurge)
-- **Search**: Make it feel premium — subtle border, no harsh outlines
-- **Empty state**: Show a curated "Popular destinations" section with placeholder cards
-- **Card layout**: Consider 2-column grid for wider screens, single column for mobile
+### CSS Variables (use these, no hardcoded colors)
+`--td-bg`, `--td-card`, `--td-label`, `--td-secondary`, `--td-accent`, `--td-accent-text`, `--td-separator`, `--td-fill`, `--td-nav-bg`
 
-### 3. Trip Detail Page (`/trip/:id`) — The Storefront
-When someone views a public trip, this is the first impression:
-- **Hero**: Full-bleed cover photo (or rich gradient), title overlay with backdrop blur
-- **Author row**: Avatar + name + follow button inline (like Instagram post header)
-- **Itinerary section**: More visual — consider timeline/rail design instead of flat list
-- **Social proof**: Likes + clones + reviews in a clean horizontal row
-- **Comments**: Chat-bubble style, not flat cards
+### Motion System (already in index.css)
+- `.reveal` — scroll-triggered fade-up
+- `.page-enter` — route transition animation
+- `.breathe` — subtle scale pulse
+- `.btn-spring` — bouncy press
+- `.gradient-animate` — shifting gradient
+- `.tilt-hover` — 3D perspective on hover
+- `.card-hover` — scale-down on tap
 
-### 4. Feed Page (`/feed`)
-- **Feed items**: Richer cards with trip cover thumbnail, not just text
-- **Action icons**: Use subtle line icons not emoji (or at minimum, very restrained emoji)
-- **Timestamps**: "2h ago" style, muted
+### Components
+- `BottomTabBar` — 5-tab nav, hides on intake/auth/book/postcard/movie
+- `UserAvatar` — supports initials, emoji, upload
+- `TripHeroMap` — satellite Mapbox hero (when token set)
 
-### 5. Profile Page (`/profile/:id`)
-- **Header**: Centered layout with large avatar, name, bio — like Instagram profile
-- **Stats row**: Follower/following/trips in a clean horizontal bar
-- **Trip grid**: 2-column image grid (use trip cover or gradient placeholder) instead of a list
+## What to Polish (Priority Order)
 
-### 6. Itinerary Page (`/itinerary`) — Main Trip View
-This is where users spend the most time:
-- **Day headers**: More prominent, perhaps with a subtle background color band
-- **Slot cards**: Tighter spacing, cleaner option layout
-- **Photo strip**: Slightly larger thumbnails (48px not 40px)
-- **Booking badge**: Current green is good, keep it subtle
-- **Vote bubbles**: Current size is good
+### 1. ExplorePage — Trip Discovery
+This is where new users browse. Needs to feel like a travel magazine.
+- **Trip cards**: Larger cover photo areas (h-40 not h-28), gradient text overlay
+- **Filter bar**: Horizontal pills instead of `<select>` dropdowns
+- **Search**: More premium — larger, subtle border, placeholder icon
+- **Card hover**: Already has `tilt-hover`, verify it works well
 
-### 7. Settings Page (`/settings`)
-- **Profile section**: Add the avatar preview larger at the top
-- **Grouped list style**: iOS Settings-style grouped sections (already close, just tighten)
+### 2. TripDetailPage — Public Trip View
+The "storefront" that people share. Already has:
+- 320px hero cover with gradient overlay
+- Floating social bar with author avatar
+- Timeline itinerary with vertical rail
+Polish: tighten the timeline spacing, make activity cards cleaner
 
-## Design Rules
+### 3. ProfilePage — User Profile
+Needs Instagram-style treatment:
+- Centered large avatar + name + bio
+- Stats row (trips/followers/following) — make numbers bold, labels subtle
+- Trip gallery: 2-column grid with cover images instead of list
 
-1. **Use ONLY `var(--td-*)` CSS variables** — no hardcoded colors except white/black/transparent
-2. **Don't add new npm dependencies** — use Tailwind utilities and CSS only
-3. **Keep all functional code untouched** — only modify JSX structure and class names
-4. **Test with at least 3 themes** (Default, Grand Budapest, Moonrise Kingdom) to ensure nothing breaks
-5. **Mobile-first** — design for 390px wide, but look decent on wider screens too
-6. **Subtle animations only** — use the existing CSS animations sparingly (fade-scale-in on page load, card-hover on tap, that's it)
-7. **No emoji as primary icons** — use emoji as accents only. Prefer text labels.
+### 4. FeedPage — Activity Feed
+- Richer feed item cards — add trip cover thumbnail
+- Distinct styling per action type (published, liked, commented)
+- Timestamps more subtle
 
-## Snapchat Integration (Future — Don't Build Yet, Just Design For)
-We're considering Snapchat integration. For now, just leave space for:
-- A "Share to Snapchat" button on the trip detail page (next to Like/Clone)
-- A potential Bitmoji avatar option in the profile avatar picker
+### 5. ItineraryPage — Main Trip View
+The hero map is built. Below it:
+- Tighten day header spacing
+- Activity cards could be slightly more compact
+- Photo thumbnails slightly larger
+- "Booked" badge is good, keep it
 
-Don't implement these — just note them in comments like `{/* TODO: Snapchat share */}`.
+### 6. HomePage — Landing
+Already redesigned with satellite earth hero. Minor tweaks:
+- "How it works" cards could have icons instead of numbers
+- Bottom CTAs spacing
 
-## Files to Focus On (in priority order)
+## Rules
 
-1. `src/pages/ExplorePage.tsx` — trip card redesign, filter pills
-2. `src/pages/TripDetailPage.tsx` — hero, author row, timeline itinerary
-3. `src/pages/ProfilePage.tsx` — centered header, trip grid
-4. `src/pages/FeedPage.tsx` — richer feed items
-5. `src/pages/ItineraryPage.tsx` — day headers, slot card tightening (CAREFUL — this file has complex logic, only change styling classes)
-6. `src/pages/SettingsPage.tsx` — larger avatar preview, tighter grouping
-7. `src/pages/HomePage.tsx` — already cleaned up, minor polish only
+1. **ONLY use `var(--td-*)` CSS variables** for colors
+2. **Don't change any imports from `lib/` or `store/`** — functionality is locked
+3. **Don't add npm dependencies**
+4. **Test with Default, Grand Budapest, and Moonrise Kingdom themes**
+5. **Mobile-first (390px)** but look decent on desktop
+6. **Use existing motion classes** (`.reveal`, `.btn-spring`, etc.) — don't add new animation frameworks
+7. **Keep all routes and navigation intact**
 
-## What NOT to Change
-- `src/lib/*` — all library files, Supabase calls, AI generation
-- `src/store/*` — all state management
-- `src/components/gamification/*` — leave as-is (used minimally)
-- `src/components/BottomTabBar.tsx` — working well, don't change
-- Route structure in App.tsx
-- Any `import` statements that import from lib/ or store/
+## Files to Focus On
+
+```
+src/pages/ExplorePage.tsx     — trip cards, filters
+src/pages/TripDetailPage.tsx  — hero, timeline, social
+src/pages/ProfilePage.tsx     — grid layout, stats
+src/pages/FeedPage.tsx        — feed item cards
+src/pages/ItineraryPage.tsx   — CAREFUL, complex file, only touch classes
+src/pages/HomePage.tsx        — minor polish only
+```
 
 ## How to Test
+
 ```bash
 npm install
 npm run dev
 # Open http://localhost:5173
-# Check: HomePage, ExplorePage, TripDetailPage, ProfilePage, FeedPage
+# Test: Home, Explore, Trip Detail, Profile, Feed, Itinerary
 # Switch themes at /theme — try Default, Grand Budapest, Moonrise Kingdom
+# Verify npm run build passes before finishing
 ```
