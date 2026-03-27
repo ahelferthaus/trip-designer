@@ -46,7 +46,7 @@ export default function BottomTabBar() {
   };
 
   // Don't show tab bar on intake flow or auth pages
-  const hiddenPaths = ["/intake", "/auth", "/join/", "/onboarding"];
+  const hiddenPaths = ["/intake", "/auth", "/join/", "/onboarding", "/book/"];
   const shouldHide = hiddenPaths.some(path => 
     location.pathname === path || location.pathname.startsWith(path)
   );
