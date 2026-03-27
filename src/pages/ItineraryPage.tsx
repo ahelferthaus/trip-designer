@@ -1236,17 +1236,30 @@ export default function ItineraryPage() {
 
         <div className="flex flex-col items-center gap-3 pb-8 safe-bottom px-4">
           {activeCloudTripId && authUser && (
-            <button
-              onClick={() => navigate(`/book/${activeCloudTripId}`)}
-              className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
-              style={{
-                background: "linear-gradient(135deg, #C8A97E, #8B6914)",
-                color: "white",
-                boxShadow: "0 4px 16px rgba(200,169,126,0.3)",
-              }}
-            >
-              Create Photo Book
-            </button>
+            <>
+              <button
+                onClick={() => navigate(`/book/${activeCloudTripId}`)}
+                className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
+                style={{
+                  background: "linear-gradient(135deg, #C8A97E, #8B6914)",
+                  color: "white",
+                  boxShadow: "0 4px 16px rgba(200,169,126,0.3)",
+                }}
+              >
+                Create Photo Book
+              </button>
+              <button
+                onClick={() => navigate(`/postcard?tripId=${activeCloudTripId}`)}
+                className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
+                style={{
+                  background: "linear-gradient(135deg, #E63956, #B82E44)",
+                  color: "white",
+                  boxShadow: "0 4px 16px rgba(230,57,86,0.3)",
+                }}
+              >
+                Send a Postcard
+              </button>
+            </>
           )}
           <button onClick={() => navigate("/")} className="text-[15px]"
             style={{ color: "var(--td-accent)" }}>
