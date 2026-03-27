@@ -141,52 +141,83 @@ export default function TripDetailPage() {
     : 0;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "var(--td-bg)" }}>
-      {/* Cover */}
+    <div className="min-h-screen pb-20" style={{ backgroundColor: "var(--td-bg)" }}>
+      {/* === HERO COVER === */}
       <div
-        className="h-44 flex items-end px-4 pb-4 relative"
+        className="relative flex flex-col justify-end"
         style={{
+          height: 320,
           background: trip.cover_photo_url
             ? `url(${trip.cover_photo_url}) center/cover`
-            : `linear-gradient(135deg, var(--td-accent), var(--td-fill))`,
+            : `linear-gradient(160deg, #0B1D33 0%, #1B4332 50%, #132F4C 100%)`,
         }}
       >
+        {/* Gradient overlay */}
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.7) 100%)",
+        }} />
+
+        {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 safe-top w-8 h-8 rounded-full flex items-center justify-center active:opacity-70"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          className="absolute top-4 left-4 safe-top w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
         >
-          <span className="text-white text-[17px]">‹</span>
+          <span className="text-white text-[17px] font-semibold">‹</span>
         </button>
-        <div>
-          <h1 className="text-[24px] font-bold text-white drop-shadow-md">{trip.title}</h1>
-          <p className="text-[14px] text-white/80 drop-shadow-sm">
-            📍 {trip.destination} · {days} days · by {trip.created_by}
+
+        {/* Share button */}
+        {/* TODO: Snapchat share */}
+
+        {/* Title overlay */}
+        <div className="relative z-10 px-5 pb-5">
+          <h1 className="text-[28px] font-black text-white leading-tight drop-shadow-lg">
+            {trip.title}
+          </h1>
+          <p className="text-[14px] text-white/70 mt-1 drop-shadow">
+            {trip.destination} · {days} day{days !== 1 ? "s" : ""}
           </p>
         </div>
       </div>
 
-      <div className="px-4 py-4 flex flex-col gap-4">
-        {/* Stats row + like */}
-        <div className="flex items-center gap-4 text-[13px]" style={{ color: "var(--td-secondary)" }}>
-          <button onClick={handleLike} disabled={!user}
-            className="flex items-center gap-1 active:opacity-70"
-            style={{ color: liked ? "#FF3B30" : "var(--td-secondary)" }}>
-            {liked ? "❤️" : "🤍"} {likeCount}
-          </button>
-          {avgRating > 0 && (
-            <span className="flex items-center gap-1">
-              <Stars rating={Math.round(avgRating)} size={13} /> {avgRating} ({reviews.length})
-            </span>
-          )}
-          {trip.clone_count > 0 && <span>{trip.clone_count} cloned</span>}
-          {trip.view_count > 0 && <span>{trip.view_count} views</span>}
+      {/* === FLOATING SOCIAL BAR === */}
+      <div className="px-4 -mt-5">
+        <div
+          className="rounded-2xl px-4 py-3.5 flex items-center justify-between shadow-lg"
+          style={{ backgroundColor: "var(--td-card)" }}
+        >
+          {/* Author */}
           <button onClick={() => navigate(`/profile/${trip.user_id}`)}
-            className="ml-auto text-[12px] active:opacity-70" style={{ color: "var(--td-accent)" }}>
-            by {trip.created_by} ›
+            className="flex items-center gap-2 active:opacity-70">
+            <UserAvatar name={trip.created_by} size="sm" showLabel={false} />
+            <div className="text-left">
+              <p className="text-[13px] font-semibold" style={{ color: "var(--td-label)" }}>{trip.created_by}</p>
+              <p className="text-[11px]" style={{ color: "var(--td-secondary)" }}>Trip creator</p>
+            </div>
           </button>
-        </div>
 
+          {/* Social actions */}
+          <div className="flex items-center gap-4">
+            <button onClick={handleLike} disabled={!user}
+              className="flex flex-col items-center active:opacity-70">
+              <span className="text-[18px]">{liked ? "❤️" : "🤍"}</span>
+              <span className="text-[10px] font-semibold" style={{ color: "var(--td-secondary)" }}>{likeCount}</span>
+            </button>
+            {avgRating > 0 && (
+              <div className="flex flex-col items-center">
+                <Stars rating={Math.round(avgRating)} size={14} />
+                <span className="text-[10px] font-semibold" style={{ color: "var(--td-secondary)" }}>{avgRating}</span>
+              </div>
+            )}
+            <div className="flex flex-col items-center">
+              <span className="text-[14px] font-bold" style={{ color: "var(--td-label)" }}>{trip.clone_count || 0}</span>
+              <span className="text-[10px]" style={{ color: "var(--td-secondary)" }}>clones</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 pt-5 flex flex-col gap-5">
         {/* Description */}
         {trip.description && (
           <p className="text-[15px] leading-relaxed" style={{ color: "var(--td-label)" }}>
@@ -196,9 +227,9 @@ export default function TripDetailPage() {
 
         {/* Tags */}
         {trip.tags?.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap">
+          <div className="flex gap-2 flex-wrap">
             {trip.tags.map(t => (
-              <span key={t} className="text-[12px] px-2.5 py-1 rounded-full"
+              <span key={t} className="text-[12px] px-3 py-1.5 rounded-full font-medium"
                 style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
                 {t}
               </span>
@@ -210,51 +241,66 @@ export default function TripDetailPage() {
         <button
           onClick={handleClone}
           disabled={!user || cloning}
-          className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70"
+          className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
           style={{
             backgroundColor: user ? "var(--td-accent)" : "var(--td-fill)",
             color: user ? "var(--td-accent-text)" : "var(--td-secondary)",
+            boxShadow: user ? "0 4px 16px rgba(0,0,0,0.12)" : "none",
           }}
         >
           {cloning ? "Cloning..." : !user ? "Sign in to clone this trip" : "Clone this trip"}
         </button>
 
-        {/* Itinerary preview (read-only) */}
-        <div className="flex flex-col gap-5">
-          <p className="text-[12px] uppercase tracking-wide" style={{ color: "var(--td-secondary)" }}>Itinerary</p>
-          {itinerary.days.map(day => (
-            <div key={day.id}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-full text-[12px] font-bold flex items-center justify-center"
-                  style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}>
-                  {day.day_number}
+        {/* === TIMELINE ITINERARY === */}
+        <div>
+          <p className="text-[12px] uppercase tracking-widest font-semibold mb-4" style={{ color: "var(--td-secondary)" }}>
+            Itinerary
+          </p>
+          <div className="flex flex-col gap-0">
+            {itinerary.days.map((day, dayIdx) => (
+              <div key={day.id} className="flex gap-3">
+                {/* Timeline rail */}
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 rounded-full text-[12px] font-bold flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}>
+                    {day.day_number}
+                  </div>
+                  {dayIdx < itinerary.days.length - 1 && (
+                    <div className="w-0.5 flex-1 my-1" style={{ backgroundColor: "var(--td-separator)" }} />
+                  )}
                 </div>
-                <span className="font-semibold text-[15px]" style={{ color: "var(--td-label)" }}>
-                  {day.title ?? `Day ${day.day_number}`}
-                </span>
-                <span className="text-[12px]" style={{ color: "var(--td-secondary)" }}>{day.date}</span>
+
+                {/* Day content */}
+                <div className="flex-1 pb-5">
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="font-semibold text-[15px]" style={{ color: "var(--td-label)" }}>
+                      {day.title ?? `Day ${day.day_number}`}
+                    </span>
+                    <span className="text-[11px]" style={{ color: "var(--td-secondary)" }}>{day.date}</span>
+                  </div>
+                  <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
+                    style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
+                    {day.slots.map(slot => {
+                      const opt = slot.options[0];
+                      if (!opt) return null;
+                      return (
+                        <div key={slot.id} className="px-4 py-3">
+                          <p className="text-[10px] uppercase tracking-widest mb-0.5 font-semibold" style={{ color: "var(--td-secondary)" }}>
+                            {SLOT_LABELS[slot.slot_type]}
+                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">{CAT_ICONS[opt.category] ?? "📍"}</span>
+                            <span className="text-[14px] font-semibold" style={{ color: "var(--td-label)" }}>{opt.title}</span>
+                          </div>
+                          <p className="text-[12px] mt-0.5 leading-snug" style={{ color: "var(--td-secondary)" }}>{opt.description}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
-              <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
-                style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
-                {day.slots.map(slot => {
-                  const opt = slot.options[0];
-                  if (!opt) return null;
-                  return (
-                    <div key={slot.id} className="px-4 py-3">
-                      <p className="text-[11px] uppercase tracking-wide mb-0.5" style={{ color: "var(--td-secondary)" }}>
-                        {SLOT_LABELS[slot.slot_type]}
-                      </p>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">{CAT_ICONS[opt.category] ?? "📍"}</span>
-                        <span className="text-[14px] font-medium" style={{ color: "var(--td-label)" }}>{opt.title}</span>
-                      </div>
-                      <p className="text-[12px] mt-0.5" style={{ color: "var(--td-secondary)" }}>{opt.description}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Reviews */}
