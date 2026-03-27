@@ -32,6 +32,7 @@ import UserAvatar from "../components/UserAvatar";
 import InviteModal from "../components/itinerary/InviteModal";
 import SlotPhotos from "../components/itinerary/SlotPhotos";
 import { publishTrip, unpublishTrip } from "../lib/publicTrips";
+import { supabase } from "../lib/supabase";
 import { getPhotosForTrip } from "../lib/tripPhotos";
 import type { TripPhoto } from "../lib/tripPhotos";
 import type { SavedTrip } from "../lib/tripStorage";
@@ -71,6 +72,7 @@ function OptionCard({
   voters,
   booked,
   onBook,
+  onUnbook,
 }: {
   option: ActivityOption;
   selected: boolean;
@@ -80,6 +82,7 @@ function OptionCard({
   voters: string[];
   booked?: boolean;
   onBook?: () => void;
+  onUnbook?: () => void;
 }) {
   return (
     <div
@@ -184,6 +187,15 @@ function OptionCard({
               style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
             >
               Book this
+            </button>
+          )}
+          {onUnbook && booked && (
+            <button
+              onClick={e => { e.stopPropagation(); onUnbook(); }}
+              className="ml-auto text-[11px] px-2.5 py-1 rounded-full font-semibold active:opacity-70"
+              style={{ backgroundColor: "#FF3B3020", color: "#FF3B30" }}
+            >
+              Unbook
             </button>
           )}
         </div>
@@ -434,12 +446,28 @@ export default function ItineraryPage() {
     showToast("Moment saved!");
   };
 
-  const handleBookSlot = async (slotId: string, optionId: string) => {
-    setBookedSlots(prev => ({ ...prev, [slotId]: optionId }));
+  const handleBookSlot = async (slotId: string, optionId: string, category: string) => {
+    const key = `${slotId}:${category}`;
+    setBookedSlots(prev => ({ ...prev, [key]: optionId }));
     if (activeCloudTripId) {
-      await saveBookedSlot(activeCloudTripId, slotId, optionId, currentUser?.name ?? "");
+      await saveBookedSlot(activeCloudTripId, key, optionId, currentUser?.name ?? "");
     }
     showToast("Booked!");
+  };
+
+  const handleUnbook = async (slotId: string, category: string) => {
+    const key = `${slotId}:${category}`;
+    setBookedSlots(prev => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    if (activeCloudTripId && supabase) {
+      await supabase.from("trip_booked_slots").delete()
+        .eq("trip_id", activeCloudTripId)
+        .eq("slot_id", key);
+    }
+    showToast("Unbooked");
   };
 
   const handlePublish = async () => {
@@ -1107,19 +1135,23 @@ export default function ItineraryPage() {
             <div className="flex flex-col gap-3">
               {slotsToRender.map(slot => {
                 const allMerged = slot.options;
-                const bookedOptionId = bookedSlots[slot.id];
-                // On Full Trip, if a slot is booked, only show the booked option
-                const displayOpts = (activeTab === "all" && bookedOptionId)
-                  ? allMerged.filter(opt => opt.id === bookedOptionId)
+                // Per-category booking: check each option's category
+                // On Full Trip, hide unbooked options only for categories that have a booking
+                const displayOpts = activeTab === "all"
+                  ? allMerged.filter(opt => {
+                      const catKey = `${slot.id}:${opt.category}`;
+                      const bookedId = bookedSlots[catKey];
+                      // If this category is booked in this slot, only show the booked option
+                      return !bookedId || bookedId === opt.id;
+                    })
                   : allMerged;
                 const allUsers = Object.keys(activeSelections);
                 const thisSlotVotes = allUsers.filter(u => activeSelections[u]?.[slot.id]).length;
-                // Determine the primary category for write-ins (use the full slot options, not filtered)
                 const fullSlotOpts = getMergedOptions(slot);
                 const primaryCategory = fullSlotOpts[0]?.category ?? "attraction";
-                // Only show write-in for food/attraction/adventure categories, and not if booked on full trip
-                const showWriteIn = ["food", "attraction", "adventure"].includes(primaryCategory)
-                  && !(activeTab === "all" && bookedOptionId);
+                // Check if ANY category in this slot has a booking
+                const hasAnyBooking = allMerged.some(opt => bookedSlots[`${slot.id}:${opt.category}`]);
+                const showWriteIn = ["food", "attraction", "adventure"].includes(primaryCategory);
                 return (
                   <div key={slot.id}>
                     <div className="flex items-center justify-between px-1 mb-1.5">
@@ -1127,7 +1159,7 @@ export default function ItineraryPage() {
                         {SLOT_LABELS[slot.slot_type]}
                       </p>
                       <div className="flex items-center gap-2">
-                        {bookedOptionId && (
+                        {hasAnyBooking && (
                           <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
                             style={{ backgroundColor: "#34C75930", color: "#34C759" }}>
                             Booked
@@ -1147,6 +1179,9 @@ export default function ItineraryPage() {
                         const voters = Object.entries(activeSelections)
                           .filter(([, slotSels]) => slotSels[slot.id] === opt.id)
                           .map(([name]) => name);
+                        const catKey = `${slot.id}:${opt.category}`;
+                        const isBooked = bookedSlots[catKey] === opt.id;
+                        const catHasBooking = !!bookedSlots[catKey];
                         return (
                           <OptionCard
                             key={opt.id}
@@ -1156,8 +1191,9 @@ export default function ItineraryPage() {
                             link={opt.isCustom ? null : getActivityLink(opt, activeForm.destination?.name)}
                             photosLink={getPhotosLink(opt, activeForm.destination?.name)}
                             voters={voters}
-                            booked={bookedOptionId === opt.id}
-                            onBook={!bookedOptionId ? () => handleBookSlot(slot.id, opt.id) : undefined}
+                            booked={isBooked}
+                            onBook={!catHasBooking ? () => handleBookSlot(slot.id, opt.id, opt.category) : undefined}
+                            onUnbook={isBooked ? () => handleUnbook(slot.id, opt.category) : undefined}
                           />
                         );
                       })}

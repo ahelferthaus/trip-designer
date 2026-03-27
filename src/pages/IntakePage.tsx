@@ -85,11 +85,13 @@ export default function IntakePage() {
     else handleSubmit();
   };
 
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
   const handleSubmit = async () => {
     store.setGroupMembers(members);
-    itineraryStore.setLoading(true);
-    itineraryStore.setError(null);
-    navigate("/itinerary");
+    setGenerating(true);
+    setGenError(null);
     try {
       const finalForm = { ...form, group_members: members };
       const result = await generateItinerary(finalForm);
@@ -116,13 +118,13 @@ export default function IntakePage() {
         incrementStat("tripsCreated");
         incrementStat("daysPlanned");
       }
+      // Navigate AFTER itinerary is ready — no blank page race
+      navigate("/itinerary");
     } catch (err) {
       console.error("Trip generation failed:", err);
-      itineraryStore.setError(
-        err instanceof Error ? err.message : "Couldn't generate your itinerary. Please try again."
-      );
+      setGenError(err instanceof Error ? err.message : "Couldn't generate your itinerary. Please try again.");
     } finally {
-      itineraryStore.setLoading(false);
+      setGenerating(false);
     }
   };
 
@@ -137,8 +139,46 @@ export default function IntakePage() {
   const updateMember = (i: number, patch: Partial<GroupMember>) =>
     setMembers(m => m.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
 
+  // Full-screen generating overlay
+  if (generating) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6"
+        style={{ backgroundColor: "var(--td-bg)" }}>
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full shadow-sm flex items-center justify-center mx-auto mb-5"
+            style={{ backgroundColor: "var(--td-card)" }}>
+            <svg className="animate-spin w-7 h-7" fill="none" viewBox="0 0 24 24"
+              style={{ color: "var(--td-accent)" }}>
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          </div>
+          <h2 className="text-[22px] font-bold mb-1" style={{ color: "var(--td-label)" }}>
+            Building your trip…
+          </h2>
+          <p className="text-[15px]" style={{ color: "var(--td-secondary)" }}>
+            {form.destination?.name}
+          </p>
+          <p className="text-[13px] mt-2" style={{ color: "var(--td-fill)" }}>
+            This can take up to 30 seconds
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--td-bg)" }}>
+      {/* Generation error banner */}
+      {genError && (
+        <div className="px-4 py-3 text-center" style={{ backgroundColor: "#FF3B3015" }}>
+          <p className="text-[13px] font-medium" style={{ color: "#FF3B30" }}>{genError}</p>
+          <button onClick={() => setGenError(null)} className="text-[12px] mt-1 underline" style={{ color: "#FF3B30" }}>
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Nav bar */}
       <div className="px-4 safe-top pt-3 pb-2 flex items-center justify-between"
         style={{ backgroundColor: "var(--td-bg)" }}>
