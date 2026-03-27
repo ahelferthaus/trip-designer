@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { searchPublicTrips } from "../lib/publicTrips";
@@ -13,39 +13,99 @@ function daysBetween(start: string, end: string) {
 
 const BUDGET_LABELS: Record<string, string> = { budget: "Budget", mid: "Mid-range", splurge: "Splurge" };
 
+// Category filters
+const CATEGORIES = [
+  { id: "all", label: "All Trips", icon: "🌍" },
+  { id: "weekend", label: "Weekends", icon: "🗓️" },
+  { id: "family", label: "Family", icon: "👨‍👩‍👧" },
+  { id: "college", label: "College Tours", icon: "🎓" },
+  { id: "soccer", label: "Soccer", icon: "⚽" },
+  { id: "skiing", label: "Skiing", icon: "⛷️" },
+  { id: "spring-break", label: "Spring Break", icon: "🌴" },
+  { id: "budget-friendly", label: "Budget", icon: "💰" },
+  { id: "luxury", label: "Luxury", icon: "✨" },
+  { id: "beach", label: "Beach", icon: "🏖️" },
+  { id: "europe", label: "Europe", icon: "🇪🇺" },
+  { id: "asia", label: "Asia", icon: "🌏" },
+];
+
+// Popular destinations for autofill
+const DESTINATIONS = [
+  "Paris", "Rome", "Barcelona", "London", "Amsterdam", "Tokyo", "Kyoto",
+  "New York", "Los Angeles", "Chicago", "Miami", "Austin", "Nashville",
+  "New Orleans", "Denver", "Seattle", "San Francisco", "San Diego",
+  "Cancun", "Cabo", "Costa Rica", "Maldives", "Santorini", "Lisbon",
+  "Bangkok", "Mexico City", "Vail", "Aspen", "Whistler", "Chamonix",
+  "Zermatt", "Jackson Hole", "Park City", "Telluride", "Steamboat",
+  "Big Sky", "Orlando", "Maui", "Budapest", "Prague", "Vienna",
+  "Munich", "Berlin", "Dublin", "Edinburgh", "Milan", "Florence",
+  "Manchester", "Liverpool", "Buenos Aires", "Bali",
+  "Duke University", "University of Virginia", "USC", "Emory University",
+  "University of Colorado", "Colgate University", "Carnegie Mellon",
+  "Colorado School of Mines", "Harvard", "MIT", "Stanford", "Yale",
+  "Princeton", "Columbia", "Georgetown", "UCLA", "Berkeley",
+];
+
 export default function ExplorePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   useReveal();
   const [query, setQuery] = useState("");
   const [budget, setBudget] = useState<BudgetLevel | "">("");
+  const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState<"newest" | "most_cloned" | "highest_rated">("newest");
   const [trips, setTrips] = useState<PublicTrip[]>([]);
   const [loading, setLoading] = useState(true);
   const [searched, setSearched] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Autofill suggestions
+  const suggestions = useMemo(() => {
+    if (!query.trim() || query.length < 2) return [];
+    const q = query.toLowerCase();
+    return DESTINATIONS.filter(d => d.toLowerCase().includes(q)).slice(0, 6);
+  }, [query]);
 
   const doSearch = async () => {
     setLoading(true);
+    setShowSuggestions(false);
+    // Build search query — combine text query with category tag
+    const searchQuery = category !== "all"
+      ? (query.trim() ? `${query.trim()} ${category}` : category)
+      : query.trim() || undefined;
+
     const results = await searchPublicTrips({
-      query: query.trim() || undefined,
+      query: searchQuery,
       budgetLevel: budget || undefined,
       sortBy,
-      limit: 30,
+      limit: 40,
     });
-    setTrips(results);
+
+    // Client-side tag filter for category (server search may not be exact)
+    const filtered = category !== "all"
+      ? results.filter(t => t.tags?.includes(category))
+      : results;
+
+    setTrips(filtered.length > 0 ? filtered : results);
     setLoading(false);
     setSearched(true);
   };
 
-  // Load initial results
   useEffect(() => {
     doSearch();
-  }, [sortBy, budget]);
+  }, [sortBy, budget, category]);
 
   const handleSearch = () => doSearch();
 
+  const handleSuggestionClick = (dest: string) => {
+    setQuery(dest);
+    setShowSuggestions(false);
+    // Trigger search after setting
+    setTimeout(() => doSearch(), 50);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--td-bg)" }}>
+    <div className="min-h-screen flex flex-col pb-20" style={{ backgroundColor: "var(--td-bg)" }}>
       {/* Nav */}
       <div
         className="sticky top-0 z-10 px-4 safe-top pt-3 pb-3"
@@ -63,51 +123,99 @@ export default function ExplorePage() {
       </div>
 
       <div className="px-4 pt-4 flex flex-col gap-3">
-        {/* Search bar */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search destinations, activities..."
-            className="flex-1 px-4 py-3 rounded-2xl text-[15px] bg-transparent focus:outline-none"
-            style={{ backgroundColor: "var(--td-card)", color: "var(--td-label)", border: "1px solid var(--td-separator)" }}
-            onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
-          />
-          <button
-            onClick={handleSearch}
-            className="px-4 py-3 rounded-2xl text-[15px] font-semibold active:opacity-70"
-            style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
-          >
-            Search
-          </button>
+        {/* Search bar with autofill */}
+        <div className="relative">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={e => { setQuery(e.target.value); setShowSuggestions(true); }}
+              onFocus={() => setShowSuggestions(true)}
+              placeholder="Search destinations, colleges, activities..."
+              className="flex-1 px-4 py-3 rounded-2xl text-[15px] bg-transparent focus:outline-none"
+              style={{ backgroundColor: "var(--td-card)", color: "var(--td-label)", border: "1px solid var(--td-separator)" }}
+              onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
+            />
+            <button
+              onClick={handleSearch}
+              className="px-4 py-3 rounded-2xl text-[15px] font-semibold active:opacity-70"
+              style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
+            >
+              Search
+            </button>
+          </div>
+
+          {/* Autofill suggestions dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div
+              className="absolute top-14 left-0 right-14 z-20 rounded-2xl overflow-hidden shadow-lg"
+              style={{ backgroundColor: "var(--td-card)", border: "1px solid var(--td-separator)" }}
+            >
+              {suggestions.map(s => (
+                <button
+                  key={s}
+                  onClick={() => handleSuggestionClick(s)}
+                  className="w-full text-left px-4 py-3 text-[14px] active:opacity-70"
+                  style={{ color: "var(--td-label)", borderBottom: "1px solid var(--td-separator)" }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto">
-          <select
-            value={budget}
-            onChange={e => setBudget(e.target.value as BudgetLevel | "")}
-            className="px-3 py-1.5 rounded-full text-[13px] bg-transparent focus:outline-none"
-            style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
-          >
-            <option value="">All Budgets</option>
-            <option value="budget">Budget</option>
-            <option value="mid">Mid-range</option>
-            <option value="splurge">Splurge</option>
-          </select>
+        {/* Category pills */}
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setCategory(cat.id)}
+              className="px-3 py-2 rounded-full text-[12px] font-semibold whitespace-nowrap active:opacity-70 flex items-center gap-1.5"
+              style={{
+                backgroundColor: category === cat.id ? "var(--td-accent)" : "var(--td-fill)",
+                color: category === cat.id ? "var(--td-accent-text)" : "var(--td-label)",
+              }}
+            >
+              <span>{cat.icon}</span>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Budget + Sort row */}
+        <div className="flex gap-2">
+          {(["", "budget", "mid", "splurge"] as const).map(b => (
+            <button
+              key={b}
+              onClick={() => setBudget(b as BudgetLevel | "")}
+              className="px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap active:opacity-70"
+              style={{
+                backgroundColor: budget === b ? "var(--td-accent)" : "var(--td-fill)",
+                color: budget === b ? "var(--td-accent-text)" : "var(--td-label)",
+              }}
+            >
+              {b === "" ? "Any $" : b === "budget" ? "💰 Budget" : b === "mid" ? "💳 Mid" : "💎 Splurge"}
+            </button>
+          ))}
+          <div className="flex-1" />
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as typeof sortBy)}
-            className="px-3 py-1.5 rounded-full text-[13px] bg-transparent focus:outline-none"
+            className="px-2 py-1.5 rounded-full text-[11px] bg-transparent focus:outline-none font-semibold"
             style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
           >
             <option value="newest">Newest</option>
-            <option value="most_cloned">Most Cloned</option>
+            <option value="most_cloned">Popular</option>
             <option value="highest_rated">Most Viewed</option>
           </select>
         </div>
       </div>
+
+      {/* Click outside to close suggestions */}
+      {showSuggestions && (
+        <div className="fixed inset-0 z-10" onClick={() => setShowSuggestions(false)} />
+      )}
 
       {/* Results */}
       <div className="flex-1 px-4 pt-4 pb-8">
@@ -130,6 +238,10 @@ export default function ExplorePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
+            <p className="text-[12px] font-semibold uppercase tracking-widest" style={{ color: "var(--td-secondary)" }}>
+              {trips.length} trip{trips.length !== 1 ? "s" : ""}
+              {category !== "all" ? ` in ${CATEGORIES.find(c => c.id === category)?.label}` : ""}
+            </p>
             {trips.map(trip => {
               const days = daysBetween(trip.start_date, trip.end_date);
               const formData = trip.form_data;
@@ -140,16 +252,16 @@ export default function ExplorePage() {
                   className="rounded-2xl overflow-hidden shadow-sm text-left active:opacity-70 reveal tilt-hover"
                   style={{ backgroundColor: "var(--td-card)" }}
                 >
-                  {/* Cover photo or gradient */}
+                  {/* Cover */}
                   <div
-                    className="h-28 flex items-end px-4 pb-3"
+                    className="h-32 flex items-end px-4 pb-3"
                     style={{
                       background: trip.cover_photo_url
                         ? `url(${trip.cover_photo_url}) center/cover`
                         : `linear-gradient(135deg, var(--td-accent), var(--td-fill))`,
                     }}
                   >
-                    <h3 className="text-[18px] font-bold text-white drop-shadow-md truncate">
+                    <h3 className="text-[17px] font-bold text-white drop-shadow-md truncate">
                       {trip.title}
                     </h3>
                   </div>
@@ -179,11 +291,11 @@ export default function ExplorePage() {
                       <span className="ml-auto">by {trip.created_by}</span>
                     </div>
 
-                    {/* Vibes */}
-                    {formData?.vibes?.length > 0 && (
+                    {/* Tags */}
+                    {trip.tags?.length > 0 && (
                       <div className="flex gap-1.5 mt-2 flex-wrap">
-                        {formData.vibes.map((v: string) => (
-                          <span key={v} className="text-[11px] px-2 py-0.5 rounded-full"
+                        {trip.tags.slice(0, 5).map((v: string) => (
+                          <span key={v} className="text-[10px] px-2 py-0.5 rounded-full"
                             style={{ backgroundColor: "var(--td-fill)", color: "var(--td-secondary)" }}>
                             {v}
                           </span>
@@ -200,7 +312,7 @@ export default function ExplorePage() {
 
       {/* CTA for logged-in users */}
       {user && (
-        <div className="px-4 pb-8 safe-bottom">
+        <div className="px-4 pb-4">
           <button
             onClick={() => navigate("/trips")}
             className="w-full py-3 rounded-2xl text-[15px] font-semibold active:opacity-70"

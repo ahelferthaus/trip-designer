@@ -28,6 +28,7 @@ export async function generateItinerary(form: IntakeFormData): Promise<Generated
     "nightlife-music": "THEME: Nightlife & music. Prioritize live music venues, clubs, cocktail bars, jazz clubs, and late-night food spots.",
     "wellness-spa": "THEME: Wellness & spa. Prioritize spas, thermal baths, yoga studios, meditation retreats, and healthy dining.",
     "photography": "THEME: Photography. Prioritize the most photogenic locations, golden hour spots, iconic viewpoints, and unique architecture.",
+    "college-tour": "THEME: College campus tour. This is a college visit trip for a high school junior/senior. Include: official campus tour (usually morning), walk through campus highlights, visit the college bookstore, eat at a popular student spot, explore the surrounding college town/city. If there are other notable colleges within 30 miles (big city) or 100 miles (smaller area), include a visit to one as an option. Mix in local attractions and restaurants the student would enjoy.",
   };
   const themeText = form.travel_theme && form.travel_theme !== "none"
     ? themePrompts[form.travel_theme] || ""

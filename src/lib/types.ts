@@ -169,7 +169,8 @@ export type TravelTheme =
   | "hiking-nature"
   | "nightlife-music"
   | "wellness-spa"
-  | "photography";
+  | "photography"
+  | "college-tour";
 
 export interface IntakeFormData {
   destination: Location | null;
