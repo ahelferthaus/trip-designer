@@ -90,7 +90,7 @@ export default function BottomTabBar() {
                   )}
                 </div>
                 <span 
-                  className="text-[10px] mt-1 font-medium"
+                  className="text-[11px] mt-1 font-semibold"
                   style={{ color: active ? "var(--td-accent)" : "var(--td-secondary)" }}
                 >
                   {tab.label}

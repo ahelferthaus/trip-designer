@@ -31,15 +31,15 @@ export default function HomePage() {
       <div
         className="relative overflow-hidden"
         style={{
-          background: "linear-gradient(170deg, #0B1D33 0%, #132F4C 30%, #1B4332 55%, #132F4C 80%, #0B1D33 100%)",
+          background: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=70') center/cover",
           minHeight: 460,
         }}
       >
-        {/* Subtle radial glow */}
+        {/* Dark overlay for text readability */}
         <div
           className="absolute inset-0"
           style={{
-            background: "radial-gradient(ellipse at 50% 60%, rgba(45,106,79,0.35) 0%, transparent 70%)",
+            background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.6) 100%)",
           }}
         />
 
@@ -265,21 +265,30 @@ export default function HomePage() {
 
       <div className="flex-1" />
 
-      {/* Footer for logged-out */}
-      {!user && (
-        <div className="px-4 pt-4 pb-24 safe-bottom">
+      {/* Footer actions */}
+      <div className="px-4 pt-4 pb-24 safe-bottom flex flex-col gap-3">
+        {!user && (
           <button
-            onClick={() => navigate("/explore")}
-            className="w-full py-3.5 rounded-2xl text-[15px] font-semibold active:opacity-70"
-            style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
+            onClick={() => navigate("/auth")}
+            className="w-full py-4 rounded-2xl text-[17px] font-bold active:opacity-70"
+            style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
           >
-            Explore Public Trips
+            Create Account
           </button>
-          <p className="text-center text-[12px] mt-3" style={{ color: "var(--td-secondary)" }}>
-            No account needed to get started
+        )}
+        <button
+          onClick={() => navigate("/explore")}
+          className="w-full py-4 rounded-2xl text-[17px] font-semibold active:opacity-70"
+          style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}
+        >
+          Explore Public Trips
+        </button>
+        {!user && (
+          <p className="text-center text-[13px] mt-1" style={{ color: "var(--td-secondary)" }}>
+            No account needed to plan a trip
           </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
