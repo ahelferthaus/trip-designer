@@ -1,10 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useTripStore } from "../store/tripStore";
 import { getBookForTrip, generateBookFromTrip, saveBook } from "../lib/photoBook";
+import { exportBookToPDF, downloadBlob } from "../lib/bookExport";
+import { submitPrintOrder, saveOrderToBook } from "../lib/printProvider";
 import type { PhotoBook, BookPage } from "../lib/photoBook";
+import type { ShippingAddress } from "../lib/printProvider";
 
 // --- Template Styles ---
 const TEMPLATES = {
@@ -191,10 +194,67 @@ export default function PhotoBookPage() {
     setBook({ ...book, pages });
   };
 
-  const handleExportPDF = () => {
-    // PDF export would use html2canvas + jsPDF
-    // For now, show a coming-soon message
-    alert("PDF export coming soon! Your book draft is saved.");
+  // PDF Export
+  const pagesRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState("");
+
+  const handleExportPDF = async () => {
+    if (!book || !pagesRef.current) return;
+    setExporting(true);
+    setExportProgress("Rendering pages…");
+    try {
+      const blob = await exportBookToPDF(
+        pagesRef.current,
+        book.title,
+        (current, total) => setExportProgress(`Rendering page ${current}/${total}…`)
+      );
+      const filename = `${book.title.replace(/[^a-zA-Z0-9]/g, "_")}_VYBR.pdf`;
+      downloadBlob(blob, filename);
+      setExportProgress("Download started!");
+      setTimeout(() => setExportProgress(""), 2000);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      setExportProgress("Export failed. Try again.");
+      setTimeout(() => setExportProgress(""), 3000);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Print Order
+  const [showShipping, setShowShipping] = useState(false);
+  const [ordering, setOrdering] = useState(false);
+  const [orderResult, setOrderResult] = useState<string | null>(null);
+  const [shipping, setShipping] = useState<ShippingAddress>({
+    name: "", street1: "", street2: "", city: "", state: "", postalCode: "", country: "US",
+  });
+
+  const handleOrder = async () => {
+    if (!book || !shipping.name || !shipping.street1 || !shipping.city || !shipping.postalCode) return;
+    setOrdering(true);
+
+    // First export PDF and upload (in production, upload to Supabase Storage)
+    // For now, submit the order with the book metadata
+    const result = await submitPrintOrder({
+      bookId: book.id,
+      provider: "lulu",
+      productType: "hardcover-photo",
+      pageCount: book.pages.length,
+      shipping,
+    });
+
+    if (result.success && result.orderId) {
+      await saveOrderToBook(book.id, result.orderId, "lulu", {
+        price: result.price,
+        trackingUrl: result.trackingUrl,
+      });
+      setOrderResult("Order placed! You'll receive tracking info by email.");
+      setShowShipping(false);
+    } else {
+      setOrderResult(result.error || "Order failed. Try again.");
+    }
+    setOrdering(false);
   };
 
   if (loading) {
@@ -313,23 +373,120 @@ export default function PhotoBookPage() {
         </div>
       </div>
 
+      {/* Export progress / order result */}
+      {(exportProgress || orderResult) && (
+        <div className="px-4 pt-2">
+          <p className="text-[13px] text-center py-2 rounded-xl font-medium"
+            style={{ backgroundColor: "rgba(255,255,255,0.1)", color: orderResult?.includes("failed") ? "#FF3B30" : "#34C759" }}>
+            {exportProgress || orderResult}
+          </p>
+        </div>
+      )}
+
       {/* Bottom actions */}
       <div className="px-4 pt-2 flex gap-2">
         <button
           onClick={handleExportPDF}
+          disabled={exporting}
           className="flex-1 py-3.5 rounded-2xl text-[15px] font-semibold active:opacity-70"
           style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "white" }}
         >
-          Export PDF
+          {exporting ? "Exporting…" : "Export PDF"}
         </button>
         <button
           className="flex-1 py-3.5 rounded-2xl text-[15px] font-bold active:opacity-70"
           style={{ backgroundColor: TEMPLATES[book.template].accent, color: "white" }}
-          onClick={() => alert("Print ordering coming soon! Save your draft for now.")}
+          onClick={() => setShowShipping(true)}
         >
           Order Print
         </button>
       </div>
+
+      {/* Hidden full-render container for PDF export */}
+      <div ref={pagesRef} className="fixed left-[-9999px] top-0" style={{ width: 850 }}>
+        {book.pages.map(p => (
+          <div key={p.id} data-book-page style={{ width: 850, marginBottom: 0 }}>
+            <PageRenderer page={p} template={book.template} />
+          </div>
+        ))}
+      </div>
+
+      {/* Shipping modal */}
+      {showShipping && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowShipping(false); }}>
+          <div className="w-full max-w-lg rounded-t-3xl px-6 pt-6 pb-8 safe-bottom"
+            style={{ backgroundColor: "var(--td-card, #fff)" }}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[20px] font-bold" style={{ color: "var(--td-label, #000)" }}>Shipping Address</h3>
+              <button onClick={() => setShowShipping(false)} className="text-[15px]" style={{ color: "var(--td-secondary)" }}>Cancel</button>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {([
+                { key: "name", label: "Full name", placeholder: "John Smith" },
+                { key: "street1", label: "Street address", placeholder: "123 Main St" },
+                { key: "street2", label: "Apt / Suite (optional)", placeholder: "Apt 4B" },
+                { key: "city", label: "City", placeholder: "New York" },
+                { key: "state", label: "State / Province", placeholder: "NY" },
+                { key: "postalCode", label: "Postal code", placeholder: "10001" },
+              ] as const).map(({ key, label, placeholder }) => (
+                <div key={key}>
+                  <label className="text-[11px] block mb-1 px-1 font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--td-secondary, #888)" }}>{label}</label>
+                  <input
+                    type="text"
+                    value={shipping[key] || ""}
+                    onChange={e => setShipping(prev => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full px-4 py-3 rounded-xl text-[15px] bg-transparent focus:outline-none"
+                    style={{ color: "var(--td-label, #000)", border: "1.5px solid var(--td-separator, #ccc)" }}
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label className="text-[11px] block mb-1 px-1 font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--td-secondary, #888)" }}>Country</label>
+                <select
+                  value={shipping.country}
+                  onChange={e => setShipping(prev => ({ ...prev, country: e.target.value }))}
+                  className="w-full px-4 py-3 rounded-xl text-[15px] bg-transparent focus:outline-none"
+                  style={{ color: "var(--td-label, #000)", border: "1.5px solid var(--td-separator, #ccc)" }}
+                >
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="GB">United Kingdom</option>
+                  <option value="AU">Australia</option>
+                  <option value="DE">Germany</option>
+                  <option value="FR">France</option>
+                  <option value="IT">Italy</option>
+                  <option value="ES">Spain</option>
+                  <option value="JP">Japan</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                onClick={handleOrder}
+                disabled={ordering || !shipping.name || !shipping.street1 || !shipping.city || !shipping.postalCode}
+                className="w-full py-4 rounded-2xl text-[17px] font-bold active:scale-[0.98] transition-transform"
+                style={{
+                  backgroundColor: shipping.name && shipping.street1 ? TEMPLATES[book.template].accent : "var(--td-fill, #e5e5ea)",
+                  color: shipping.name && shipping.street1 ? "white" : "var(--td-secondary, #888)",
+                }}
+              >
+                {ordering ? "Placing order…" : "Place Order"}
+              </button>
+              <p className="text-[11px] text-center" style={{ color: "var(--td-secondary, #888)" }}>
+                Hardcover photo book · {book.pages.length} pages · Ships in 5-10 business days
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
