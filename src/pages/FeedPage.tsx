@@ -58,7 +58,7 @@ export default function FeedPage() {
       <div className="sticky top-0 z-10 px-4 safe-top pt-3 pb-3"
         style={{ backgroundColor: "var(--td-nav-bg, var(--td-bg))", borderBottom: "1px solid var(--td-separator)" }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/")} className="text-[17px] active:opacity-70" style={{ color: "var(--td-accent)" }}>
+          <button onClick={() => navigate("/home")} className="text-[17px] active:opacity-70" style={{ color: "var(--td-accent)" }}>
             ‹ Home
           </button>
           <h1 className="text-[17px] font-semibold flex-1 text-center" style={{ color: "var(--td-label)" }}>

@@ -183,7 +183,7 @@ export default function IntakePage() {
       <div className="px-4 safe-top pt-3 pb-2 flex items-center justify-between"
         style={{ backgroundColor: "var(--td-bg)" }}>
         <button
-          onClick={() => step > 1 ? setStep(s => s - 1) : navigate("/")}
+          onClick={() => step > 1 ? setStep(s => s - 1) : navigate("/home")}
           className="text-[17px]"
           style={{ color: "var(--td-accent)" }}
         >

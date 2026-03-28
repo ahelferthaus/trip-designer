@@ -70,7 +70,7 @@ export default function OnboardingPage() {
 
     await refreshProfile();
     setSaving(false);
-    navigate("/");
+    navigate("/home");
   };
 
   return (
@@ -200,7 +200,7 @@ export default function OnboardingPage() {
         </button>
 
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
           className="w-full py-3 mt-2 text-[15px] active:opacity-70"
           style={{ color: "var(--td-secondary, #8e8e93)" }}
         >

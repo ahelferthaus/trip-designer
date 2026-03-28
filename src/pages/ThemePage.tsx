@@ -11,7 +11,7 @@ export default function ThemePage() {
       <div className="px-4 safe-top pt-3 pb-2 flex items-center justify-between"
         style={{ backgroundColor: "var(--td-nav-bg)" }}>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
           className="text-[17px] font-medium"
           style={{ color: "var(--td-accent-text)" }}
         >

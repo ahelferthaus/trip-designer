@@ -661,7 +661,7 @@ export default function ItineraryPage() {
           </button>
 
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
             className="w-full py-3 text-[17px] active:opacity-70"
             style={{ color: "var(--td-secondary)" }}
           >
@@ -786,7 +786,7 @@ export default function ItineraryPage() {
         <div className="absolute top-0 left-0 right-0 z-10 safe-top">
           <div className="flex items-center justify-between px-4 pt-3">
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
               className="w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
               style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
             >
@@ -1273,7 +1273,7 @@ export default function ItineraryPage() {
               </button>
             </>
           )}
-          <button onClick={() => navigate("/")} className="text-[15px]"
+          <button onClick={() => navigate("/home")} className="text-[15px]"
             style={{ color: "var(--td-accent)" }}>
             Plan another trip
           </button>

@@ -75,7 +75,7 @@ export default function SeedTripsPage() {
   return (
     <div className="min-h-screen flex flex-col pb-20" style={{ backgroundColor: "var(--td-bg)" }}>
       <div className="px-4 pt-4 pb-2 safe-top flex items-center gap-3">
-        <button onClick={() => navigate("/")} className="text-[17px]" style={{ color: "var(--td-accent)" }}>‹ Home</button>
+        <button onClick={() => navigate("/home")} className="text-[17px]" style={{ color: "var(--td-accent)" }}>‹ Home</button>
         <h1 className="text-[17px] font-semibold" style={{ color: "var(--td-label)" }}>Seed Trips (Admin)</h1>
       </div>
 

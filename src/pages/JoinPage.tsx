@@ -121,7 +121,7 @@ export default function JoinPage() {
               {fetchError}
             </h2>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
               className="w-full py-4 rounded-2xl text-[17px] font-semibold mt-6 active:opacity-70"
               style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
             >
@@ -179,7 +179,7 @@ export default function JoinPage() {
             </button>
 
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/home")}
               className="w-full py-3 text-[17px] active:opacity-70"
               style={{ color: "var(--td-secondary)" }}
             >

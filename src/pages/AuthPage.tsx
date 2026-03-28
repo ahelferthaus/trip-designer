@@ -38,7 +38,7 @@ export default function AuthPage() {
         if (user) {
           await migrateLocalTripsToCloud(user.id);
         }
-        navigate("/");
+        navigate("/home");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
@@ -74,7 +74,7 @@ export default function AuthPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ backgroundColor: "var(--td-bg)" }}>
       <div className="w-full max-w-sm">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
           className="text-[17px] mb-6"
           style={{ color: "var(--td-accent)" }}
         >

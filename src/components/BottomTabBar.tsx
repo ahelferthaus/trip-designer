@@ -11,7 +11,7 @@ interface TabItem {
 }
 
 const TABS: TabItem[] = [
-  { id: "home", label: "Home", icon: "🏠", activeIcon: "🏠", path: "/" },
+  { id: "home", label: "Home", icon: "🏠", activeIcon: "🏠", path: "/home" },
   { id: "explore", label: "Explore", icon: "🔍", activeIcon: "🔍", path: "/explore" },
   { id: "plan", label: "Plan", icon: "➕", activeIcon: "➕", path: "/intake" },
   { id: "feed", label: "Feed", icon: "🔔", activeIcon: "🔔", path: "/feed", requiresAuth: true },
@@ -24,8 +24,8 @@ export default function BottomTabBar() {
   const { user, profile } = useAuth();
 
   const isActive = (path: string) => {
-    if (path === "/") {
-      return location.pathname === "/";
+    if (path === "/home") {
+      return location.pathname === "/home";
     }
     if (path === "/profile") {
       return location.pathname.startsWith("/profile");
@@ -47,6 +47,8 @@ export default function BottomTabBar() {
 
   // Don't show tab bar on intake flow or auth pages
   const hiddenPaths = ["/intake", "/auth", "/join/", "/onboarding", "/book/", "/postcard", "/movie"];
+  // Also hide on landing page (/)
+  if (location.pathname === "/") return null;
   const shouldHide = hiddenPaths.some(path => 
     location.pathname === path || location.pathname.startsWith(path)
   );

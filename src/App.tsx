@@ -4,6 +4,7 @@ import { ItineraryStoreProvider } from "./store/itineraryStore";
 import { ThemeProvider } from "./store/themeStore";
 import { AuthProvider } from "./store/authStore";
 import HomePage from "./pages/HomePage";
+import LandingPage from "./pages/LandingPage";
 import IntakePage from "./pages/IntakePage";
 import ItineraryPage from "./pages/ItineraryPage";
 import JoinPage from "./pages/JoinPage";
@@ -31,7 +32,8 @@ export default function App() {
           <ItineraryStoreProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<HomePage />} />
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/home" element={<HomePage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/intake" element={<IntakePage />} />
                 <Route path="/itinerary" element={<ItineraryPage />} />
