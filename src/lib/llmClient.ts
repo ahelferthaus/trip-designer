@@ -91,8 +91,11 @@ async function callGemini(messages: LLMMessage[], key: string): Promise<string> 
   return data.candidates[0].content.parts[0].text;
 }
 
-// Client-side fallback chain
+// Client-side fallback chain (local dev only — disabled in production to prevent key exposure)
 async function callClientSideLLM(messages: LLMMessage[]): Promise<string> {
+  if (import.meta.env.PROD) {
+    throw new Error("Client-side LLM disabled in production. Check Vercel environment variables for API keys.");
+  }
   const config = getConfig();
   const errors: string[] = [];
 

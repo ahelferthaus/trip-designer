@@ -1,15 +1,5 @@
 @import "tailwindcss";
 
-/* Ensure leaflet popups render above other content */
-.leaflet-container {
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-  z-index: 0;
-}
-.leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-}
-
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   --color-ios-blue: #007AFF;
@@ -110,6 +100,11 @@ html::before {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Apple HIG: minimum 44×44pt touch targets */
+button, a, [role="button"], input[type="submit"], input[type="button"] {
+  min-height: 44px;
+}
+
 /* Safe area padding for notch / Dynamic Island / home indicator */
 .safe-top    { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
@@ -164,9 +159,17 @@ html::before {
 @keyframes tick-in { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .tick-in { animation: tick-in 0.3s ease-out; }
 
-/* Skeleton loading */
-@keyframes skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.skeleton { animation: skeleton-pulse 1.5s ease-in-out infinite; }
+/* Skeleton loading shimmer */
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--td-fill, #E5E5EA) 25%, var(--td-separator, #C6C6C8) 50%, var(--td-fill, #E5E5EA) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
 
 /* Toast slide-in */
 @keyframes toast-slide-in { from { transform: translateX(-50%) translateY(100%); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
@@ -251,3 +254,25 @@ html::before {
 .mapboxgl-ctrl-group button { width: 36px !important; height: 36px !important; }
 .trip-hero-marker { transition: transform 0.15s ease-out; }
 .trip-hero-marker:hover { transform: scale(1.15); }
+
+/* === ACCESSIBILITY: Respect user motion preferences === */
+@media (prefers-reduced-motion: reduce) {
+  .shooting-star, .star, .comet,
+  .breathe, .gradient-animate, .pulse-glow,
+  .animate-ripple, .animate-float, .animate-float-slow,
+  .animate-confetti-fall, .animate-shimmer,
+  .animate-modal-in, .animate-reveal,
+  .animate-pulse-glow, .animate-bounce-in,
+  .animate-shake, .animate-slide-up,
+  .animate-fade-scale-in, .skeleton,
+  .stagger-children > * {
+    animation: none !important;
+  }
+
+  .reveal, .card-hover, .btn-spring,
+  .tilt-hover, .press-feedback, .lift-hover,
+  .trip-hero-marker, .page-enter {
+    animation: none !important;
+    transition: none !important;
+  }
+}

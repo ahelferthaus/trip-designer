@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { getFeed } from "../lib/social";
+import { FeedItemSkeleton } from "../components/Skeletons";
 import type { FeedItem } from "../lib/social";
 import UserAvatar from "../components/UserAvatar";
 import { useReveal } from "../lib/useReveal";
@@ -85,11 +86,8 @@ export default function FeedPage() {
             </button>
           </div>
         ) : loading ? (
-          <div className="flex items-center justify-center pt-16">
-            <svg className="animate-spin w-7 h-7" fill="none" viewBox="0 0 24 24" style={{ color: "var(--td-accent)" }}>
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
+          <div>
+            {[1, 2, 3, 4, 5].map(i => <FeedItemSkeleton key={i} />)}
           </div>
         ) : feed.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-20 text-center">

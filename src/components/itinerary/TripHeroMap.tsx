@@ -5,6 +5,7 @@ import type { GeneratedItinerary } from "../../lib/generateItinerary";
 import type { IntakeFormData } from "../../lib/types";
 import UserAvatar from "../UserAvatar";
 import type { UserProfile } from "../../lib/types";
+import { mapboxGeocode } from "../../lib/mapboxGeocode";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
@@ -27,17 +28,6 @@ interface TripHeroMapProps {
   form: IntakeFormData;
   profile?: UserProfile | null;
   userName?: string;
-}
-
-async function geocode(query: string, proximity?: [number, number]): Promise<[number, number] | null> {
-  if (!MAPBOX_TOKEN) return null;
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=1${proximity ? `&proximity=${proximity[0]},${proximity[1]}` : ""}`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.features?.length > 0) return data.features[0].center as [number, number];
-  } catch { /* skip */ }
-  return null;
 }
 
 export default function TripHeroMap({ itinerary, form, profile, userName }: TripHeroMapProps) {
@@ -77,11 +67,11 @@ export default function TripHeroMap({ itinerary, form, profile, userName }: Trip
     if (!MAPBOX_TOKEN) return;
     let cancelled = false;
     (async () => {
-      const destCoords = await geocode(destination);
+      const destCoords = await mapboxGeocode(destination);
       const results: GeoPoint[] = [];
       for (const act of activities) {
         if (cancelled) return;
-        const coords = await geocode(`${act.location}, ${destination}`, destCoords ?? undefined);
+        const coords = await mapboxGeocode(`${act.location}, ${destination}`, destCoords ?? undefined);
         if (coords) results.push({ lng: coords[0], lat: coords[1], ...act });
       }
       if (!cancelled) setPoints(results);

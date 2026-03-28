@@ -1,0 +1,22 @@
+{
+  "name": "VYBR Travel",
+  "short_name": "VYBR",
+  "description": "AI-powered travel companion — plan, share, relive",
+  "start_url": "/home",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B1D33",
+  "theme_color": "#0B1D33",
+  "icons": [
+    {
+      "src": "/vybr-icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/vybr-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

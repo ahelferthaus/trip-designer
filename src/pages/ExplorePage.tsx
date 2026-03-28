@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { searchPublicTrips } from "../lib/publicTrips";
+import { ExploreGridSkeleton } from "../components/Skeletons";
 import type { PublicTrip } from "../lib/publicTrips";
 import type { BudgetLevel } from "../lib/types";
 import { useReveal } from "../lib/useReveal";
@@ -212,12 +213,7 @@ export default function ExplorePage() {
       {/* Results */}
       <div className="flex-1 px-4 pt-4 pb-8">
         {loading ? (
-          <div className="flex items-center justify-center pt-16">
-            <svg className="animate-spin w-7 h-7" fill="none" viewBox="0 0 24 24" style={{ color: "var(--td-accent)" }}>
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          </div>
+          <ExploreGridSkeleton />
         ) : trips.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-16 text-center">
             <div className="text-5xl mb-4">🌍</div>

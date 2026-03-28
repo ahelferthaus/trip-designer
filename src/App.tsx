@@ -27,6 +27,7 @@ import AppHeader from "./components/AppHeader";
 import { useEffect } from "react";
 import { getSpaceBackground, preloadSpaceBackground } from "./lib/spaceBackgrounds";
 import SpaceEffects from "./components/SpaceEffects";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function SpaceBackgroundSetter() {
   useEffect(() => {
@@ -47,27 +48,29 @@ export default function App() {
               <SpaceBackgroundSetter />
               <SpaceEffects />
               <AppHeader />
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/home" element={<HomePage />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/intake" element={<IntakePage />} />
-                <Route path="/itinerary" element={<ItineraryPage />} />
-                <Route path="/join/:inviteCode" element={<JoinPage />} />
-                <Route path="/theme" element={<ThemePage />} />
-                <Route path="/trips" element={<TripsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/explore" element={<ExplorePage />} />
-                <Route path="/trip/:tripId" element={<TripDetailPage />} />
-                <Route path="/feed" element={<FeedPage />} />
-                <Route path="/onboarding" element={<OnboardingPage />} />
-                <Route path="/book/:tripId" element={<PhotoBookPage />} />
-                <Route path="/postcard" element={<PostcardPage />} />
-                <Route path="/movie" element={<TripMoviePage />} />
-                <Route path="/admin/seed" element={<SeedTripsPage />} />
-                <Route path="/admin/api-test" element={<ApiTestPage />} />
-                <Route path="/profile/:userId" element={<ProfilePage />} />
-              </Routes>
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<ErrorBoundary><LandingPage /></ErrorBoundary>} />
+                  <Route path="/home" element={<ErrorBoundary><HomePage /></ErrorBoundary>} />
+                  <Route path="/auth" element={<ErrorBoundary><AuthPage /></ErrorBoundary>} />
+                  <Route path="/intake" element={<ErrorBoundary><IntakePage /></ErrorBoundary>} />
+                  <Route path="/itinerary" element={<ErrorBoundary><ItineraryPage /></ErrorBoundary>} />
+                  <Route path="/join/:inviteCode" element={<ErrorBoundary><JoinPage /></ErrorBoundary>} />
+                  <Route path="/theme" element={<ErrorBoundary><ThemePage /></ErrorBoundary>} />
+                  <Route path="/trips" element={<ErrorBoundary><TripsPage /></ErrorBoundary>} />
+                  <Route path="/settings" element={<ErrorBoundary><SettingsPage /></ErrorBoundary>} />
+                  <Route path="/explore" element={<ErrorBoundary><ExplorePage /></ErrorBoundary>} />
+                  <Route path="/trip/:tripId" element={<ErrorBoundary><TripDetailPage /></ErrorBoundary>} />
+                  <Route path="/feed" element={<ErrorBoundary><FeedPage /></ErrorBoundary>} />
+                  <Route path="/onboarding" element={<ErrorBoundary><OnboardingPage /></ErrorBoundary>} />
+                  <Route path="/book/:tripId" element={<ErrorBoundary><PhotoBookPage /></ErrorBoundary>} />
+                  <Route path="/postcard" element={<ErrorBoundary><PostcardPage /></ErrorBoundary>} />
+                  <Route path="/movie" element={<ErrorBoundary><TripMoviePage /></ErrorBoundary>} />
+                  <Route path="/admin/seed" element={<ErrorBoundary><SeedTripsPage /></ErrorBoundary>} />
+                  <Route path="/admin/api-test" element={<ErrorBoundary><ApiTestPage /></ErrorBoundary>} />
+                  <Route path="/profile/:userId" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
+                </Routes>
+              </ErrorBoundary>
               <BottomTabBar />
             </BrowserRouter>
           </ItineraryStoreProvider>

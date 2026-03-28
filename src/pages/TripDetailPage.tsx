@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { useItineraryStore } from "../store/itineraryStore";
+import { TripDetailSkeleton } from "../components/Skeletons";
 import { useTripStore } from "../store/tripStore";
 import { getPublicTrip, cloneTrip, getReviews, submitReview } from "../lib/publicTrips";
 import { updateTripCloudData, saveTrip } from "../lib/tripStorage";
@@ -111,14 +112,7 @@ export default function TripDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--td-bg)" }}>
-        <svg className="animate-spin w-8 h-8" fill="none" viewBox="0 0 24 24" style={{ color: "var(--td-accent)" }}>
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-        </svg>
-      </div>
-    );
+    return <TripDetailSkeleton />;
   }
 
   if (!trip) {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { GeneratedItinerary } from "../../lib/generateItinerary";
+import { mapboxGeocode } from "../../lib/mapboxGeocode";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 
@@ -28,21 +29,6 @@ interface GeocodedPoint {
   activity: MapActivity;
   lng: number;
   lat: number;
-}
-
-// Mapbox geocoding (free tier: 100k/month)
-async function geocodeLocation(query: string, proximity?: [number, number]): Promise<[number, number] | null> {
-  if (!MAPBOX_TOKEN) return null;
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&limit=1${proximity ? `&proximity=${proximity[0]},${proximity[1]}` : ""}`;
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.features?.length > 0) {
-      const [lng, lat] = data.features[0].center;
-      return [lng, lat];
-    }
-  } catch { /* skip */ }
-  return null;
 }
 
 export default function ItineraryMap({ itinerary, destination }: ItineraryMapProps) {
@@ -82,13 +68,13 @@ export default function ItineraryMap({ itinerary, destination }: ItineraryMapPro
     let cancelled = false;
     (async () => {
       // First geocode the destination for proximity bias
-      const destCoords = await geocodeLocation(destination || itinerary.title);
+      const destCoords = await mapboxGeocode(destination || itinerary.title);
       const results: GeocodedPoint[] = [];
 
       for (const act of activities) {
         if (cancelled) return;
         const query = `${act.location}, ${destination || ""}`;
-        const coords = await geocodeLocation(query, destCoords ?? undefined);
+        const coords = await mapboxGeocode(query, destCoords ?? undefined);
         if (coords) {
           results.push({ activity: act, lng: coords[0], lat: coords[1] });
         }

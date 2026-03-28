@@ -56,14 +56,15 @@ export default function BottomTabBar() {
   if (shouldHide) return null;
 
   return (
-    <div 
-      className="fixed bottom-0 left-0 right-0 z-50 safe-bottom"
-      style={{ 
+    <div
+      className="fixed bottom-0 left-0 right-0 z-50"
+      style={{
         backgroundColor: "var(--td-nav-bg, var(--td-card))",
-        borderTop: "1px solid var(--td-separator)"
+        borderTop: "1px solid var(--td-separator)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
     >
-      <div className="flex items-center justify-around px-2 pb-safe">
+      <div className="flex items-center justify-around px-2">
         {TABS.map((tab) => {
           const active = isActive(tab.path);
           const isPlan = tab.id === "plan";
