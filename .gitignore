@@ -25,3 +25,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Reference images
+*.png
+!src/assets/*.png
+
+# Kimi generated files (already integrated)
+vybr-src/
+
+# Old strategy docs
+STRATEGY_DOCUMENT.md
+IMPLEMENTATION_SUMMARY.md
+GITHUB_PUSH_INSTRUCTIONS.md
+CLAUDE_TASK.md
+
+# Supabase local
+supabase/.temp/

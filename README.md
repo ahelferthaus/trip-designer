@@ -2,6 +2,8 @@
 
 AI-powered travel companion. Plan trips, vote with your group, capture photos, create movies, send postcards, and order photo books.
 
+**Live at [vybrtravel.com](https://vybrtravel.com)**
+
 ---
 
 ## Features
@@ -32,7 +34,7 @@ AI-powered travel companion. Plan trips, vote with your group, capture photos, c
 - **Per-activity photos** — One photo per person per slot, camera or gallery upload
 - **Trip movie generator** — Auto-creates 9:16 vertical video from photos + itinerary with Ken Burns effect, shareable via Web Share API
 - **Photo book creator** — Auto-generates 20+ page book, 2 premium templates, thumbnail editor, PDF export, Lulu print ordering
-- **Postcards** — 3 templates (Minimal, Vintage, Family), send via email/SMS/physical mail (Lob API)
+- **Postcards** — 3 templates (Minimal, Vintage, Family), send via email/SMS/physical mail (Thanks.io API)
 
 ### Experience
 - **Satellite hero map** — Cinematic trip overview with route visualization
@@ -42,6 +44,13 @@ AI-powered travel companion. Plan trips, vote with your group, capture photos, c
 - **10 Wes Anderson themes** — Color palettes from Grand Budapest to Bottle Rocket
 - **Gamification** — Opt-in XP, badges, streaks, daily rewards (Settings toggle)
 - **Most Memorable Moment** — Each person shares their highlight
+- **Marketing landing page** — Dark hero at `/`, app at `/home`
+- **College tour trips** — Campus visits with nearby college comparisons
+- **Travel themes** — 13 themes (soccer, skiing, food & wine, college tour, etc.)
+- **Autofill search** — Typeahead suggestions on the Explore page
+- **Category filters** — 12 filter pills (Weekends, Family, Soccer, Skiing, etc.)
+- **52+ seed trips** — Pre-loaded itineraries across 7 categories
+- **API key tester** — `/admin/api-test` validates all connected services
 
 ---
 
@@ -55,9 +64,10 @@ AI-powered travel companion. Plan trips, vote with your group, capture photos, c
 | Maps | Mapbox GL (primary), Google Maps Embed (fallback) |
 | Video | Canvas API + MediaRecorder (browser-native) |
 | PDF | jsPDF + html2canvas |
-| Print | Lulu API (photo books), Lob API (postcards) |
+| Print | Lulu API (photo books), Thanks.io API (postcards) |
 | State | React Context + Zustand (gamification) |
-| Hosting | Vercel (serverless API routes) |
+| Hosting | Vercel + Cloudflare (CDN, WAF, SSL) |
+| Domain | [vybrtravel.com](https://vybrtravel.com) |
 
 ---
 
@@ -86,7 +96,7 @@ VITE_MAPBOX_TOKEN=pk.eyJ1...
 
 # Optional: Print providers
 VITE_LULU_API_KEY=...
-VITE_LOB_API_KEY=...
+VITE_THANKS_IO_API_KEY=...
 ```
 
 ### Database Setup
