@@ -53,6 +53,7 @@ export async function unpublishTrip(tripId: string): Promise<void> {
 
 export async function searchPublicTrips(opts: {
   query?: string;
+  tag?: string;
   budgetLevel?: string;
   vibes?: string[];
   minDays?: number;
@@ -71,6 +72,11 @@ export async function searchPublicTrips(opts: {
 
   if (opts.query) {
     q = q.textSearch("search_vector", opts.query, { type: "websearch" });
+  }
+
+  // Tag-based filter (for category pills)
+  if (opts.tag) {
+    q = q.contains("tags", [opts.tag]);
   }
 
   if (opts.budgetLevel) {

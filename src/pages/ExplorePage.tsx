@@ -69,24 +69,16 @@ export default function ExplorePage() {
   const doSearch = async () => {
     setLoading(true);
     setShowSuggestions(false);
-    // Build search query — combine text query with category tag
-    const searchQuery = category !== "all"
-      ? (query.trim() ? `${query.trim()} ${category}` : category)
-      : query.trim() || undefined;
 
     const results = await searchPublicTrips({
-      query: searchQuery,
+      query: query.trim() || undefined,
+      tag: category !== "all" ? category : undefined,
       budgetLevel: budget || undefined,
       sortBy,
       limit: 40,
     });
 
-    // Client-side tag filter for category (server search may not be exact)
-    const filtered = category !== "all"
-      ? results.filter(t => t.tags?.includes(category))
-      : results;
-
-    setTrips(filtered.length > 0 ? filtered : results);
+    setTrips(results);
     setLoading(false);
     setSearched(true);
   };
