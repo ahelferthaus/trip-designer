@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { getProfile, upsertProfile } from "../lib/userProfile";
+import { loadGamificationFromCloud, saveGamificationToCloud } from "../lib/gamificationSync";
 import type { UserProfile } from "../lib/types";
 
 interface AuthContextType {
@@ -63,8 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     if (!supabase) throw new Error("Supabase not configured");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    // Sync gamification from cloud on login
+    if (data.user) loadGamificationFromCloud(data.user.id);
   };
 
   const signUp = async (email: string, password: string) => {
@@ -77,6 +80,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     if (!supabase) return;
+    // Save gamification to cloud before signing out
+    if (user) await saveGamificationToCloud(user.id);
     await supabase.auth.signOut();
   };
 

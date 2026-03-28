@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, createElement } from "react";
 import type { ReactNode } from "react";
-import type { IntakeFormData, BudgetLevel, TripVibe, GroupMember, Location, Currency } from "../lib/types";
+import type { IntakeFormData, BudgetLevel, TripVibe, GroupMember, Location, Currency, TransportMode } from "../lib/types";
 
 const defaultForm: IntakeFormData = {
   destination: null,
@@ -24,6 +24,7 @@ interface TripStoreContextType {
   setGroupMembers: (members: GroupMember[]) => void;
   setBudget: (level: BudgetLevel, amount?: number, currency?: Currency, perPerson?: boolean) => void;
   setVibes: (vibes: TripVibe[]) => void;
+  setTransportMode: (mode: TransportMode) => void;
   setNotes: (must_haves: string, avoid: string, dietary?: string, mobility?: string) => void;
   resetForm: () => void;
   loadForm: (form: IntakeFormData) => void;
@@ -40,13 +41,14 @@ export function TripStoreProvider({ children }: { children: ReactNode }) {
   const setBudget = (level: BudgetLevel, amount?: number, currency?: Currency, perPerson?: boolean) =>
     setFormState(f => ({ ...f, budget_level: level, budget_amount: amount, budget_currency: currency ?? f.budget_currency, budget_per_person: perPerson ?? f.budget_per_person }));
   const setVibes = (vibes: TripVibe[]) => setFormState(f => ({ ...f, vibes }));
+  const setTransportMode = (mode: TransportMode) => setFormState(f => ({ ...f, transport_mode: mode }));
   const setNotes = (must_haves: string, avoid: string, dietary?: string, mobility?: string) =>
     setFormState(f => ({ ...f, must_haves, avoid, dietary: dietary ?? f.dietary, mobility: mobility ?? f.mobility }));
   const resetForm = () => setFormState(defaultForm);
   const loadForm = (f: IntakeFormData) => setFormState(f);
 
   return createElement(TripStoreContext.Provider, {
-    value: { form, setDestination, setDates, setGroupMembers, setBudget, setVibes, setNotes, resetForm, loadForm },
+    value: { form, setDestination, setDates, setGroupMembers, setBudget, setVibes, setTransportMode, setNotes, resetForm, loadForm },
     children,
   });
 }

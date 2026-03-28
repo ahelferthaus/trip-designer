@@ -8,8 +8,9 @@ import { isSupabaseConfigured, saveCloudTrip } from "../lib/supabaseTrips";
 import { updateTripCloudData } from "../lib/tripStorage";
 import CalendarPicker from "../components/intake/CalendarPicker";
 import GroupPresetPicker from "../components/intake/GroupPresetPicker";
-import type { BudgetLevel, TripVibe, GroupMember, Currency } from "../lib/types";
+import type { BudgetLevel, TripVibe, GroupMember, Currency, TransportMode } from "../lib/types";
 import { useGamification } from "../store/gamificationStore";
+import { getDNADefaults, buildTravelDNA } from "../lib/travelDNA";
 
 const CURRENCIES: { id: Currency; label: string; symbol: string }[] = [
   { id: "USD", label: "USD", symbol: "$" },
@@ -20,7 +21,15 @@ const CURRENCIES: { id: Currency; label: string; symbol: string }[] = [
   { id: "AUD", label: "AUD", symbol: "A$" },
 ];
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 8;
+
+const TRANSPORT_MODES: { id: TransportMode; label: string; emoji: string; desc: string }[] = [
+  { id: "flight", label: "Flying", emoji: "✈️", desc: "Flights between cities" },
+  { id: "train", label: "Train", emoji: "🚆", desc: "Rail connections between stops" },
+  { id: "car", label: "Driving", emoji: "🚗", desc: "Road trip / rental car" },
+  { id: "bus", label: "Bus", emoji: "🚌", desc: "Bus or coach travel" },
+  { id: "mixed", label: "Mix it up", emoji: "🔀", desc: "Whatever works best per leg" },
+];
 
 const VIBES: { id: TripVibe; label: string; emoji: string }[] = [
   { id: "relaxed", label: "Relaxed", emoji: "🏖️" },
@@ -43,6 +52,7 @@ const STEP_TITLES = [
   "Where to?",
   "When?",
   "Who's coming?",
+  "Getting around?",
   "Budget",
   "Vibe",
   "Anything else?",
@@ -66,6 +76,19 @@ export default function IntakePage() {
   const [step, setStep] = useState(1);
   const [destinationText, setDestinationText] = useState(form.destination?.name ?? "");
   const [members, setMembers] = useState<GroupMember[]>(form.group_members);
+  const [dnaApplied, setDnaApplied] = useState(false);
+  const travelDNA = buildTravelDNA();
+
+  // Pre-fill from Travel DNA on first mount (if user has 3+ trips)
+  if (!dnaApplied && travelDNA) {
+    const defaults = getDNADefaults();
+    if (defaults) {
+      if (defaults.vibes && form.vibes.length === 0) store.setVibes(defaults.vibes);
+      if (defaults.budget_level && !form.budget_level) store.setBudget(defaults.budget_level);
+      if (defaults.transport_mode && !form.transport_mode) store.setTransportMode(defaults.transport_mode);
+    }
+    setDnaApplied(true);
+  }
 
   const days = daysBetween(form.start_date, form.end_date);
 
@@ -73,8 +96,9 @@ export default function IntakePage() {
     if (step === 1) return destinationText.trim().length > 0;
     if (step === 2) return !!form.start_date && !!form.end_date && days > 0;
     if (step === 3) return members.length > 0;
-    if (step === 4) return !!form.budget_level;
-    if (step === 5) return form.vibes.length > 0;
+    if (step === 4) return !!form.transport_mode;
+    if (step === 5) return !!form.budget_level;
+    if (step === 6) return form.vibes.length > 0;
     return true;
   };
 
@@ -316,8 +340,31 @@ export default function IntakePage() {
           </div>
         )}
 
-        {/* Step 4: Budget */}
+        {/* Step 4: Transport Mode */}
         {step === 4 && (
+          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
+            {TRANSPORT_MODES.map((t, i) => (
+              <button
+                key={t.id}
+                onClick={() => store.setTransportMode(t.id)}
+                className="w-full flex items-center gap-4 px-4 py-4 transition-colors active:opacity-70"
+                style={{ borderBottom: i < TRANSPORT_MODES.length - 1 ? "1px solid var(--td-separator)" : "none" }}
+              >
+                <span className="text-2xl w-8">{t.emoji}</span>
+                <div className="flex-1 text-left">
+                  <div className="text-[17px] font-medium" style={{ color: "var(--td-label)" }}>{t.label}</div>
+                  <div className="text-[13px]" style={{ color: "var(--td-secondary)" }}>{t.desc}</div>
+                </div>
+                {form.transport_mode === t.id && (
+                  <span className="text-xl" style={{ color: "var(--td-accent)" }}>✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Step 5: Budget */}
+        {step === 5 && (
           <div className="flex flex-col gap-3">
             <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
               {BUDGETS.map((b, i) => (
@@ -373,8 +420,8 @@ export default function IntakePage() {
           </div>
         )}
 
-        {/* Step 5: Vibe */}
-        {step === 5 && (
+        {/* Step 6: Vibe */}
+        {step === 6 && (
           <div>
             <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
               {VIBES.map((v, i) => {
@@ -400,8 +447,8 @@ export default function IntakePage() {
           </div>
         )}
 
-        {/* Step 6: Notes */}
-        {step === 6 && (
+        {/* Step 7: Notes */}
+        {step === 7 && (
           <div className="flex flex-col gap-4">
             <div>
               <p className="text-[13px] uppercase tracking-wide px-4 mb-1" style={{ color: "var(--td-secondary)" }}>
@@ -466,14 +513,15 @@ export default function IntakePage() {
           </div>
         )}
 
-        {/* Step 7: Review */}
-        {step === 7 && (
+        {/* Step 8: Review */}
+        {step === 8 && (
           <div className="flex flex-col gap-3">
             <div className="rounded-2xl shadow-sm overflow-hidden" style={{ backgroundColor: "var(--td-card)" }}>
               {[
                 { label: "Destination", value: destinationText },
                 { label: "Dates", value: `${form.start_date} — ${form.end_date} (${days} days)` },
                 { label: "Group", value: members.filter(m => m.name.trim()).map(m => m.name).join(", ") || "—" },
+                { label: "Transport", value: TRANSPORT_MODES.find(t => t.id === form.transport_mode)?.label || "—" },
                 { label: "Budget", value: [
                   BUDGETS.find(b => b.id === form.budget_level)?.label,
                   form.budget_amount ? `${form.budget_currency ?? "USD"} ${form.budget_amount.toLocaleString()}` : null,

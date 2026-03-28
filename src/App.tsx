@@ -22,6 +22,7 @@ import TripMoviePage from "./pages/TripMoviePage";
 import SeedTripsPage from "./pages/SeedTripsPage";
 import ApiTestPage from "./pages/ApiTestPage";
 import ProfilePage from "./pages/ProfilePage";
+import UnpackedPage from "./pages/UnpackedPage";
 import BottomTabBar from "./components/BottomTabBar";
 import AppHeader from "./components/AppHeader";
 import { useEffect } from "react";
@@ -69,6 +70,7 @@ export default function App() {
                   <Route path="/admin/seed" element={<ErrorBoundary><SeedTripsPage /></ErrorBoundary>} />
                   <Route path="/admin/api-test" element={<ErrorBoundary><ApiTestPage /></ErrorBoundary>} />
                   <Route path="/profile/:userId" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
+                  <Route path="/unpacked" element={<ErrorBoundary><UnpackedPage /></ErrorBoundary>} />
                 </Routes>
               </ErrorBoundary>
               <BottomTabBar />

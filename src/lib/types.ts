@@ -157,6 +157,8 @@ export interface TripInvitation {
   expires_at: string;
 }
 
+export type TransportMode = "flight" | "train" | "car" | "bus" | "mixed";
+
 export type TravelTheme =
   | "none"
   | "sports-soccer"
@@ -183,6 +185,7 @@ export interface IntakeFormData {
   budget_per_person?: boolean;
   vibes: TripVibe[];
   travel_theme?: TravelTheme;
+  transport_mode?: TransportMode;
   must_haves?: string;
   avoid?: string;
   dietary?: string;

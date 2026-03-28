@@ -34,11 +34,20 @@ export async function generateItinerary(form: IntakeFormData): Promise<Generated
     ? themePrompts[form.travel_theme] || ""
     : "";
 
+  const transportDesc: Record<string, string> = {
+    flight: "flying between cities",
+    train: "taking trains between stops",
+    car: "driving / rental car",
+    bus: "bus or coach between stops",
+    mixed: "using the best transport option per leg (flight, train, bus, or car)",
+  };
+
   const userPrompt = `Plan a ${days}-day trip to ${form.destination?.name}.
 
 Group: ${form.group_members.length} people (${groupDesc})
 Budget: ${form.budget_level}${form.budget_amount ? ` — ${form.budget_currency ?? "USD"} ${form.budget_amount}${form.budget_per_person ? "/person" : " total"}` : ""}
 Vibe: ${form.vibes.join(", ")}
+Transport: ${form.transport_mode ? transportDesc[form.transport_mode] : "any"}
 Dates: ${form.start_date} to ${form.end_date}
 ${themeText ? `\n${themeText}\n` : ""}${form.must_haves ? `Must: ${form.must_haves}` : ""}
 ${form.avoid ? `Avoid: ${form.avoid}` : ""}
