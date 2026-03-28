@@ -23,6 +23,7 @@ import SeedTripsPage from "./pages/SeedTripsPage";
 import ApiTestPage from "./pages/ApiTestPage";
 import ProfilePage from "./pages/ProfilePage";
 import BottomTabBar from "./components/BottomTabBar";
+import AppHeader from "./components/AppHeader";
 import { useEffect } from "react";
 import { getSpaceBackground, preloadSpaceBackground } from "./lib/spaceBackgrounds";
 import SpaceEffects from "./components/SpaceEffects";
@@ -45,6 +46,7 @@ export default function App() {
             <BrowserRouter>
               <SpaceBackgroundSetter />
               <SpaceEffects />
+              <AppHeader />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/home" element={<HomePage />} />
