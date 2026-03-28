@@ -378,7 +378,7 @@ export default function PostcardPage() {
               {sending ? "Sending…" : deliveryType === "print" ? "Send Physical Postcard" : "Send Postcard"}
             </button>
             <p className="text-[11px] text-center text-white/30">
-              {deliveryType === "print" ? "Printed & mailed via Lob · Arrives in 3-7 days" :
+              {deliveryType === "print" ? "Printed & mailed via Thanks.io · Arrives in 3-7 days" :
                deliveryType === "sms" ? "Opens your messaging app" : "Sends via email"}
             </p>
           </div>

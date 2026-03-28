@@ -125,52 +125,53 @@ async function sendSMSPostcard(postcard: Postcard): Promise<{ success: boolean; 
   return { success: true };
 }
 
-// --- Print Provider (Lob API) ---
-// Docs: https://docs.lob.com/#tag/Postcards
+// --- Print Provider (Thanks.io API) ---
+// Docs: https://docs.thanks.io
+// Dashboard: https://app.thanks.io
 
 async function sendPrintPostcard(postcard: Postcard): Promise<{ success: boolean; error?: string }> {
   if (!postcard.recipient_address) return { success: false, error: "No mailing address" };
 
-  const lobKey = import.meta.env.VITE_LOB_API_KEY as string | undefined;
-  if (!lobKey) {
-    return { success: false, error: "Print postcard not configured. Set VITE_LOB_API_KEY." };
+  const thanksKey = import.meta.env.VITE_THANKS_IO_API_KEY as string | undefined;
+  if (!thanksKey) {
+    return { success: false, error: "Print postcard not configured. Set VITE_THANKS_IO_API_KEY." };
   }
 
-  const lobBase = (import.meta.env.VITE_LOB_SANDBOX === "true")
-    ? "https://api.lob.com/v1"
-    : "https://api.lob.com/v1";
+  const apiBase = "https://api.thanks.io/api/v2";
 
   try {
     const addr = postcard.recipient_address;
-    const res = await fetch(`${lobBase}/postcards`, {
+    const res = await fetch(`${apiBase}/send/postcard`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${btoa(lobKey + ":")}`,
+        Authorization: `Bearer ${thanksKey}`,
       },
       body: JSON.stringify({
-        to: {
-          name: postcard.recipient_name,
-          address_line1: addr.street1,
-          address_line2: addr.street2 || undefined,
-          address_city: addr.city,
-          address_state: addr.state,
-          address_zip: addr.postalCode,
-          address_country: addr.country,
-        },
-        front: postcard.photo_url, // Lob accepts a URL to an image
-        back: `<html><body style="font-family:Georgia,serif;padding:40px;text-align:center"><p style="font-size:18px;line-height:1.6">${postcard.message}</p><p style="font-size:12px;color:#888;margin-top:20px">Sent with VYBR</p></body></html>`,
-        size: "4x6",
+        front_image_url: postcard.photo_url,
+        handwriting_style: 0, // 0 = printed text (not handwritten)
+        message: `${postcard.message}\n\nSent with VYBR`,
+        recipients: [
+          {
+            name: postcard.recipient_name,
+            address: addr.street1,
+            address2: addr.street2 || undefined,
+            city: addr.city,
+            state: addr.state,
+            postal_code: addr.postalCode,
+            country: addr.country,
+          },
+        ],
       }),
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: `Print failed: ${err.error?.message || res.status}` };
+      return { success: false, error: `Print failed: ${err.message || err.error || res.status}` };
     }
 
     const data = await res.json();
-    await markSent(postcard.id, "lob", data.id);
+    await markSent(postcard.id, "thanks.io", data.id || data.order_id);
     return { success: true };
   } catch (err) {
     return { success: false, error: `Print failed: ${err instanceof Error ? err.message : "Unknown"}` };
