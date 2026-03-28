@@ -19,6 +19,7 @@ import PhotoBookPage from "./pages/PhotoBookPage";
 import PostcardPage from "./pages/PostcardPage";
 import TripMoviePage from "./pages/TripMoviePage";
 import SeedTripsPage from "./pages/SeedTripsPage";
+import ApiTestPage from "./pages/ApiTestPage";
 import ProfilePage from "./pages/ProfilePage";
 import BottomTabBar from "./components/BottomTabBar";
 
@@ -46,6 +47,7 @@ export default function App() {
                 <Route path="/postcard" element={<PostcardPage />} />
                 <Route path="/movie" element={<TripMoviePage />} />
                 <Route path="/admin/seed" element={<SeedTripsPage />} />
+                <Route path="/admin/api-test" element={<ApiTestPage />} />
                 <Route path="/profile/:userId" element={<ProfilePage />} />
               </Routes>
               <BottomTabBar />
