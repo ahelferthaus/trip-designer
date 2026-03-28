@@ -12,7 +12,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#0B1D33" }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "rgba(11,29,51,0.85)" }}>
       {/* Hero */}
       <div
         className="relative flex flex-col items-center justify-center text-center px-6 pt-20 pb-16"

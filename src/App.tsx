@@ -23,6 +23,17 @@ import SeedTripsPage from "./pages/SeedTripsPage";
 import ApiTestPage from "./pages/ApiTestPage";
 import ProfilePage from "./pages/ProfilePage";
 import BottomTabBar from "./components/BottomTabBar";
+import { useEffect } from "react";
+import { getSpaceBackground, preloadSpaceBackground } from "./lib/spaceBackgrounds";
+
+function SpaceBackgroundSetter() {
+  useEffect(() => {
+    preloadSpaceBackground();
+    const url = getSpaceBackground();
+    document.documentElement.style.setProperty("--space-bg", `url('${url}')`);
+  }, []);
+  return null;
+}
 
 export default function App() {
   return (
@@ -31,6 +42,7 @@ export default function App() {
         <TripStoreProvider>
           <ItineraryStoreProvider>
             <BrowserRouter>
+              <SpaceBackgroundSetter />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/home" element={<HomePage />} />

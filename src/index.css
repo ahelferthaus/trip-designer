@@ -26,8 +26,22 @@
 html, body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-color: #F2F2F7;
+  background-color: #0B1D33;
   overscroll-behavior: none;
+}
+
+/* Space background — fixed behind all content */
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--space-bg, none);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.25;
+  pointer-events: none;
 }
 
 * {
