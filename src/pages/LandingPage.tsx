@@ -28,7 +28,7 @@ export default function LandingPage() {
 
         {/* Nav */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-6 pt-6 safe-top">
-          <span className="text-[22px] font-black text-white tracking-tight">VYBR</span>
+          <img src="/vybr-icon.png" alt="VYBR" className="h-8 w-8 rounded-lg" />
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/auth")}
@@ -48,7 +48,8 @@ export default function LandingPage() {
 
         {/* Hero content */}
         <div className="relative z-10 max-w-lg">
-          <h1 className="text-[48px] md:text-[64px] font-black text-white leading-[1.05] tracking-tight mb-4">
+          <img src="/vybr-logo.png" alt="VYBR" className="h-24 md:h-32 mx-auto mb-6" />
+          <h1 className="text-[36px] md:text-[48px] font-black text-white leading-[1.1] tracking-tight mb-4">
             Your trips,<br />beautifully planned.
           </h1>
           <p className="text-[18px] md:text-[20px] text-white/75 leading-relaxed mb-8 max-w-md mx-auto">

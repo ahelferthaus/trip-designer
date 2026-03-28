@@ -26,9 +26,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Reference images
+# Reference images (keep public/ and src/assets/)
 *.png
 !src/assets/*.png
+!public/*.png
 
 # Kimi generated files (already integrated)
 vybr-src/

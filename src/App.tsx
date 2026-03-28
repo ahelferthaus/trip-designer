@@ -25,6 +25,7 @@ import ProfilePage from "./pages/ProfilePage";
 import BottomTabBar from "./components/BottomTabBar";
 import { useEffect } from "react";
 import { getSpaceBackground, preloadSpaceBackground } from "./lib/spaceBackgrounds";
+import SpaceEffects from "./components/SpaceEffects";
 
 function SpaceBackgroundSetter() {
   useEffect(() => {
@@ -43,6 +44,7 @@ export default function App() {
           <ItineraryStoreProvider>
             <BrowserRouter>
               <SpaceBackgroundSetter />
+              <SpaceEffects />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/home" element={<HomePage />} />

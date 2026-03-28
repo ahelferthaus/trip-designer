@@ -44,6 +44,68 @@ html::before {
   pointer-events: none;
 }
 
+/* === ANIMATED SPACE EFFECTS === */
+
+/* Shooting star */
+@keyframes shooting-star {
+  0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; width: 0; }
+  30% { opacity: 1; width: 80px; }
+  100% { transform: translateX(300px) translateY(300px) rotate(-45deg); opacity: 0; width: 0; }
+}
+
+.shooting-star {
+  position: fixed;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.8), transparent);
+  border-radius: 50px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Twinkling stars */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.8; }
+}
+
+.star-field {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle var(--twinkle-duration, 3s) ease-in-out infinite;
+  animation-delay: var(--twinkle-delay, 0s);
+}
+
+/* Comet */
+@keyframes comet {
+  0% { transform: translateX(-100px) translateY(-50px) rotate(-30deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.8; }
+  100% { transform: translateX(calc(100vw + 200px)) translateY(calc(50vh)) rotate(-30deg); opacity: 0; }
+}
+
+.comet {
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(100,200,255,0.9), rgba(100,200,255,0.3), transparent);
+  border-radius: 50px;
+  filter: blur(0.5px);
+  box-shadow: 0 0 8px rgba(100,200,255,0.4);
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
