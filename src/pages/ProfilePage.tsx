@@ -154,23 +154,30 @@ export default function ProfilePage() {
             No published trips yet
           </p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {trips.map(trip => (
               <button
                 key={trip.id}
                 onClick={() => navigate(`/trip/${trip.id}`)}
-                className="rounded-2xl px-4 py-3 text-left active:opacity-70 shadow-sm"
+                className="rounded-2xl overflow-hidden text-left active:opacity-70 shadow-sm"
                 style={{ backgroundColor: "var(--td-card)" }}
               >
-                <div className="font-semibold text-[15px] truncate" style={{ color: "var(--td-label)" }}>
-                  {trip.title}
+                <div
+                  className="h-28 flex items-end px-3 pb-2"
+                  style={{ background: "linear-gradient(135deg, var(--td-accent), var(--td-fill))" }}
+                >
+                  <span className="text-[13px] font-bold text-white drop-shadow-md line-clamp-2">
+                    {trip.title}
+                  </span>
                 </div>
-                <div className="text-[13px] mt-0.5" style={{ color: "var(--td-secondary)" }}>
-                  📍 {trip.destination} · {daysBetween(trip.start_date, trip.end_date)} days
-                </div>
-                <div className="flex gap-3 mt-1.5 text-[12px]" style={{ color: "var(--td-secondary)" }}>
-                  {trip.likes_count > 0 && <span>❤️ {trip.likes_count}</span>}
-                  {trip.clone_count > 0 && <span>📋 {trip.clone_count} cloned</span>}
+                <div className="px-3 py-2">
+                  <div className="text-[11px] truncate" style={{ color: "var(--td-secondary)" }}>
+                    📍 {trip.destination} · {daysBetween(trip.start_date, trip.end_date)}d
+                  </div>
+                  <div className="flex gap-2 mt-1 text-[10px]" style={{ color: "var(--td-secondary)" }}>
+                    {trip.likes_count > 0 && <span>❤️ {trip.likes_count}</span>}
+                    {trip.clone_count > 0 && <span>📋 {trip.clone_count}</span>}
+                  </div>
                 </div>
               </button>
             ))}

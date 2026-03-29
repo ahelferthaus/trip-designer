@@ -161,7 +161,7 @@ export default function TripMoviePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#0B1D33" }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#1A1A1A" }}>
         <svg className="animate-spin w-8 h-8" fill="none" viewBox="0 0 24 24" style={{ color: "white" }}>
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
@@ -171,7 +171,7 @@ export default function TripMoviePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#0B1D33" }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#1A1A1A" }}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2 safe-top">
         <button onClick={() => navigate(-1)} className="text-[15px] font-medium text-white/70 active:opacity-70">

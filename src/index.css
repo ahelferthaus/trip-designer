@@ -13,6 +13,56 @@
   --color-ios-green: #34C759;
 }
 
+/* === VYBR DESIGN SYSTEM — Complete Token Set === */
+:root {
+  /* Semantic Elevation */
+  --td-elevation-1: 0 1px 3px rgba(0,0,0,0.08);
+  --td-elevation-2: 0 4px 16px rgba(0,0,0,0.12);
+  --td-elevation-3: 0 12px 40px rgba(0,0,0,0.18);
+
+  /* Border Radius Scale */
+  --td-radius-sm: 8px;
+  --td-radius-md: 12px;
+  --td-radius-lg: 16px;
+  --td-radius-xl: 24px;
+  --td-radius-full: 9999px;
+
+  /* Spacing Scale (4px grid) */
+  --td-space-1: 4px;
+  --td-space-2: 8px;
+  --td-space-3: 12px;
+  --td-space-4: 16px;
+  --td-space-5: 20px;
+  --td-space-6: 24px;
+  --td-space-8: 32px;
+  --td-space-10: 40px;
+  --td-space-12: 48px;
+
+  /* Typography Scale */
+  --vybr-text-xs: 11px;
+  --vybr-text-sm: 13px;
+  --vybr-text-base: 15px;
+  --vybr-text-lg: 17px;
+  --vybr-text-xl: 20px;
+  --vybr-text-2xl: 24px;
+  --vybr-text-3xl: 30px;
+  --vybr-text-hero: 38px;
+
+  /* Safe Area Tokens */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Z-Index Scale */
+  --z-base: 0;
+  --z-card: 10;
+  --z-sticky: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+}
+
 html, body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;

@@ -219,17 +219,17 @@ export default function HomePage() {
             How it works
           </p>
           {[
-            { step: "1", title: "Describe your trip", desc: "Destination, dates, group, budget, and vibe" },
-            { step: "2", title: "AI builds your itinerary", desc: "Morning, afternoon, and evening options for every day" },
-            { step: "3", title: "Plan together", desc: "Your group votes, writes in ideas, and books what's confirmed" },
-          ].map(({ step, title, desc }) => (
-            <div key={step} className="rounded-2xl px-4 py-3.5 flex items-start gap-3.5"
+            { icon: "🗺️", title: "Describe your trip", desc: "Destination, dates, group, budget, and vibe" },
+            { icon: "🤖", title: "AI builds your itinerary", desc: "Morning, afternoon, and evening options for every day" },
+            { icon: "🗳️", title: "Plan together", desc: "Your group votes, writes in ideas, and books what's confirmed" },
+          ].map(({ icon, title, desc }) => (
+            <div key={title} className="rounded-2xl px-4 py-3.5 flex items-start gap-3.5"
               style={{ backgroundColor: "var(--td-card)" }}>
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold flex-shrink-0 mt-0.5"
-                style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[16px] flex-shrink-0 mt-0.5"
+                style={{ backgroundColor: "var(--td-fill)" }}
               >
-                {step}
+                {icon}
               </div>
               <div>
                 <div className="font-semibold text-[15px]" style={{ color: "var(--td-label)" }}>{title}</div>

@@ -192,16 +192,19 @@ export default function ExplorePage() {
             </button>
           ))}
           <div className="flex-1" />
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value as typeof sortBy)}
-            className="px-2 py-1.5 rounded-full text-[11px] bg-transparent focus:outline-none font-semibold"
-            style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
-          >
-            <option value="newest">Newest</option>
-            <option value="most_cloned">Popular</option>
-            <option value="highest_rated">Most Viewed</option>
-          </select>
+          {(["newest", "most_cloned", "highest_rated"] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setSortBy(s)}
+              className="px-3 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap active:opacity-70"
+              style={{
+                backgroundColor: sortBy === s ? "var(--td-accent)" : "var(--td-fill)",
+                color: sortBy === s ? "var(--td-accent-text)" : "var(--td-label)",
+              }}
+            >
+              {s === "newest" ? "New" : s === "most_cloned" ? "Popular" : "Views"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -240,9 +243,9 @@ export default function ExplorePage() {
                   className="rounded-2xl overflow-hidden shadow-sm text-left active:opacity-70 reveal tilt-hover"
                   style={{ backgroundColor: "var(--td-card)" }}
                 >
-                  {/* Cover */}
+                  {/* Cover — taller for emotional impact */}
                   <div
-                    className="h-32 flex items-end px-4 pb-3"
+                    className="h-48 flex items-end px-4 pb-3"
                     style={{
                       background: trip.cover_photo_url
                         ? `url(${trip.cover_photo_url}) center/cover`
