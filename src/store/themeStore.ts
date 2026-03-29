@@ -20,15 +20,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     // Semi-transparent backgrounds so space image shows through
-    root.style.setProperty("--td-bg", `color-mix(in srgb, ${theme.colors.bg} 85%, transparent)`);
-    root.style.setProperty("--td-card", `color-mix(in srgb, ${theme.colors.card} 92%, transparent)`);
+    root.style.setProperty("--td-bg", `color-mix(in srgb, ${theme.colors.bg} 70%, transparent)`);
+    root.style.setProperty("--td-card", `color-mix(in srgb, ${theme.colors.card} 85%, transparent)`);
     root.style.setProperty("--td-accent", theme.colors.accent);
     root.style.setProperty("--td-accent-text", theme.colors.accentText);
     root.style.setProperty("--td-label", theme.colors.label);
     root.style.setProperty("--td-secondary", theme.colors.secondary);
     root.style.setProperty("--td-separator", theme.colors.separator);
-    root.style.setProperty("--td-fill", theme.colors.fill);
-    root.style.setProperty("--td-nav-bg", `color-mix(in srgb, ${theme.colors.navBg} 90%, transparent)`);
+    root.style.setProperty("--td-fill", `color-mix(in srgb, ${theme.colors.fill} 80%, transparent)`);
+    root.style.setProperty("--td-nav-bg", `color-mix(in srgb, ${theme.colors.navBg} 80%, transparent)`);
     document.body.style.backgroundColor = "#0B1D33"; // Dark base for space bg
   }, [theme]);
 

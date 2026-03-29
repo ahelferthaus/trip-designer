@@ -6,6 +6,8 @@ import { ExploreGridSkeleton } from "../components/Skeletons";
 import type { PublicTrip } from "../lib/publicTrips";
 import type { BudgetLevel } from "../lib/types";
 import { useReveal } from "../lib/useReveal";
+import { isFavorite, toggleFavorite } from "../lib/favorites";
+import { useTripStore } from "../store/tripStore";
 
 function daysBetween(start: string, end: string) {
   if (!start || !end) return 0;
@@ -50,8 +52,10 @@ const DESTINATIONS = [
 export default function ExplorePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const store = useTripStore();
   useReveal();
   const [query, setQuery] = useState("");
+  const [favs, setFavs] = useState<Set<string>>(new Set());
   const [budget, setBudget] = useState<BudgetLevel | "">("");
   const [category, setCategory] = useState("all");
   const [sortBy, setSortBy] = useState<"newest" | "most_cloned" | "highest_rated">("newest");
@@ -236,26 +240,45 @@ export default function ExplorePage() {
             {trips.map(trip => {
               const days = daysBetween(trip.start_date, trip.end_date);
               const formData = trip.form_data;
+              const faved = favs.has(trip.id) || isFavorite(trip.id);
               return (
-                <button
+                <div
                   key={trip.id}
-                  onClick={() => navigate(`/trip/${trip.id}`)}
-                  className="rounded-2xl overflow-hidden shadow-sm text-left active:opacity-70 reveal tilt-hover"
+                  className="rounded-2xl overflow-hidden shadow-sm reveal tilt-hover"
                   style={{ backgroundColor: "var(--td-card)" }}
                 >
                   {/* Cover — taller for emotional impact */}
-                  <div
-                    className="h-48 flex items-end px-4 pb-3"
+                  <button
+                    onClick={() => navigate(`/trip/${trip.id}`)}
+                    className="w-full h-48 flex items-end px-4 pb-3 text-left relative"
                     style={{
                       background: trip.cover_photo_url
                         ? `url(${trip.cover_photo_url}) center/cover`
                         : `linear-gradient(135deg, var(--td-accent), var(--td-fill))`,
                     }}
                   >
+                    {/* Favorite heart */}
+                    <div
+                      className="absolute top-3 right-3"
+                      onClick={e => {
+                        e.stopPropagation();
+                        toggleFavorite(trip.id);
+                        setFavs(prev => {
+                          const next = new Set(prev);
+                          if (next.has(trip.id)) next.delete(trip.id);
+                          else next.add(trip.id);
+                          return next;
+                        });
+                      }}
+                    >
+                      <span className="text-[22px] drop-shadow-lg cursor-pointer active:scale-125 transition-transform">
+                        {faved ? "❤️" : "🤍"}
+                      </span>
+                    </div>
                     <h3 className="text-[17px] font-bold text-white drop-shadow-md truncate">
                       {trip.title}
                     </h3>
-                  </div>
+                  </button>
 
                   <div className="px-4 py-3">
                     <div className="flex items-center gap-2 text-[13px] mb-1.5" style={{ color: "var(--td-secondary)" }}>
@@ -293,8 +316,22 @@ export default function ExplorePage() {
                         ))}
                       </div>
                     )}
+
+                    {/* Plan this trip button */}
+                    {formData && (
+                      <button
+                        onClick={() => {
+                          store.loadForm(formData);
+                          navigate("/intake");
+                        }}
+                        className="w-full mt-3 py-2.5 rounded-xl text-[13px] font-semibold active:opacity-70"
+                        style={{ backgroundColor: "var(--td-fill)", color: "var(--td-accent)" }}
+                      >
+                        Plan this trip
+                      </button>
+                    )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>

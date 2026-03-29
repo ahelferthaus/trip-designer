@@ -24,6 +24,7 @@ import ApiTestPage from "./pages/ApiTestPage";
 import ProfilePage from "./pages/ProfilePage";
 import UnpackedPage from "./pages/UnpackedPage";
 import BottomTabBar from "./components/BottomTabBar";
+import TripSidebar from "./components/TripSidebar";
 import AppHeader from "./components/AppHeader";
 import { useEffect } from "react";
 import { getSpaceBackground, preloadSpaceBackground } from "./lib/spaceBackgrounds";
@@ -73,6 +74,7 @@ export default function App() {
                   <Route path="/unpacked" element={<ErrorBoundary><UnpackedPage /></ErrorBoundary>} />
                 </Routes>
               </ErrorBoundary>
+              <TripSidebar />
               <BottomTabBar />
             </BrowserRouter>
           </ItineraryStoreProvider>
