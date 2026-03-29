@@ -12,6 +12,7 @@ import {
   getPublishedTripsForUser,
 } from "../lib/social";
 import UserAvatar from "../components/UserAvatar";
+import MapHero3D from "../components/itinerary/MapHero3D";
 import type { UserProfile } from "../lib/types";
 
 function daysBetween(start: string, end: string) {
@@ -77,22 +78,22 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--td-bg)" }}>
-      {/* Nav */}
-      <div className="sticky top-0 z-10 px-4 safe-top pt-3 pb-3"
-        style={{ backgroundColor: "var(--td-nav-bg, var(--td-bg))", borderBottom: "1px solid var(--td-separator)" }}>
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-[17px] active:opacity-70" style={{ color: "var(--td-accent)" }}>
-            ‹ Back
-          </button>
-          <h1 className="text-[17px] font-semibold flex-1 text-center" style={{ color: "var(--td-label)" }}>
-            Profile
-          </h1>
-          <div className="w-12" />
-        </div>
-      </div>
+      {/* 3D Map Hero — shows first trip destination or home location */}
+      <MapHero3D
+        destination={trips.length > 0 ? trips[0].destination : profile.home_location || "World"}
+        height={180}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute top-4 left-4 safe-top z-10 w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
+        >
+          <span className="text-white text-[17px] font-semibold">‹</span>
+        </button>
+      </MapHero3D>
 
-      {/* Profile header */}
-      <div className="px-4 pt-6 pb-4 flex flex-col items-center text-center">
+      {/* Profile header — overlapping the map */}
+      <div className="px-4 -mt-12 relative z-10 pb-4 flex flex-col items-center text-center">
         <UserAvatar name={profile.display_name || "?"} profile={profile} size="lg" showLabel={false} />
         <h2 className="text-[22px] font-bold mt-3" style={{ color: "var(--td-label)" }}>
           {profile.display_name || "Anonymous"}

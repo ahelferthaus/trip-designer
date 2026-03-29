@@ -8,6 +8,7 @@ import type { BudgetLevel } from "../lib/types";
 import { useReveal } from "../lib/useReveal";
 import { isFavorite, toggleFavorite } from "../lib/favorites";
 import { useTripStore } from "../store/tripStore";
+import MapHero3D from "../components/itinerary/MapHero3D";
 
 function daysBetween(start: string, end: string) {
   if (!start || !end) return 0;
@@ -103,21 +104,21 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen flex flex-col pb-20" style={{ backgroundColor: "var(--td-bg)" }}>
-      {/* Nav */}
-      <div
-        className="sticky top-0 z-10 px-4 safe-top pt-3 pb-3"
-        style={{ backgroundColor: "var(--td-nav-bg, var(--td-bg))", borderBottom: "1px solid var(--td-separator)" }}
+      {/* 3D Map Hero */}
+      <MapHero3D
+        destination={query.trim() || "World"}
+        height={200}
+        title="Explore Trips"
+        subtitle="Discover destinations planned by travelers worldwide"
       >
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/home")} className="text-[17px] active:opacity-70" style={{ color: "var(--td-accent)" }}>
-            ‹ Home
-          </button>
-          <h1 className="text-[17px] font-semibold flex-1 text-center" style={{ color: "var(--td-label)" }}>
-            Explore Trips
-          </h1>
-          <div className="w-12" />
-        </div>
-      </div>
+        <button
+          onClick={() => navigate("/home")}
+          className="absolute top-4 left-4 safe-top z-10 w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
+        >
+          <span className="text-white text-[17px] font-semibold">‹</span>
+        </button>
+      </MapHero3D>
 
       <div className="px-4 pt-4 flex flex-col gap-3">
         {/* Search bar with autofill */}
