@@ -70,17 +70,17 @@ html, body {
   overscroll-behavior: none;
 }
 
-/* Space background — fixed behind all content */
+/* Space background — fixed, visible through semi-transparent pages */
 html::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   background-image: var(--space-bg, none);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.7;
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -98,7 +98,7 @@ html::before {
   height: 2px;
   background: linear-gradient(90deg, rgba(255,255,255,0.8), transparent);
   border-radius: 50px;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -111,7 +111,7 @@ html::before {
 .star-field {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
 }
@@ -136,7 +136,7 @@ html::before {
 
 .comet {
   position: fixed;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
   width: 120px;
   height: 2px;
@@ -148,6 +148,12 @@ html::before {
 
 * {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* All page content sits above space effects */
+#root {
+  position: relative;
+  z-index: 2;
 }
 
 /* Apple HIG: minimum 44×44pt touch targets */

@@ -24,36 +24,20 @@ export default function BottomTabBar() {
   const { user, profile } = useAuth();
 
   const isActive = (path: string) => {
-    if (path === "/home") {
-      return location.pathname === "/home";
-    }
-    if (path === "/profile") {
-      return location.pathname.startsWith("/profile");
-    }
+    if (path === "/home") return location.pathname === "/home";
+    if (path === "/profile") return location.pathname.startsWith("/profile");
     return location.pathname.startsWith(path);
   };
 
   const handleTabClick = (tab: TabItem) => {
-    if (tab.requiresAuth && !user) {
-      navigate("/auth");
-      return;
-    }
-    if (tab.path === "/profile" && user) {
-      navigate(`/profile/${user.id}`);
-      return;
-    }
+    if (tab.requiresAuth && !user) { navigate("/auth"); return; }
+    if (tab.path === "/profile" && user) { navigate(`/profile/${user.id}`); return; }
     navigate(tab.path);
   };
 
-  // Don't show tab bar on intake flow or auth pages
   const hiddenPaths = ["/intake", "/auth", "/join/", "/onboarding", "/book/", "/postcard", "/movie"];
-  // Also hide on landing page (/)
   if (location.pathname === "/") return null;
-  const shouldHide = hiddenPaths.some(path => 
-    location.pathname === path || location.pathname.startsWith(path)
-  );
-  
-  if (shouldHide) return null;
+  if (hiddenPaths.some(path => location.pathname === path || location.pathname.startsWith(path))) return null;
 
   return (
     <div
@@ -62,38 +46,41 @@ export default function BottomTabBar() {
         backgroundColor: "var(--td-nav-bg, var(--td-card))",
         borderTop: "1px solid var(--td-separator)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
       }}
     >
-      <div className="flex items-center justify-around px-2">
+      <div className="flex items-center justify-around px-1">
         {TABS.map((tab) => {
           const active = isActive(tab.path);
           const isPlan = tab.id === "plan";
-          
-          // For profile tab, show user avatar if available
+
+          // Profile tab with avatar
           if (tab.id === "profile" && user) {
             return (
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab)}
-                className="flex flex-col items-center justify-center py-2 px-3 min-w-[64px] active:opacity-70 transition-opacity"
+                className="flex flex-col items-center justify-center py-3 px-2 flex-1 active:opacity-70"
               >
-                <div 
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold overflow-hidden ${active ? "ring-2" : ""}`}
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-[15px] font-semibold overflow-hidden ${active ? "ring-2 ring-offset-1" : ""}`}
                   style={{
                     backgroundColor: active ? "var(--td-accent)" : "var(--td-fill)",
                     color: active ? "var(--td-accent-text)" : "var(--td-label)",
+                    ringColor: "var(--td-accent)",
                   }}
                 >
                   {profile?.avatar_type === "emoji" && profile.avatar_value ? (
-                    <span className="text-[14px]">{profile.avatar_value}</span>
+                    <span className="text-[18px]">{profile.avatar_value}</span>
                   ) : (
-                    <span className="text-[10px]">
+                    <span className="text-[12px]">
                       {(profile?.display_name || user.email?.split("@")[0] || "U").slice(0, 2).toUpperCase()}
                     </span>
                   )}
                 </div>
-                <span 
-                  className="text-[11px] mt-1 font-semibold"
+                <span
+                  className="text-[12px] mt-1.5 font-semibold"
                   style={{ color: active ? "var(--td-accent)" : "var(--td-secondary)" }}
                 >
                   {tab.label}
@@ -106,32 +93,32 @@ export default function BottomTabBar() {
             <button
               key={tab.id}
               onClick={() => handleTabClick(tab)}
-              className={`flex flex-col items-center justify-center py-2 px-3 min-w-[64px] active:opacity-70 transition-all ${isPlan ? "-mt-4" : ""}`}
+              className={`flex flex-col items-center justify-center py-3 px-2 flex-1 active:opacity-70 ${isPlan ? "-mt-5" : ""}`}
             >
               {isPlan ? (
-                <div 
-                  className="w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
-                  style={{ 
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+                  style={{
                     backgroundColor: "var(--td-accent)",
                     color: "var(--td-accent-text)",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
                   }}
                 >
-                  <span className="text-[22px]">{tab.icon}</span>
+                  <span className="text-[26px]">{tab.icon}</span>
                 </div>
               ) : (
-                <div 
-                  className="w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{ 
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{
                     backgroundColor: active ? "var(--td-accent)" : "transparent",
-                    color: active ? "var(--td-accent-text)" : "var(--td-label)"
+                    color: active ? "var(--td-accent-text)" : "var(--td-label)",
                   }}
                 >
-                  <span className="text-[16px]">{active ? tab.activeIcon : tab.icon}</span>
+                  <span className="text-[22px]">{active ? tab.activeIcon : tab.icon}</span>
                 </div>
               )}
-              <span 
-                className={`text-[10px] mt-1 font-medium ${isPlan ? "mt-2" : ""}`}
+              <span
+                className={`text-[12px] font-semibold ${isPlan ? "mt-2" : "mt-1.5"}`}
                 style={{ color: active ? "var(--td-accent)" : "var(--td-secondary)" }}
               >
                 {tab.label}
