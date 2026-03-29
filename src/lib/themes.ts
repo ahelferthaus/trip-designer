@@ -19,6 +19,24 @@ export interface Theme {
 
 export const themes: Theme[] = [
   {
+    id: "vybr-space",
+    film: "VYBR Space",
+    year: "",
+    description: "Dark sky, bright stars. The way VYBR was meant to be.",
+    colors: {
+      bg: "#0B1D33",
+      card: "#132F4C",
+      accent: "#007AFF",
+      accentText: "#FFFFFF",
+      label: "#F0F0F5",
+      secondary: "#8E9AB0",
+      separator: "#1E3A5C",
+      fill: "#1A3050",
+      navBg: "#0D2240",
+    },
+    swatch: ["#007AFF", "#0B1D33", "#132F4C", "#8E9AB0"],
+  },
+  {
     id: "ios-default",
     film: "Default",
     year: "",

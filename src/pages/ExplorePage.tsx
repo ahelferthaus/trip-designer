@@ -245,7 +245,7 @@ export default function ExplorePage() {
               return (
                 <div
                   key={trip.id}
-                  className="rounded-2xl overflow-hidden shadow-sm reveal tilt-hover"
+                  className="rounded-2xl overflow-hidden shadow-sm"
                   style={{ backgroundColor: "var(--td-card)" }}
                 >
                   {/* Cover — taller for emotional impact */}

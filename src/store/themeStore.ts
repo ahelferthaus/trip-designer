@@ -20,8 +20,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     // Semi-transparent backgrounds so space image + stars show through
-    root.style.setProperty("--td-bg", `color-mix(in srgb, ${theme.colors.bg} 55%, transparent)`);
-    root.style.setProperty("--td-card", `color-mix(in srgb, ${theme.colors.card} 75%, transparent)`);
+    const isDark = theme.id === "vybr-space";
+    root.style.setProperty("--td-bg", `color-mix(in srgb, ${theme.colors.bg} ${isDark ? "50%" : "55%"}, transparent)`);
+    root.style.setProperty("--td-card", `color-mix(in srgb, ${theme.colors.card} ${isDark ? "65%" : "75%"}, transparent)`);
     root.style.setProperty("--td-accent", theme.colors.accent);
     root.style.setProperty("--td-accent-text", theme.colors.accentText);
     root.style.setProperty("--td-label", theme.colors.label);

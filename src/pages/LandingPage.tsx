@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
+import MapHero3D from "../components/itinerary/MapHero3D";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -13,17 +14,16 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "rgba(11,29,51,0.85)" }}>
-      {/* Hero */}
-      <div
-        className="relative flex flex-col items-center justify-center text-center px-6 pt-20 pb-16"
-        style={{
-          minHeight: "85vh",
-          background: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1200&q=70') center/cover",
-        }}
-      >
-        {/* Dark overlay */}
+      {/* Hero with 3D Globe */}
+      <div className="relative flex flex-col items-center justify-center text-center px-6 pt-20 pb-16" style={{ minHeight: "85vh" }}>
+        {/* 3D Globe background — full bleed */}
+        <div className="absolute inset-0">
+          <MapHero3D destination="Europe" height={900}>
+            <div />
+          </MapHero3D>
+        </div>
         <div className="absolute inset-0" style={{
-          background: "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.65) 100%)",
+          background: "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.6) 100%)",
         }} />
 
         {/* Nav */}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
+import MapHero3D from "../components/itinerary/MapHero3D";
 import { migrateLocalTripsToCloud } from "../lib/tripStorage";
 import { supabase } from "../lib/supabase";
 
@@ -71,24 +72,25 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ backgroundColor: "var(--td-bg)" }}>
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--td-bg)" }}>
+      {/* 3D Map background */}
+      <MapHero3D
+        destination="World"
+        height={220}
+        title={mode === "signin" ? "Welcome back" : "Create account"}
+        subtitle={mode === "signin" ? "Sign in to sync trips across devices." : "Sign up to save and share your trips."}
+      >
         <button
           onClick={() => navigate("/home")}
-          className="text-[17px] mb-6"
-          style={{ color: "var(--td-accent)" }}
+          className="absolute top-4 left-4 safe-top z-10 w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
         >
-          ‹ Home
+          <span className="text-white text-[17px] font-semibold">‹</span>
         </button>
+      </MapHero3D>
 
-        <h2 className="text-[28px] font-bold mb-1" style={{ color: "var(--td-label)" }}>
-          {mode === "signin" ? "Welcome back" : "Create account"}
-        </h2>
-        <p className="text-[15px] mb-6" style={{ color: "var(--td-secondary)" }}>
-          {mode === "signin"
-            ? "Sign in to sync trips across devices."
-            : "Sign up to save and share your trips."}
-        </p>
+      <div className="flex-1 flex flex-col items-center px-6 pt-6">
+      <div className="w-full max-w-sm">
 
         <div className="flex flex-col gap-3 mb-4">
           <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
@@ -143,6 +145,7 @@ export default function AuthPage() {
             {mode === "signin" ? "Sign up" : "Sign in"}
           </button>
         </p>
+      </div>
       </div>
     </div>
   );
