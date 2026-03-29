@@ -8,6 +8,7 @@ import { getPublicTrip, cloneTrip, getReviews, submitReview } from "../lib/publi
 import { updateTripCloudData, saveTrip } from "../lib/tripStorage";
 import { getComments, addComment, hasLiked, likeTrip, unlikeTrip, getLikeCount } from "../lib/social";
 import type { Comment } from "../lib/social";
+import MapHero3D from "../components/itinerary/MapHero3D";
 import UserAvatar from "../components/UserAvatar";
 import type { PublicTrip, TripReview } from "../lib/publicTrips";
 
@@ -136,43 +137,22 @@ export default function TripDetailPage() {
 
   return (
     <div className="min-h-screen pb-20 page-enter" style={{ backgroundColor: "var(--td-bg)" }}>
-      {/* === HERO COVER === */}
-      <div
-        className="relative flex flex-col justify-end"
-        style={{
-          height: 320,
-          background: trip.cover_photo_url
-            ? `url(${trip.cover_photo_url}) center/cover`
-            : `linear-gradient(160deg, #0B1D33 0%, #1B4332 50%, #132F4C 100%)`,
-        }}
+      {/* === 3D MAP HERO === */}
+      <MapHero3D
+        destination={trip.destination}
+        height={320}
+        title={trip.title}
+        subtitle={`${trip.destination} · ${days} day${days !== 1 ? "s" : ""}`}
       >
-        {/* Gradient overlay */}
-        <div className="absolute inset-0" style={{
-          background: "linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.7) 100%)",
-        }} />
-
         {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 safe-top w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
+          className="absolute top-4 left-4 safe-top z-10 w-9 h-9 rounded-full flex items-center justify-center active:opacity-70"
           style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}
         >
           <span className="text-white text-[17px] font-semibold">‹</span>
         </button>
-
-        {/* Share button */}
-        {/* TODO: Snapchat share */}
-
-        {/* Title overlay */}
-        <div className="relative z-10 px-5 pb-5">
-          <h1 className="text-[28px] font-black text-white leading-tight drop-shadow-lg">
-            {trip.title}
-          </h1>
-          <p className="text-[14px] text-white/70 mt-1 drop-shadow">
-            {trip.destination} · {days} day{days !== 1 ? "s" : ""}
-          </p>
-        </div>
-      </div>
+      </MapHero3D>
 
       {/* === FLOATING SOCIAL BAR === */}
       <div className="px-4 -mt-5">

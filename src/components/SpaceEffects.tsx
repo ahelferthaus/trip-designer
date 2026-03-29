@@ -11,9 +11,9 @@ export default function SpaceEffects() {
   const [comet, setComet] = useState<{ id: number; y: number } | null>(null);
   const nextId = useRef(0);
 
-  // Generate twinkling stars (static, CSS animated)
+  // Generate twinkling stars (static, CSS animated) — 80 stars for dense field
   const stars = useRef(
-    Array.from({ length: 40 }, (_, i) => ({
+    Array.from({ length: 80 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -38,7 +38,7 @@ export default function SpaceEffects() {
       setTimeout(() => {
         setShootingStars(prev => prev.filter(s => s.id !== id));
       }, 1500);
-    }, Math.random() * 2000 + 3000); // 3-5 seconds
+    }, Math.random() * 1500 + 2000); // 2-3.5 seconds — more frequent
 
     return () => clearInterval(interval);
   }, []);
@@ -49,14 +49,14 @@ export default function SpaceEffects() {
       const id = nextId.current++;
       setComet({ id, y: Math.random() * 40 + 10 });
       setTimeout(() => setComet(null), 8000);
-    }, 120000); // 2 minutes
+    }, 60000); // 1 minute — more frequent comets
 
-    // First comet after 30 seconds
+    // First comet after 10 seconds
     const initial = setTimeout(() => {
       const id = nextId.current++;
       setComet({ id, y: Math.random() * 40 + 10 });
       setTimeout(() => setComet(null), 8000);
-    }, 30000);
+    }, 10000);
 
     return () => { clearInterval(interval); clearTimeout(initial); };
   }, []);

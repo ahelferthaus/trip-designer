@@ -7,6 +7,7 @@ import UserAvatar from "../components/UserAvatar";
 import { useGamification, useDailyCheckIn } from "../store/gamificationStore";
 import { StreakDisplay, XPProgressBar, BadgeShowcase } from "../components/gamification";
 import { useReveal } from "../lib/useReveal";
+import MapHero3D from "../components/itinerary/MapHero3D";
 
 const FEATURED_PHOTOS = [
   "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80", // Paris
@@ -46,18 +47,17 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col pb-28 page-enter" style={{ backgroundColor: "var(--td-bg)" }}>
-      {/* === FULL-BLEED HERO === */}
-      <div
-        className="relative overflow-hidden"
-        style={{
-          background: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=70') center/cover",
-          minHeight: 320,
-        }}
+      {/* === 3D MAP HERO === */}
+      <MapHero3D
+        destination={savedTrips.length > 0 ? savedTrips[0].destination : "Europe"}
+        height={360}
+        title={user ? `Welcome back${profile?.display_name ? `, ${profile.display_name.split(" ")[0]}` : ""}` : "Plan your next adventure"}
+        subtitle={user && savedTrips.length > 0
+          ? `${savedTrips.length} trip${savedTrips.length !== 1 ? "s" : ""} planned`
+          : "AI-powered itineraries for every kind of traveler"}
       >
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.7) 100%)" }} />
-
-        {/* Top bar */}
-        <div className="relative z-10 flex items-center justify-between px-5 pt-14 pb-2">
+        {/* Top bar — overlaid on the map */}
+        <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-5 pt-14 pb-2">
           <div>
             {user ? (
               <button onClick={() => navigate(`/profile/${user.id}`)} className="flex items-center gap-2.5 active:opacity-70">
@@ -80,29 +80,17 @@ export default function HomePage() {
             </svg>
           </button>
         </div>
+      </MapHero3D>
 
-        {/* Hero text */}
-        <div className="relative z-10 px-6 mt-8 pb-6">
-          <h1 className="text-[30px] font-black leading-[1.1] text-white">
-            {user ? `Welcome back${profile?.display_name ? `, ${profile.display_name.split(" ")[0]}` : ""}` : "Plan your next\nadventure"}
-          </h1>
-          <p className="text-[15px] text-white/70 mt-2">
-            {user && savedTrips.length > 0
-              ? `${savedTrips.length} trip${savedTrips.length !== 1 ? "s" : ""} planned`
-              : "AI-powered itineraries for every kind of traveler"}
-          </p>
-        </div>
-
-        {/* CTA */}
-        <div className="relative z-10 px-5 pb-6">
-          <button
-            onClick={() => navigate("/intake")}
-            className="w-full py-4 rounded-2xl text-[17px] font-bold btn-spring"
-            style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
-          >
-            {user && savedTrips.length > 0 ? "Plan another trip" : "Plan my first trip"}
-          </button>
-        </div>
+      {/* CTA — just below the map */}
+      <div className="px-5 -mt-6 relative z-10">
+        <button
+          onClick={() => navigate("/intake")}
+          className="w-full py-4 rounded-2xl text-[17px] font-bold btn-spring shadow-lg"
+          style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
+        >
+          {user && savedTrips.length > 0 ? "Plan another trip" : "Plan my first trip"}
+        </button>
       </div>
 
       {/* === GAMIFICATION (opt-in) === */}
