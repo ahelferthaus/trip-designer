@@ -7,6 +7,8 @@ import TripRecordingControls from "../components/activetrip/TripRecordingControl
 import { getTrackingPoints, subscribeToTrackingPoints } from "../lib/tripTracking";
 import type { TrackingPoint } from "../lib/tripTracking";
 import { getDestinationPhoto } from "../lib/destinationPhotos";
+import TripTimeline from "../components/activetrip/TripTimeline";
+import JournalEntryForm from "../components/activetrip/JournalEntryForm";
 
 export default function ActiveTripPage() {
   const { tripId } = useParams<{ tripId: string }>();
@@ -15,6 +17,8 @@ export default function ActiveTripPage() {
   const activeTrip = useActiveTrip();
   const [tab, setTab] = useState<"map" | "timeline" | "stats">("map");
   const [allPoints, setAllPoints] = useState<TrackingPoint[]>([]);
+  const [showJournalForm, setShowJournalForm] = useState(false);
+  const [journalRefresh, setJournalRefresh] = useState(0);
   const [tripTitle, setTripTitle] = useState("");
   const [tripDest, setTripDest] = useState("");
 
@@ -114,17 +118,10 @@ export default function ActiveTripPage() {
           </div>
         )}
 
-        {/* Timeline tab */}
+        {/* Timeline tab — photo journal */}
         {tab === "timeline" && (
-          <div className="px-4 py-6 pb-32">
-            <div className="text-center py-12">
-              <div className="text-4xl mb-3">📸</div>
-              <p className="text-[15px] font-semibold" style={{ color: "var(--td-label)" }}>Trip Journal</p>
-              <p className="text-[13px] mt-1" style={{ color: "var(--td-secondary)" }}>
-                Photo diary and journal entries will appear here.
-                <br />Coming in the next update!
-              </p>
-            </div>
+          <div className="pb-32 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>
+            <TripTimeline tripId={tripId!} refreshTrigger={journalRefresh} />
           </div>
         )}
 
@@ -166,6 +163,33 @@ export default function ActiveTripPage() {
           </div>
         )}
       </div>
+
+      {/* Floating add journal button */}
+      {tab === "timeline" && (
+        <button
+          onClick={() => setShowJournalForm(true)}
+          className="fixed bottom-36 right-5 z-30 w-14 h-14 rounded-full flex items-center justify-center shadow-xl active:opacity-70"
+          style={{
+            backgroundColor: "var(--td-accent)",
+            color: "var(--td-accent-text)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+          }}
+        >
+          <span className="text-[26px]">+</span>
+        </button>
+      )}
+
+      {/* Journal entry form (bottom sheet) */}
+      {showJournalForm && tripId && (
+        <JournalEntryForm
+          tripId={tripId}
+          onCreated={() => {
+            setShowJournalForm(false);
+            setJournalRefresh(n => n + 1);
+          }}
+          onClose={() => setShowJournalForm(false)}
+        />
+      )}
 
       {/* Recording controls — fixed at bottom */}
       <div className="fixed bottom-20 left-4 right-4 z-30">
