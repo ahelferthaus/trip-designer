@@ -4,7 +4,7 @@ import { loadSavedTrips } from "../lib/tripStorage";
 import type { SavedTrip } from "../lib/tripStorage";
 import { ALL_SEED_TRIPS, seedTripToForm } from "../lib/seedTrips";
 import type { SeedTrip } from "../lib/seedTrips";
-import { getFavorites, toggleFavorite, isFavorite } from "../lib/favorites";
+import { toggleFavorite, isFavorite } from "../lib/favorites";
 import { useTripStore } from "../store/tripStore";
 
 const VIBE_EMOJIS: Record<string, string> = {

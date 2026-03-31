@@ -1,13 +1,14 @@
 import { supabase } from "./supabase";
 import { useGamification } from "../store/gamificationStore";
+import type { Badge } from "../store/gamificationStore";
 
 interface GamificationData {
+  badges: Badge[];
   xp: number;
   level: number;
   currentStreak: number;
   longestStreak: number;
   lastActiveDate: string;
-  badges: unknown[];
   dailyRewards: unknown[];
   lastClaimedDate: string;
   tripsCreated: number;
@@ -82,7 +83,7 @@ export async function loadGamificationFromCloud(userId: string): Promise<void> {
       friendsInvited: Math.max(cloud.friendsInvited ?? 0, local.friendsInvited),
       daysPlanned: Math.max(cloud.daysPlanned ?? 0, local.daysPlanned),
       photosAdded: Math.max(cloud.photosAdded ?? 0, local.photosAdded),
-      badges: cloud.badges?.length ? (cloud.badges as unknown as typeof local.badges) : local.badges,
+      badges: cloud.badges?.length ? (cloud.badges as Badge[]) : local.badges,
     });
   } catch {
     // Non-fatal
