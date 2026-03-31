@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../store/authStore";
+import { useTripStore } from "../store/tripStore";
 import { loadSavedTrips } from "../lib/tripStorage";
 import type { SavedTrip } from "../lib/tripStorage";
 import UserAvatar from "../components/UserAvatar";
@@ -34,6 +35,7 @@ function daysBetween(start: string, end: string) {
 export default function HomePage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const store = useTripStore();
   const savedTrips = loadSavedTrips();
   const dailyCheckIn = useDailyCheckIn();
   const { enabled: gamificationEnabled, currentStreak, badges } = useGamification();
@@ -149,7 +151,17 @@ export default function HomePage() {
           {INSPIRATION.map((item, i) => (
             <button
               key={item.dest}
-              onClick={() => navigate("/explore")}
+              onClick={() => {
+                store.loadForm({
+                  destination: { name: item.dest },
+                  start_date: "",
+                  end_date: "",
+                  group_members: [{ name: "Me", type: "adult" }],
+                  budget_level: "mid",
+                  vibes: [],
+                });
+                navigate("/intake");
+              }}
               className={`rounded-2xl overflow-hidden relative active:opacity-70 ${i === 0 ? "col-span-2 h-48" : "h-36"}`}
             >
               <img src={item.img} alt={item.title} className="w-full h-full object-cover" loading="lazy" />
