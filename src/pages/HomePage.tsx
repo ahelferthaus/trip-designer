@@ -19,13 +19,14 @@ const FEATURED_PHOTOS = [
   "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=600&q=80", // Rome
 ];
 
+// Inspiration cards — tripId links to pre-built database trips, null goes to planner
 const INSPIRATION = [
-  { title: "Weekend in Paris", dest: "Paris", img: FEATURED_PHOTOS[0], days: 3, vibe: "Culture & Romance" },
-  { title: "Santorini Escape", dest: "Santorini", img: FEATURED_PHOTOS[1], days: 5, vibe: "Beach & Food" },
-  { title: "Alpine Adventure", dest: "Swiss Alps", img: FEATURED_PHOTOS[2], days: 7, vibe: "Adventure & Nature" },
-  { title: "Tropical Paradise", dest: "Maldives", img: FEATURED_PHOTOS[3], days: 5, vibe: "Relaxation" },
-  { title: "Kyoto Culture", dest: "Kyoto", img: FEATURED_PHOTOS[4], days: 7, vibe: "Culture & Food" },
-  { title: "Roman Holiday", dest: "Rome", img: FEATURED_PHOTOS[5], days: 5, vibe: "Culture & History" },
+  { title: "Santorini Escape", dest: "Santorini", img: FEATURED_PHOTOS[1], days: 7, vibe: "Beach & Food", tripId: "18620aab-b33f-408c-89d5-ab4fc0e13ca6" },
+  { title: "Maldives Paradise", dest: "Maldives", img: FEATURED_PHOTOS[3], days: 7, vibe: "Romance & Relaxation", tripId: "3f0db695-735e-4032-97ba-6d6166238c12" },
+  { title: "Kyoto Culture", dest: "Kyoto", img: FEATURED_PHOTOS[4], days: 7, vibe: "Culture & Food", tripId: "ef9977c3-7e83-44e7-98c0-0000a4a52740" },
+  { title: "Barcelona Football", dest: "Barcelona", img: "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600&q=80", days: 5, vibe: "Culture & Soccer", tripId: "3ae3cd9a-a5f0-4067-abfa-cbd9bd1aba54" },
+  { title: "Chicago Weekend", dest: "Chicago", img: "https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=600&q=80", days: 3, vibe: "Food & Culture", tripId: "2daad120-b554-4132-88a0-cfd976fa85ab" },
+  { title: "Weekend in Paris", dest: "Paris", img: FEATURED_PHOTOS[0], days: 3, vibe: "Culture & Romance", tripId: null },
 ];
 
 function daysBetween(start: string, end: string) {
@@ -152,15 +153,19 @@ export default function HomePage() {
             <button
               key={item.dest}
               onClick={() => {
-                store.loadForm({
-                  destination: { name: item.dest },
-                  start_date: "",
-                  end_date: "",
-                  group_members: [{ name: "Me", type: "adult" }],
-                  budget_level: "mid",
-                  vibes: [],
-                });
-                navigate("/intake");
+                if (item.tripId) {
+                  navigate(`/trip/${item.tripId}`);
+                } else {
+                  store.loadForm({
+                    destination: { name: item.dest },
+                    start_date: "",
+                    end_date: "",
+                    group_members: [{ name: "Me", type: "adult" }],
+                    budget_level: "mid",
+                    vibes: [],
+                  });
+                  navigate("/intake");
+                }
               }}
               className={`rounded-2xl overflow-hidden relative active:opacity-70 ${i === 0 ? "col-span-2 h-48" : "h-36"}`}
             >
