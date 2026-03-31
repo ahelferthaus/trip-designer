@@ -94,15 +94,15 @@ export default function SpaceEffects() {
         />
       ))}
 
-      {/* Comet */}
+      {/* Comet — bright and dramatic */}
       {comet && (
         <div
           key={comet.id}
           className="comet"
           style={{
             top: `${comet.y}%`,
-            left: "-150px",
-            animation: `comet 6s ease-in-out forwards`,
+            left: "-250px",
+            animation: `comet 4s ease-in-out forwards`,
           }}
         />
       )}

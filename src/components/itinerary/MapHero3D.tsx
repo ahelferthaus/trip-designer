@@ -227,7 +227,10 @@ export default function MapHero3D({ destination, title, subtitle, height = 340, 
 
   return (
     <div className="relative overflow-hidden" style={{ height }}>
-      {/* Destination photo — only on trip-specific pages */}
+      {/* 3D Map — full when no photo, hidden when photo is shown */}
+      {!showPhoto && <div ref={mapContainer} className="absolute inset-0" />}
+
+      {/* Destination photo — full-bleed on trip-specific pages */}
       {showPhoto && (
         <div
           className="absolute inset-0"
@@ -238,9 +241,6 @@ export default function MapHero3D({ destination, title, subtitle, height = 340, 
           }}
         />
       )}
-
-      {/* 3D Map */}
-      <div ref={mapContainer} className="absolute inset-0" style={{ opacity: showPhoto ? 0.25 : 1 }} />
 
       {/* Top gradient */}
       <div className="absolute inset-x-0 top-0 h-24 pointer-events-none"
