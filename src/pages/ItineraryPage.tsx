@@ -793,6 +793,14 @@ export default function ItineraryPage() {
               <span className="text-white text-[17px] font-semibold">‹</span>
             </button>
             <div className="flex items-center gap-2">
+              {/* Edit & Regenerate */}
+              <button
+                onClick={() => navigate("/intake?step=review")}
+                className="px-3 py-1.5 rounded-full text-[12px] font-semibold active:opacity-70"
+                style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", color: "white" }}
+              >
+                Edit & Rerun
+              </button>
               {activeCloudTripId && authUser && (
                 <button
                   onClick={handlePublish}

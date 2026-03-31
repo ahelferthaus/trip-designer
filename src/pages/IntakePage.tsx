@@ -74,9 +74,12 @@ export default function IntakePage() {
   const { addXP, incrementStat } = useGamification();
 
   const [searchParams] = useSearchParams();
-  const startStep = searchParams.get("step") === "review" && form.destination ? TOTAL_STEPS : 1;
+  const autoGenerate = searchParams.get("auto") === "generate" && form.destination;
+  const isReview = searchParams.get("step") === "review" && form.destination;
+  const startStep = autoGenerate || isReview ? TOTAL_STEPS : 1;
   const [step, setStep] = useState(startStep);
   const [destinationText, setDestinationText] = useState(form.destination?.name ?? "");
+  const [autoTriggered, setAutoTriggered] = useState(false);
   const [members, setMembers] = useState<GroupMember[]>(form.group_members);
   const [dnaApplied, setDnaApplied] = useState(false);
   const travelDNA = buildTravelDNA();
@@ -153,6 +156,12 @@ export default function IntakePage() {
       setGenerating(false);
     }
   };
+
+  // Auto-generate when coming from sidebar seed trip
+  if (autoGenerate && !autoTriggered && !generating && form.destination) {
+    setAutoTriggered(true);
+    setTimeout(() => handleSubmit(), 200);
+  }
 
   const toggleVibe = (v: TripVibe) => {
     const current = form.vibes;
