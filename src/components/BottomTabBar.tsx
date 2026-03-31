@@ -68,7 +68,6 @@ export default function BottomTabBar() {
                   style={{
                     backgroundColor: active ? "var(--td-accent)" : "var(--td-fill)",
                     color: active ? "var(--td-accent-text)" : "var(--td-label)",
-                    ringColor: "var(--td-accent)",
                   }}
                 >
                   {profile?.avatar_type === "emoji" && profile.avatar_value ? (

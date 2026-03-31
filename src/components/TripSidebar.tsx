@@ -49,14 +49,12 @@ export default function TripSidebar() {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"browse" | "my" | "favs">("browse");
   const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [expandedGroup, setExpandedGroup] = useState<string | null>("Europe");
   const [favRefresh, setFavRefresh] = useState(0);
 
   // Load data on open
   useEffect(() => {
     setSavedTrips(loadSavedTrips());
-    setFavorites(getFavorites());
   }, [open, favRefresh]);
 
   // Hide on certain pages
