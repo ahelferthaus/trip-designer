@@ -23,6 +23,7 @@ import SeedTripsPage from "./pages/SeedTripsPage";
 import ApiTestPage from "./pages/ApiTestPage";
 import ProfilePage from "./pages/ProfilePage";
 import UnpackedPage from "./pages/UnpackedPage";
+import ActiveTripPage from "./pages/ActiveTripPage";
 import BottomTabBar from "./components/BottomTabBar";
 import TripSidebar from "./components/TripSidebar";
 import AppHeader from "./components/AppHeader";
@@ -72,6 +73,7 @@ export default function App() {
                   <Route path="/admin/api-test" element={<ErrorBoundary><ApiTestPage /></ErrorBoundary>} />
                   <Route path="/profile/:userId" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
                   <Route path="/unpacked" element={<ErrorBoundary><UnpackedPage /></ErrorBoundary>} />
+                  <Route path="/trip/:tripId/live" element={<ErrorBoundary><ActiveTripPage /></ErrorBoundary>} />
                 </Routes>
               </ErrorBoundary>
               <TripSidebar />
