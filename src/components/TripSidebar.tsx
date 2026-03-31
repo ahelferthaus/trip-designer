@@ -4,30 +4,9 @@ import { searchPublicTrips } from "../lib/publicTrips";
 import type { PublicTrip } from "../lib/publicTrips";
 import { toggleFavorite, isFavorite } from "../lib/favorites";
 import { useTripStore } from "../store/tripStore";
+import { getDestinationPhoto } from "../lib/destinationPhotos";
 
 const BUDGET_EMOJI: Record<string, string> = { budget: "💰", mid: "💳", splurge: "💎" };
-
-/** Destination photo lookup for card thumbnails */
-const THUMB: Record<string, string> = {
-  "Paris": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=70",
-  "Rome": "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=300&q=70",
-  "Barcelona": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=300&q=70",
-  "London": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=300&q=70",
-  "Amsterdam": "https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=300&q=70",
-  "Santorini": "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=300&q=70",
-  "Maldives": "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=300&q=70",
-  "Cancun": "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=300&q=70",
-  "Miami": "https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=300&q=70",
-  "Kyoto": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=300&q=70",
-  "New York": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=300&q=70",
-  "Bali": "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=300&q=70",
-};
-function getThumb(dest: string): string {
-  for (const [k, v] of Object.entries(THUMB)) {
-    if (dest.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  return "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&q=70";
-}
 
 function daysBetween(s: string, e: string) {
   return Math.max(0, Math.round((new Date(e).getTime() - new Date(s).getTime()) / 86400000));
@@ -162,7 +141,7 @@ export default function TripSidebar() {
                       style={{
                         background: trip.cover_photo_url
                           ? `url(${trip.cover_photo_url}) center/cover`
-                          : `url(${getThumb(trip.destination)}) center/cover`,
+                          : `url(${getDestinationPhoto(trip.destination, 300)}) center/cover`,
                       }}
                     >
                       <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.65) 0%, transparent 55%)" }} />

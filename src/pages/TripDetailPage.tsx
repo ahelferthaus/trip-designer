@@ -153,6 +153,19 @@ export default function TripDetailPage() {
         >
           <span className="text-white text-[17px] font-semibold">‹</span>
         </button>
+        {/* Customize button */}
+        {trip.form_data && (
+          <button
+            onClick={() => {
+              tripStore.loadForm(trip.form_data);
+              navigate("/intake?step=review");
+            }}
+            className="absolute top-4 right-4 safe-top z-10 px-3.5 py-2 rounded-full text-[13px] font-bold active:opacity-70"
+            style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", color: "white" }}
+          >
+            Customize & Rerun
+          </button>
+        )}
       </MapHero3D>
 
       {/* === FLOATING SOCIAL BAR === */}
