@@ -38,7 +38,7 @@ export default function SpaceEffects() {
       setTimeout(() => {
         setShootingStars(prev => prev.filter(s => s.id !== id));
       }, 1500);
-    }, Math.random() * 1500 + 2000); // 2-3.5 seconds — more frequent
+    }, Math.random() * 10000 + 25000); // 25-35 seconds
 
     return () => clearInterval(interval);
   }, []);
