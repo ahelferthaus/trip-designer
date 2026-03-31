@@ -196,15 +196,12 @@ export default function MapHero3D({ destination, title, subtitle, height = 340, 
       {/* 3D Map — full when no photo, hidden when photo is shown */}
       {!showPhoto && <div ref={mapContainer} className="absolute inset-0" />}
 
-      {/* Destination photo — full-bleed on trip-specific pages */}
+      {/* Destination photo — full-bleed <img> for reliable rendering */}
       {showPhoto && (
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${photoUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
+        <img
+          src={photoUrl}
+          alt={destination}
+          className="absolute inset-0 w-full h-full object-cover"
         />
       )}
 
