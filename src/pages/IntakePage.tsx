@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTripStore } from "../store/tripStore";
 import { useItineraryStore } from "../store/itineraryStore";
 import { useAuth } from "../store/authStore";
@@ -73,7 +73,9 @@ export default function IntakePage() {
   const { user: authUser } = useAuth();
   const { addXP, incrementStat } = useGamification();
 
-  const [step, setStep] = useState(1);
+  const [searchParams] = useSearchParams();
+  const startStep = searchParams.get("step") === "review" && form.destination ? TOTAL_STEPS : 1;
+  const [step, setStep] = useState(startStep);
   const [destinationText, setDestinationText] = useState(form.destination?.name ?? "");
   const [members, setMembers] = useState<GroupMember[]>(form.group_members);
   const [dnaApplied, setDnaApplied] = useState(false);
@@ -256,28 +258,30 @@ export default function IntakePage() {
           </div>
         )}
 
-        {/* Step 2: Dates */}
+        {/* Step 2: Dates — calendars shown inline */}
         {step === 2 && (
-          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ backgroundColor: "var(--td-card)" }}>
-            <div className="px-4 py-4" style={{ borderBottom: "1px solid var(--td-separator)" }}>
-              <span className="text-[15px] block mb-2" style={{ color: "var(--td-secondary)" }}>Start date</span>
+          <div className="flex flex-col gap-4">
+            <div className="rounded-2xl shadow-sm px-4 py-4" style={{ backgroundColor: "var(--td-card)" }}>
+              <span className="text-[13px] uppercase tracking-wide font-bold block mb-1" style={{ color: "var(--td-secondary)" }}>Start date</span>
               <CalendarPicker
                 value={form.start_date}
                 onChange={(date) => store.setDates(date, form.end_date)}
                 label="Select start date"
+                inline
               />
             </div>
-            <div className="px-4 py-4" style={{ borderBottom: days > 0 ? "1px solid var(--td-separator)" : "none" }}>
-              <span className="text-[15px] block mb-2" style={{ color: "var(--td-secondary)" }}>End date</span>
+            <div className="rounded-2xl shadow-sm px-4 py-4" style={{ backgroundColor: "var(--td-card)" }}>
+              <span className="text-[13px] uppercase tracking-wide font-bold block mb-1" style={{ color: "var(--td-secondary)" }}>End date</span>
               <CalendarPicker
                 value={form.end_date}
                 onChange={(date) => store.setDates(form.start_date, date)}
                 label="Select end date"
+                inline
               />
             </div>
             {days > 0 && (
-              <div className="px-4 py-3">
-                <span className="text-[15px] font-medium" style={{ color: "var(--td-accent)" }}>
+              <div className="rounded-2xl shadow-sm px-4 py-3 text-center" style={{ backgroundColor: "var(--td-accent)" }}>
+                <span className="text-[17px] font-bold" style={{ color: "var(--td-accent-text)" }}>
                   {days}-day trip
                 </span>
               </div>

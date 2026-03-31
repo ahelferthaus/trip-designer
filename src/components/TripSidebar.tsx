@@ -66,7 +66,8 @@ export default function TripSidebar() {
     const form = seedTripToForm(seed);
     store.loadForm(form);
     setOpen(false);
-    navigate("/intake");
+    // Navigate to intake with a query param to skip to review step
+    navigate("/intake?step=review");
   };
 
   const handleToggleFav = (id: string) => {

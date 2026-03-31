@@ -10,14 +10,23 @@ interface MapHero3DProps {
   title?: string;
   subtitle?: string;
   height?: number;
+  /** Optional cover photo URL — shown as a blended overlay on the map */
+  coverPhoto?: string;
   children?: React.ReactNode;
+}
+
+/** Generate an Unsplash photo URL for a destination (reliable, free, no API key) */
+function getDestinationPhoto(destination: string): string {
+  const query = encodeURIComponent(destination.split(",")[0].trim());
+  return `https://source.unsplash.com/800x400/?${query},travel,city`;
 }
 
 /**
  * 3D-looking Mapbox globe hero banner.
  * Flies to the trip destination with pitch/bearing for a cinematic 3D effect.
  */
-export default function MapHero3D({ destination, title, subtitle, height = 340, children }: MapHero3DProps) {
+export default function MapHero3D({ destination, title, subtitle, height = 340, coverPhoto, children }: MapHero3DProps) {
+  const photoUrl = coverPhoto || getDestinationPhoto(destination);
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false);
@@ -75,11 +84,11 @@ export default function MapHero3D({ destination, title, subtitle, height = 340, 
     })();
   }, [ready, destination]);
 
-  // Fallback if no Mapbox token — gradient background
+  // Fallback if no Mapbox token — show destination photo
   if (!MAPBOX_TOKEN) {
     return (
-      <div className="relative overflow-hidden" style={{ height, background: "linear-gradient(135deg, #0B1D33 0%, #1a3a5c 50%, #0B1D33 100%)" }}>
-        <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 40%)" }} />
+      <div className="relative overflow-hidden" style={{ height, background: `url(${photoUrl}) center/cover` }}>
+        <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.4) 100%)" }} />
         <div className="absolute bottom-0 left-0 right-0 px-5 pb-5">
           {title && <h1 className="text-[26px] font-black text-white leading-tight drop-shadow-lg">{title}</h1>}
           {subtitle && <p className="text-[14px] text-white/70 mt-1 drop-shadow">{subtitle}</p>}
@@ -94,13 +103,25 @@ export default function MapHero3D({ destination, title, subtitle, height = 340, 
       {/* 3D Map */}
       <div ref={mapContainer} className="absolute inset-0" />
 
+      {/* Destination photo overlay — blended on top of map */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url(${photoUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.5,
+          mixBlendMode: "overlay",
+        }}
+      />
+
       {/* Top gradient */}
-      <div className="absolute inset-x-0 top-0 h-20 pointer-events-none"
-        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 100%)" }} />
+      <div className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 100%)" }} />
 
       {/* Bottom gradient for text readability */}
       <div className="absolute inset-x-0 bottom-0 h-40 pointer-events-none"
-        style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%)" }} />
+        style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.75) 0%, transparent 100%)" }} />
 
       {/* Title overlay */}
       <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 pointer-events-none">
