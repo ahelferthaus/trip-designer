@@ -10,8 +10,10 @@ interface MapHero3DProps {
   title?: string;
   subtitle?: string;
   height?: number;
-  /** Optional cover photo URL — shown as a blended overlay on the map */
+  /** Optional cover photo URL — overrides auto-detected photo */
   coverPhoto?: string;
+  /** Show destination photo as the hero visual (true for trip pages, false for general pages) */
+  showPhoto?: boolean;
   children?: React.ReactNode;
 }
 
@@ -56,7 +58,7 @@ function getDestinationPhoto(destination: string): string {
  * 3D-looking Mapbox globe hero banner.
  * Flies to the trip destination with pitch/bearing for a cinematic 3D effect.
  */
-export default function MapHero3D({ destination, title, subtitle, height = 340, coverPhoto, children }: MapHero3DProps) {
+export default function MapHero3D({ destination, title, subtitle, height = 340, coverPhoto, showPhoto = false, children }: MapHero3DProps) {
   const photoUrl = coverPhoto || getDestinationPhoto(destination);
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -131,18 +133,20 @@ export default function MapHero3D({ destination, title, subtitle, height = 340, 
 
   return (
     <div className="relative overflow-hidden" style={{ height }}>
-      {/* Full-bleed destination photo — primary visual */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${photoUrl})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
+      {/* Destination photo — only on trip-specific pages */}
+      {showPhoto && (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${photoUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+      )}
 
-      {/* 3D Map — subtle layer underneath for depth */}
-      <div ref={mapContainer} className="absolute inset-0" style={{ opacity: 0.3 }} />
+      {/* 3D Map */}
+      <div ref={mapContainer} className="absolute inset-0" style={{ opacity: showPhoto ? 0.25 : 1 }} />
 
       {/* Top gradient */}
       <div className="absolute inset-x-0 top-0 h-24 pointer-events-none"

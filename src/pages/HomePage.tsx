@@ -187,20 +187,37 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* === QUICK ACTIONS — no dead space === */}
-      <div className="px-4 pt-5 flex flex-col gap-2.5">
-        <button onClick={() => navigate("/explore")} className="w-full py-4 rounded-2xl text-[15px] font-semibold active:opacity-70 flex items-center justify-center gap-2"
-          style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}>
-          🌍 Explore Public Trips
+      {/* Fixed bottom quick actions — always visible above tab bar */}
+      <div
+        className="fixed bottom-20 left-0 right-0 z-30 px-4 flex gap-2"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
+        <button onClick={() => navigate("/explore")}
+          className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold active:opacity-70 flex items-center justify-center gap-1.5"
+          style={{
+            backgroundColor: "rgba(11, 29, 51, 0.9)",
+            backdropFilter: "blur(12px)",
+            color: "var(--td-accent)",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}>
+          🌍 Explore
         </button>
-        {user && (
-          <button onClick={() => navigate("/unpacked")} className="w-full py-4 rounded-2xl text-[15px] font-semibold active:opacity-70 flex items-center justify-center gap-2"
-            style={{ backgroundColor: "var(--td-card)", color: "var(--td-accent)" }}>
-            📦 VYBR Unpacked — Year in Review
+        {user ? (
+          <button onClick={() => navigate("/unpacked")}
+            className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold active:opacity-70 flex items-center justify-center gap-1.5"
+            style={{
+              backgroundColor: "rgba(11, 29, 51, 0.9)",
+              backdropFilter: "blur(12px)",
+              color: "var(--td-accent)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}>
+            📦 Unpacked
           </button>
-        )}
-        {!user && (
-          <button onClick={() => navigate("/auth")} className="w-full py-4 rounded-2xl text-[17px] font-bold active:opacity-70"
+        ) : (
+          <button onClick={() => navigate("/auth")}
+            className="flex-1 py-3.5 rounded-2xl text-[14px] font-bold active:opacity-70"
             style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}>
             Create Account
           </button>

@@ -143,6 +143,7 @@ export default function TripDetailPage() {
         height={320}
         title={trip.title}
         subtitle={`${trip.destination} · ${days} day${days !== 1 ? "s" : ""}`}
+        showPhoto
       >
         {/* Back button */}
         <button
