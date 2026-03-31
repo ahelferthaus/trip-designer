@@ -1,45 +1,36 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { loadSavedTrips } from "../lib/tripStorage";
-import type { SavedTrip } from "../lib/tripStorage";
-import { ALL_SEED_TRIPS, seedTripToForm } from "../lib/seedTrips";
-import type { SeedTrip } from "../lib/seedTrips";
+import { searchPublicTrips } from "../lib/publicTrips";
+import type { PublicTrip } from "../lib/publicTrips";
 import { toggleFavorite, isFavorite } from "../lib/favorites";
 import { useTripStore } from "../store/tripStore";
 
-const VIBE_EMOJIS: Record<string, string> = {
-  relaxed: "🏖️", adventure: "🧗", culture: "🏛️", food: "🍷",
-  nightlife: "🎵", nature: "🏔️", family: "👨‍👩‍👧", romance: "💑",
+const BUDGET_EMOJI: Record<string, string> = { budget: "💰", mid: "💳", splurge: "💎" };
+
+/** Destination photo lookup for card thumbnails */
+const THUMB: Record<string, string> = {
+  "Paris": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=70",
+  "Rome": "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=300&q=70",
+  "Barcelona": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=300&q=70",
+  "London": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=300&q=70",
+  "Amsterdam": "https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=300&q=70",
+  "Santorini": "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=300&q=70",
+  "Maldives": "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=300&q=70",
+  "Cancun": "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=300&q=70",
+  "Miami": "https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=300&q=70",
+  "Kyoto": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=300&q=70",
+  "New York": "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=300&q=70",
+  "Bali": "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=300&q=70",
 };
+function getThumb(dest: string): string {
+  for (const [k, v] of Object.entries(THUMB)) {
+    if (dest.toLowerCase().includes(k.toLowerCase())) return v;
+  }
+  return "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=300&q=70";
+}
 
-const BUDGET_EMOJI: Record<string, string> = {
-  budget: "💰", mid: "💳", splurge: "💎",
-};
-
-const CATEGORY_GROUPS = [
-  { label: "Europe", emoji: "🇪🇺", filter: (s: SeedTrip) => s.tags.includes("europe") },
-  { label: "US Weekends", emoji: "🇺🇸", filter: (s: SeedTrip) => s.tags.includes("weekend") },
-  { label: "Beach", emoji: "🏖️", filter: (s: SeedTrip) => s.tags.includes("beach") || s.tags.includes("spring-break") },
-  { label: "Budget", emoji: "💰", filter: (s: SeedTrip) => s.tags.includes("budget-friendly") },
-  { label: "Luxury", emoji: "✨", filter: (s: SeedTrip) => s.tags.includes("luxury") },
-  { label: "Skiing", emoji: "⛷️", filter: (s: SeedTrip) => s.tags.includes("skiing") },
-  { label: "Soccer", emoji: "⚽", filter: (s: SeedTrip) => s.tags.includes("soccer") },
-];
-
-// Photo URLs for seed trip cards
-const SEED_PHOTOS: Record<string, string> = {
-  "Paris, France": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=70",
-  "Rome, Italy": "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=300&q=70",
-  "Barcelona, Spain": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=300&q=70",
-  "London, England": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=300&q=70",
-  "Santorini, Greece": "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=300&q=70",
-  "Maldives": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&q=70",
-  "Kyoto, Japan": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=300&q=70",
-  "Cancun, Mexico": "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?w=300&q=70",
-};
-
-function getSeedPhoto(dest: string): string {
-  return SEED_PHOTOS[dest] || `https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=300&q=70`;
+function daysBetween(s: string, e: string) {
+  return Math.max(0, Math.round((new Date(e).getTime() - new Date(s).getTime()) / 86400000));
 }
 
 export default function TripSidebar() {
@@ -47,14 +38,18 @@ export default function TripSidebar() {
   const location = useLocation();
   const store = useTripStore();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"browse" | "my" | "favs">("browse");
-  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>([]);
-  const [expandedGroup, setExpandedGroup] = useState<string | null>("Europe");
+  const [trips, setTrips] = useState<PublicTrip[]>([]);
+  const [loading, setLoading] = useState(false);
   const [favRefresh, setFavRefresh] = useState(0);
 
-  // Load data on open
+  // Fetch published trips from database when opened
   useEffect(() => {
-    setSavedTrips(loadSavedTrips());
+    if (!open) return;
+    setLoading(true);
+    searchPublicTrips({ sortBy: "newest", limit: 30 }).then(data => {
+      setTrips(data);
+      setLoading(false);
+    });
   }, [open, favRefresh]);
 
   // Hide on certain pages
@@ -62,12 +57,17 @@ export default function TripSidebar() {
   if (location.pathname === "/") return null;
   if (hiddenPaths.some(p => location.pathname === p || location.pathname.startsWith(p + "/"))) return null;
 
-  const handlePlanSeed = (seed: SeedTrip) => {
-    const form = seedTripToForm(seed);
-    store.loadForm(form);
+  const handleViewTrip = (trip: PublicTrip) => {
     setOpen(false);
-    // Navigate to intake with auto-generate flag — AI runs immediately
-    navigate("/intake?auto=generate");
+    navigate(`/trip/${trip.id}`);
+  };
+
+  const handlePlanTrip = (trip: PublicTrip) => {
+    if (trip.form_data) {
+      store.loadForm(trip.form_data);
+      setOpen(false);
+      navigate("/intake?step=review");
+    }
   };
 
   const handleToggleFav = (id: string) => {
@@ -75,23 +75,20 @@ export default function TripSidebar() {
     setFavRefresh(n => n + 1);
   };
 
-  const favSeedTrips = ALL_SEED_TRIPS.filter(s => isFavorite(`seed-${s.destination}`));
-
   return (
     <>
-      {/* Floating toggle — large, prominent */}
+      {/* Toggle button — RIGHT side */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed top-24 left-0 z-50 flex items-center gap-2 pl-3 pr-4 py-3 rounded-r-2xl shadow-xl active:opacity-70"
+        className="fixed top-24 right-0 z-50 flex items-center gap-2 pr-3 pl-4 py-3 rounded-l-2xl shadow-xl active:opacity-70"
         style={{
           backgroundColor: "var(--td-accent)",
           color: "var(--td-accent-text)",
-          backdropFilter: "blur(12px)",
           boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
         }}
       >
-        <span className="text-[18px]">{open ? "✕" : "🗺️"}</span>
         <span className="text-[13px] font-bold">{open ? "Close" : "Trips"}</span>
+        <span className="text-[18px]">{open ? "✕" : "🗺️"}</span>
       </button>
 
       {/* Backdrop */}
@@ -99,20 +96,20 @@ export default function TripSidebar() {
         <div className="fixed inset-0 z-40 bg-black/50" onClick={() => setOpen(false)} />
       )}
 
-      {/* Sidebar panel */}
+      {/* RIGHT-side panel */}
       <div
-        className="fixed top-0 left-0 bottom-0 z-50 w-[320px] flex flex-col shadow-2xl transition-transform duration-250 ease-out"
+        className="fixed top-0 right-0 bottom-0 z-50 w-[330px] flex flex-col shadow-2xl transition-transform duration-250 ease-out"
         style={{
           backgroundColor: "var(--td-bg)",
           backdropFilter: "blur(20px)",
-          transform: open ? "translateX(0)" : "translateX(-100%)",
-          borderRight: "1px solid var(--td-separator)",
+          transform: open ? "translateX(0)" : "translateX(100%)",
+          borderLeft: "1px solid var(--td-separator)",
         }}
       >
         {/* Header */}
         <div className="safe-top pt-5 pb-3 px-4 flex items-center justify-between">
           <h2 className="text-[20px] font-black" style={{ color: "var(--td-label)" }}>
-            🗺️ Trip Browser
+            🗺️ Pre-Built Trips
           </h2>
           <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-full flex items-center justify-center active:opacity-70"
             style={{ backgroundColor: "var(--td-fill)" }}>
@@ -120,192 +117,105 @@ export default function TripSidebar() {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex px-3 pb-3 gap-1.5">
-          {([
-            { id: "browse" as const, label: "Browse", emoji: "🌍" },
-            { id: "my" as const, label: "My Trips", emoji: "✈️" },
-            { id: "favs" as const, label: "Saved", emoji: "❤️" },
-          ]).map(t => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className="flex-1 py-2.5 rounded-xl text-[13px] font-bold active:opacity-70 flex items-center justify-center gap-1"
-              style={{
-                backgroundColor: tab === t.id ? "var(--td-accent)" : "var(--td-card)",
-                color: tab === t.id ? "var(--td-accent-text)" : "var(--td-label)",
-              }}
-            >
-              <span>{t.emoji}</span> {t.label}
-            </button>
-          ))}
-        </div>
+        <p className="px-4 pb-3 text-[12px]" style={{ color: "var(--td-secondary)" }}>
+          AI-generated itineraries ready to explore. Tap to view, customize dates & preferences, then make it yours.
+        </p>
 
-        {/* Scrollable content */}
+        {/* Trip list */}
         <div className="flex-1 overflow-y-auto px-3 pb-24">
-
-          {/* ===== BROWSE TAB ===== */}
-          {tab === "browse" && (
-            <div className="flex flex-col gap-2">
-              {CATEGORY_GROUPS.map(group => {
-                const trips = ALL_SEED_TRIPS.filter(group.filter);
-                if (trips.length === 0) return null;
-                const isExpanded = expandedGroup === group.label;
-                return (
-                  <div key={group.label}>
-                    <button
-                      onClick={() => setExpandedGroup(isExpanded ? null : group.label)}
-                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl active:opacity-70"
-                      style={{ backgroundColor: isExpanded ? "var(--td-card)" : "transparent" }}
-                    >
-                      <span className="text-[15px] font-bold flex items-center gap-2" style={{ color: "var(--td-label)" }}>
-                        {group.emoji} {group.label}
-                      </span>
-                      <span className="text-[12px] font-semibold" style={{ color: "var(--td-secondary)" }}>
-                        {trips.length} {isExpanded ? "▾" : "▸"}
-                      </span>
-                    </button>
-                    {isExpanded && (
-                      <div className="flex flex-col gap-2 mt-1 mb-3">
-                        {trips.map(seed => {
-                          const faved = isFavorite(`seed-${seed.destination}`);
-                          return (
-                            <div
-                              key={seed.destination}
-                              className="rounded-xl overflow-hidden shadow-md"
-                              style={{ backgroundColor: "var(--td-card)" }}
-                            >
-                              {/* Photo card */}
-                              <div
-                                className="h-24 relative flex items-end px-3 pb-2"
-                                style={{ background: `url(${getSeedPhoto(seed.destination)}) center/cover` }}
-                              >
-                                <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
-                                {/* Fav button */}
-                                <button
-                                  onClick={() => handleToggleFav(`seed-${seed.destination}`)}
-                                  className="absolute top-2 right-2 text-[18px] active:scale-125 transition-transform"
-                                >
-                                  {faved ? "❤️" : "🤍"}
-                                </button>
-                                <span className="relative text-[14px] font-bold text-white drop-shadow-md truncate">
-                                  {seed.destination}
-                                </span>
-                              </div>
-                              {/* Info + Plan button */}
-                              <div className="px-3 py-2.5 flex items-center justify-between">
-                                <div>
-                                  <div className="text-[11px] flex items-center gap-1.5" style={{ color: "var(--td-secondary)" }}>
-                                    <span>{seed.days} days</span>
-                                    <span>·</span>
-                                    <span>{BUDGET_EMOJI[seed.budget] || ""} {seed.budget}</span>
-                                  </div>
-                                  <div className="text-[11px] mt-0.5" style={{ color: "var(--td-secondary)" }}>
-                                    {seed.vibes.map(v => VIBE_EMOJIS[v] || v).join(" ")}
-                                  </div>
-                                </div>
-                                <button
-                                  onClick={() => handlePlanSeed(seed)}
-                                  className="px-3 py-1.5 rounded-lg text-[12px] font-bold whitespace-nowrap active:opacity-70"
-                                  style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
-                                >
-                                  Plan it
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+          {loading ? (
+            <div className="flex flex-col gap-3 pt-2">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-xl overflow-hidden" style={{ backgroundColor: "var(--td-card)" }}>
+                  <div className="skeleton h-24 w-full" />
+                  <div className="p-3 space-y-2">
+                    <div className="skeleton h-4 w-3/4" />
+                    <div className="skeleton h-3 w-1/2" />
                   </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ===== MY TRIPS TAB ===== */}
-          {tab === "my" && (
-            <div className="flex flex-col gap-2">
-              {savedTrips.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-3">✈️</div>
-                  <p className="text-[15px] font-semibold mb-1" style={{ color: "var(--td-label)" }}>No trips yet</p>
-                  <p className="text-[13px] mb-4" style={{ color: "var(--td-secondary)" }}>Plan your first adventure!</p>
-                  <button
-                    onClick={() => { setOpen(false); navigate("/intake"); }}
-                    className="px-5 py-2.5 rounded-xl text-[14px] font-bold active:opacity-70"
-                    style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
-                  >
-                    Plan a trip
-                  </button>
                 </div>
-              ) : (
-                savedTrips.map(trip => (
-                  <button
+              ))}
+            </div>
+          ) : trips.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">🌍</div>
+              <p className="text-[14px] font-semibold" style={{ color: "var(--td-label)" }}>No trips yet</p>
+              <p className="text-[12px] mt-1" style={{ color: "var(--td-secondary)" }}>
+                Seed trips will appear here once generated.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 pt-1">
+              {trips.map(trip => {
+                const faved = isFavorite(trip.id);
+                const days = daysBetween(trip.start_date, trip.end_date);
+                const formData = trip.form_data;
+                return (
+                  <div
                     key={trip.id}
-                    onClick={() => { setOpen(false); navigate(trip.cloudTripId ? `/trip/${trip.cloudTripId}` : "/trips"); }}
-                    className="rounded-xl overflow-hidden shadow-md text-left active:opacity-70"
+                    className="rounded-xl overflow-hidden shadow-md"
                     style={{ backgroundColor: "var(--td-card)" }}
                   >
-                    <div className="h-20 flex items-end px-3 pb-2"
-                      style={{ background: "linear-gradient(135deg, var(--td-accent), var(--td-nav-bg))" }}>
-                      <span className="text-[14px] font-bold text-white drop-shadow-md truncate">{trip.title}</span>
-                    </div>
-                    <div className="px-3 py-2">
-                      <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>
-                        📍 {trip.destination} · {trip.form?.vibes?.slice(0, 2).join(", ") || ""}
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* ===== FAVORITES TAB ===== */}
-          {tab === "favs" && (
-            <div className="flex flex-col gap-2">
-              {favSeedTrips.length === 0 && savedTrips.filter(t => isFavorite(t.id)).length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-3">❤️</div>
-                  <p className="text-[15px] font-semibold mb-1" style={{ color: "var(--td-label)" }}>No saved trips</p>
-                  <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
-                    Browse trips and tap the heart to save them here.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {favSeedTrips.map(seed => (
-                    <div
-                      key={seed.destination}
-                      className="rounded-xl overflow-hidden shadow-md"
-                      style={{ backgroundColor: "var(--td-card)" }}
+                    {/* Photo card — click to view full trip */}
+                    <button
+                      onClick={() => handleViewTrip(trip)}
+                      className="w-full h-28 relative flex items-end px-3 pb-2 text-left active:opacity-90"
+                      style={{
+                        background: trip.cover_photo_url
+                          ? `url(${trip.cover_photo_url}) center/cover`
+                          : `url(${getThumb(trip.destination)}) center/cover`,
+                      }}
                     >
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.65) 0%, transparent 55%)" }} />
+                      {/* Favorite */}
                       <div
-                        className="h-24 relative flex items-end px-3 pb-2"
-                        style={{ background: `url(${getSeedPhoto(seed.destination)}) center/cover` }}
+                        className="absolute top-2 right-2"
+                        onClick={e => { e.stopPropagation(); handleToggleFav(trip.id); }}
                       >
-                        <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.6) 0%, transparent 60%)" }} />
-                        <span className="relative text-[14px] font-bold text-white drop-shadow-md truncate">
-                          {seed.destination}
-                        </span>
+                        <span className="text-[18px] drop-shadow-lg cursor-pointer">{faved ? "❤️" : "🤍"}</span>
                       </div>
-                      <div className="px-3 py-2.5 flex items-center justify-between">
-                        <div className="text-[11px]" style={{ color: "var(--td-secondary)" }}>
-                          {seed.days}d · {seed.vibes.map(v => VIBE_EMOJIS[v] || v).join(" ")}
-                        </div>
+                      <span className="relative text-[14px] font-bold text-white drop-shadow-md truncate">
+                        {trip.title}
+                      </span>
+                    </button>
+
+                    {/* Info + actions */}
+                    <div className="px-3 py-2.5">
+                      <div className="text-[12px] flex items-center gap-1.5" style={{ color: "var(--td-secondary)" }}>
+                        <span>📍 {trip.destination}</span>
+                        <span>·</span>
+                        <span>{days}d</span>
+                        {formData?.budget_level && (
+                          <>
+                            <span>·</span>
+                            <span>{BUDGET_EMOJI[formData.budget_level] || ""} {formData.budget_level}</span>
+                          </>
+                        )}
+                      </div>
+                      {trip.description && (
+                        <p className="text-[11px] mt-1 line-clamp-2" style={{ color: "var(--td-secondary)" }}>
+                          {trip.description}
+                        </p>
+                      )}
+                      <div className="flex gap-2 mt-2">
                         <button
-                          onClick={() => handlePlanSeed(seed)}
-                          className="px-3 py-1.5 rounded-lg text-[12px] font-bold active:opacity-70"
+                          onClick={() => handleViewTrip(trip)}
+                          className="flex-1 py-2 rounded-lg text-[12px] font-bold active:opacity-70 text-center"
+                          style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
+                        >
+                          View Itinerary
+                        </button>
+                        <button
+                          onClick={() => handlePlanTrip(trip)}
+                          className="flex-1 py-2 rounded-lg text-[12px] font-bold active:opacity-70 text-center"
                           style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
                         >
-                          Plan it
+                          Customize
                         </button>
                       </div>
                     </div>
-                  ))}
-                </>
-              )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
