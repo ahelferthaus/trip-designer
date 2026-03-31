@@ -6,11 +6,64 @@ import { useAuth } from "../store/authStore";
 import { generateItinerary } from "../lib/generateItinerary";
 import { isSupabaseConfigured, saveCloudTrip } from "../lib/supabaseTrips";
 import { updateTripCloudData } from "../lib/tripStorage";
-import CalendarPicker from "../components/intake/CalendarPicker";
 import GroupPresetPicker from "../components/intake/GroupPresetPicker";
 import type { BudgetLevel, TripVibe, GroupMember, Currency, TransportMode } from "../lib/types";
 import { useGamification } from "../store/gamificationStore";
 import { getDNADefaults, buildTravelDNA } from "../lib/travelDNA";
+
+/** Compact inline calendar for side-by-side date picking */
+function MiniCalendar({ value, onChange, minDate }: { value: string; onChange: (d: string) => void; minDate?: string }) {
+  const today = new Date();
+  const selected = value ? new Date(value) : null;
+  const [viewDate, setViewDate] = useState(selected || today);
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const days = ["S", "M", "T", "W", "T", "F", "S"];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1.5 px-1">
+        <button onClick={() => setViewDate(new Date(year, month - 1, 1))} className="text-[16px] active:opacity-70" style={{ color: "var(--td-accent)" }}>‹</button>
+        <span className="text-[12px] font-bold" style={{ color: "var(--td-label)" }}>{months[month]} {year}</span>
+        <button onClick={() => setViewDate(new Date(year, month + 1, 1))} className="text-[16px] active:opacity-70" style={{ color: "var(--td-accent)" }}>›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-px">
+        {days.map((d, i) => (
+          <div key={i} className="text-center text-[9px] font-bold py-0.5" style={{ color: "var(--td-secondary)" }}>{d}</div>
+        ))}
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const iso = new Date(year, month, day).toISOString().split("T")[0];
+          const isSelected = value === iso;
+          const todayIso = today.toISOString().split("T")[0];
+          const isToday = todayIso === iso;
+          const isPast = iso < todayIso;
+          const isBeforeMin = minDate ? iso < minDate : false;
+          const disabled = isPast || isBeforeMin;
+          return (
+            <button
+              key={day}
+              onClick={() => !disabled && onChange(iso)}
+              className="aspect-square flex items-center justify-center text-[11px] rounded-full"
+              style={{
+                backgroundColor: isSelected ? "var(--td-accent)" : "transparent",
+                color: isSelected ? "var(--td-accent-text)" : disabled ? "var(--td-separator)" : isToday ? "var(--td-accent)" : "var(--td-label)",
+                fontWeight: isSelected || isToday ? 700 : 400,
+                opacity: disabled ? 0.3 : 1,
+              }}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const CURRENCIES: { id: Currency; label: string; symbol: string }[] = [
   { id: "USD", label: "USD", symbol: "$" },
@@ -267,34 +320,41 @@ export default function IntakePage() {
           </div>
         )}
 
-        {/* Step 2: Dates — calendars shown inline */}
+        {/* Step 2: Dates — side-by-side compact calendars */}
         {step === 2 && (
-          <div className="flex flex-col gap-4">
-            <div className="rounded-2xl shadow-sm px-4 py-4" style={{ backgroundColor: "var(--td-card)" }}>
-              <span className="text-[13px] uppercase tracking-wide font-bold block mb-1" style={{ color: "var(--td-secondary)" }}>Start date</span>
-              <CalendarPicker
-                value={form.start_date}
-                onChange={(date) => store.setDates(date, form.end_date)}
-                label="Select start date"
-                inline
-              />
-            </div>
-            <div className="rounded-2xl shadow-sm px-4 py-4" style={{ backgroundColor: "var(--td-card)" }}>
-              <span className="text-[13px] uppercase tracking-wide font-bold block mb-1" style={{ color: "var(--td-secondary)" }}>End date</span>
-              <CalendarPicker
-                value={form.end_date}
-                onChange={(date) => store.setDates(form.start_date, date)}
-                label="Select end date"
-                inline
-              />
-            </div>
-            {days > 0 && (
-              <div className="rounded-2xl shadow-sm px-4 py-3 text-center" style={{ backgroundColor: "var(--td-accent)" }}>
-                <span className="text-[17px] font-bold" style={{ color: "var(--td-accent-text)" }}>
-                  {days}-day trip
-                </span>
+          <div className="flex flex-col gap-3">
+            {/* Side-by-side mini calendars */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-2xl shadow-sm px-2 py-3" style={{ backgroundColor: "var(--td-card)" }}>
+                <span className="text-[11px] uppercase tracking-wide font-bold block text-center mb-2" style={{ color: "var(--td-secondary)" }}>Start</span>
+                <MiniCalendar value={form.start_date} onChange={(d) => store.setDates(d, form.end_date)} />
               </div>
-            )}
+              <div className="rounded-2xl shadow-sm px-2 py-3" style={{ backgroundColor: "var(--td-card)" }}>
+                <span className="text-[11px] uppercase tracking-wide font-bold block text-center mb-2" style={{ color: "var(--td-secondary)" }}>End</span>
+                <MiniCalendar value={form.end_date} onChange={(d) => store.setDates(form.start_date, d)} minDate={form.start_date} />
+              </div>
+            </div>
+            {/* Selected dates summary */}
+            <div className="rounded-2xl shadow-sm px-4 py-3 flex items-center justify-between" style={{ backgroundColor: "var(--td-card)" }}>
+              <div>
+                <div className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
+                  {form.start_date
+                    ? new Date(form.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                    : "Start"
+                  }
+                  {" → "}
+                  {form.end_date
+                    ? new Date(form.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                    : "End"
+                  }
+                </div>
+              </div>
+              {days > 0 && (
+                <span className="text-[15px] font-bold px-3 py-1 rounded-full" style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}>
+                  {days} day{days !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
