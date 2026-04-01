@@ -10,10 +10,9 @@ import { getComments, addComment, hasLiked, likeTrip, unlikeTrip, getLikeCount }
 import type { Comment } from "../lib/social";
 import MapHero3D from "../components/itinerary/MapHero3D";
 import UserAvatar from "../components/UserAvatar";
+import EditableItinerary from "../components/itinerary/EditableItinerary";
 import type { PublicTrip, TripReview } from "../lib/publicTrips";
-
-const SLOT_LABELS: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", flex: "Flex" };
-const CAT_ICONS: Record<string, string> = { food: "🍽️", attraction: "🏛️", adventure: "🧗", rest: "🛋️", transport: "🚌" };
+import type { GeneratedItinerary } from "../lib/generateItinerary";
 
 function daysBetween(start: string, end: string) {
   return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000));
@@ -40,6 +39,8 @@ export default function TripDetailPage() {
   const [reviews, setReviews] = useState<TripReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [cloning, setCloning] = useState(false);
+  const [savedLocally, setSavedLocally] = useState(false);
+  const [editableItinerary, setEditableItinerary] = useState<GeneratedItinerary | null>(null);
 
   // Review form
   const [myRating, setMyRating] = useState(0);
@@ -244,70 +245,59 @@ export default function TripDetailPage() {
           </div>
         )}
 
-        {/* Clone CTA */}
-        <button
-          onClick={handleClone}
-          disabled={!user || cloning}
-          className="w-full py-4 rounded-2xl text-[17px] font-bold btn-spring reveal"
-          style={{
-            backgroundColor: user ? "var(--td-accent)" : "var(--td-fill)",
-            color: user ? "var(--td-accent-text)" : "var(--td-secondary)",
-            boxShadow: user ? "0 4px 16px rgba(0,0,0,0.12)" : "none",
-          }}
-        >
-          {cloning ? "Cloning..." : !user ? "Sign in to clone this trip" : "Clone this trip"}
-        </button>
+        {/* Save / Clone CTA */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (trip.form_data && itinerary) {
+                saveTrip(trip.form_data, editableItinerary || itinerary, user?.email?.split("@")[0] || "Me");
+                setSavedLocally(true);
+                setEditableItinerary(editableItinerary || { ...itinerary });
+              }
+            }}
+            disabled={savedLocally}
+            className="flex-1 py-4 rounded-2xl text-[15px] font-bold active:opacity-70"
+            style={{
+              backgroundColor: savedLocally ? "#34C759" : "var(--td-accent)",
+              color: "var(--td-accent-text)",
+            }}
+          >
+            {savedLocally ? "Saved — Now Editing" : "Save to My Trips"}
+          </button>
+          {user && !savedLocally && (
+            <button
+              onClick={handleClone}
+              disabled={cloning}
+              className="px-5 py-4 rounded-2xl text-[15px] font-bold active:opacity-70"
+              style={{ backgroundColor: "var(--td-fill)", color: "var(--td-label)" }}
+            >
+              {cloning ? "..." : "Clone"}
+            </button>
+          )}
+        </div>
 
-        {/* === TIMELINE ITINERARY === */}
+        {savedLocally && (
+          <p className="text-[12px] text-center" style={{ color: "var(--td-secondary)" }}>
+            Tap any activity to see options. Edit descriptions, swap choices, or remove what you don't want.
+          </p>
+        )}
+
+        {/* === ITINERARY with all options visible === */}
         <div>
           <p className="text-[12px] uppercase tracking-widest font-semibold mb-4" style={{ color: "var(--td-secondary)" }}>
-            Itinerary
+            Itinerary {savedLocally ? "(Editing)" : ""}
           </p>
-          <div className="flex flex-col gap-0">
-            {itinerary.days.map((day, dayIdx) => (
-              <div key={day.id} className="flex gap-3">
-                {/* Timeline rail */}
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 rounded-full text-[12px] font-bold flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}>
-                    {day.day_number}
-                  </div>
-                  {dayIdx < itinerary.days.length - 1 && (
-                    <div className="w-0.5 flex-1 my-1" style={{ backgroundColor: "var(--td-separator)" }} />
-                  )}
-                </div>
-
-                {/* Day content */}
-                <div className="flex-1 pb-5">
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="font-semibold text-[15px]" style={{ color: "var(--td-label)" }}>
-                      {day.title ?? `Day ${day.day_number}`}
-                    </span>
-                    <span className="text-[11px]" style={{ color: "var(--td-secondary)" }}>{day.date}</span>
-                  </div>
-                  <div className="rounded-2xl overflow-hidden shadow-sm divide-y"
-                    style={{ backgroundColor: "var(--td-card)", borderColor: "var(--td-separator)" }}>
-                    {day.slots.map(slot => {
-                      const opt = slot.options[0];
-                      if (!opt) return null;
-                      return (
-                        <div key={slot.id} className="px-4 py-3">
-                          <p className="text-[10px] uppercase tracking-widest mb-0.5 font-semibold" style={{ color: "var(--td-secondary)" }}>
-                            {SLOT_LABELS[slot.slot_type]}
-                          </p>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm">{CAT_ICONS[opt.category] ?? "📍"}</span>
-                            <span className="text-[14px] font-semibold" style={{ color: "var(--td-label)" }}>{opt.title}</span>
-                          </div>
-                          <p className="text-[12px] mt-0.5 leading-snug" style={{ color: "var(--td-secondary)" }}>{opt.description}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <EditableItinerary
+            itinerary={editableItinerary || itinerary}
+            editable={savedLocally}
+            onUpdate={(updated) => {
+              setEditableItinerary(updated);
+              // Auto-save to local storage
+              if (trip.form_data) {
+                saveTrip(trip.form_data, updated, user?.email?.split("@")[0] || "Me");
+              }
+            }}
+          />
         </div>
 
         {/* Reviews */}
