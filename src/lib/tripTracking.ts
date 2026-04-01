@@ -238,6 +238,49 @@ export async function getTrackingSessions(tripId: string): Promise<TrackingSessi
   return (data ?? []) as TrackingSession[];
 }
 
+/** Get tracking points grouped by user_id */
+export async function getTrackingPointsByUser(
+  tripId: string,
+): Promise<Map<string, TrackingPoint[]>> {
+  if (!supabase) return new Map();
+  const { data } = await supabase
+    .from("trip_tracking_points")
+    .select("user_id, lat, lng, altitude_m, accuracy_m, speed_mps, heading, recorded_at")
+    .eq("trip_id", tripId)
+    .order("recorded_at");
+
+  const result = new Map<string, TrackingPoint[]>();
+  for (const row of data ?? []) {
+    const uid = row.user_id as string;
+    if (!result.has(uid)) result.set(uid, []);
+    result.get(uid)!.push({
+      lat: row.lat as number,
+      lng: row.lng as number,
+      altitude_m: row.altitude_m as number | undefined,
+      accuracy_m: row.accuracy_m as number | undefined,
+      speed_mps: row.speed_mps as number | undefined,
+      heading: row.heading as number | undefined,
+      recorded_at: row.recorded_at as string,
+    });
+  }
+  return result;
+}
+
+/** Get display names for users in a trip */
+export async function getTripMemberNames(tripId: string): Promise<Map<string, string>> {
+  if (!supabase) return new Map();
+  const { data } = await supabase
+    .from("trip_members")
+    .select("user_id, display_name")
+    .eq("trip_id", tripId);
+
+  const result = new Map<string, string>();
+  for (const row of data ?? []) {
+    if (row.user_id) result.set(row.user_id as string, row.display_name as string);
+  }
+  return result;
+}
+
 // --- Realtime subscription for group tracking ---
 
 export function subscribeToTrackingPoints(

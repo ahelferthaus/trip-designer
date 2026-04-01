@@ -3,20 +3,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../store/authStore";
 import { useActiveTrip } from "../store/activeTripStore";
 import LiveRouteMap from "../components/activetrip/LiveRouteMap";
+import type { UserRoute } from "../components/activetrip/LiveRouteMap";
 import TripRecordingControls from "../components/activetrip/TripRecordingControls";
-import { getTrackingPoints, subscribeToTrackingPoints } from "../lib/tripTracking";
-import type { TrackingPoint } from "../lib/tripTracking";
-import { getDestinationPhoto } from "../lib/destinationPhotos";
+import { getTrackingPointsByUser, subscribeToTrackingPoints, getTripMemberNames } from "../lib/tripTracking";
 import TripTimeline from "../components/activetrip/TripTimeline";
 import JournalEntryForm from "../components/activetrip/JournalEntryForm";
 
 export default function ActiveTripPage() {
   const { tripId } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
-  useAuth();
+  const { user } = useAuth();
   const activeTrip = useActiveTrip();
   const [tab, setTab] = useState<"map" | "timeline" | "stats">("map");
-  const [allPoints, setAllPoints] = useState<TrackingPoint[]>([]);
+  const [userRoutes, setUserRoutes] = useState<UserRoute[]>([]);
+  const [memberNames, setMemberNames] = useState<Map<string, string>>(new Map());
   const [showJournalForm, setShowJournalForm] = useState(false);
   const [journalRefresh, setJournalRefresh] = useState(0);
   const [tripTitle, setTripTitle] = useState("");
@@ -45,32 +45,70 @@ export default function ActiveTripPage() {
     });
   }, [tripId]);
 
-  // Load existing tracking points
+  // Load member names
   useEffect(() => {
     if (!tripId) return;
-    getTrackingPoints(tripId).then(setAllPoints);
+    getTripMemberNames(tripId).then(setMemberNames);
   }, [tripId]);
+
+  // Load tracking points grouped by user
+  const loadRoutes = () => {
+    if (!tripId) return;
+    getTrackingPointsByUser(tripId).then(pointsByUser => {
+      const routes: UserRoute[] = [];
+      for (const [userId, points] of pointsByUser) {
+        const isMe = userId === user?.id;
+        routes.push({
+          userId,
+          displayName: memberNames.get(userId) || (isMe ? "You" : "Traveler"),
+          points,
+          isCurrentUser: isMe,
+          currentLat: isMe ? activeTrip.currentLat ?? undefined : points[points.length - 1]?.lat,
+          currentLng: isMe ? activeTrip.currentLng ?? undefined : points[points.length - 1]?.lng,
+        });
+      }
+      // Sort: current user first
+      routes.sort((a, b) => (b.isCurrentUser ? 1 : 0) - (a.isCurrentUser ? 1 : 0));
+      setUserRoutes(routes);
+    });
+  };
+
+  useEffect(() => { loadRoutes(); }, [tripId, memberNames, activeTrip.currentLat]);
 
   // Subscribe to new points from group members
   useEffect(() => {
     if (!tripId) return;
-    const unsub = subscribeToTrackingPoints(tripId, () => {
-      getTrackingPoints(tripId).then(setAllPoints);
-    });
+    const unsub = subscribeToTrackingPoints(tripId, loadRoutes);
     return unsub;
-  }, [tripId]);
+  }, [tripId, memberNames]);
 
-  // Combine stored points with live buffer
-  const displayPoints = [
-    ...allPoints,
-    ...activeTrip.recentPoints.filter(p =>
-      !allPoints.some(ap => ap.recorded_at === p.recorded_at)
-    ),
-  ].sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+  // Merge live buffer into current user's route
+  const displayRoutes = userRoutes.map(route => {
+    if (route.isCurrentUser && activeTrip.recentPoints.length > 0) {
+      const merged = [
+        ...route.points,
+        ...activeTrip.recentPoints.filter(p =>
+          !route.points.some(rp => rp.recorded_at === p.recorded_at)
+        ),
+      ].sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+      return { ...route, points: merged, currentLat: activeTrip.currentLat ?? undefined, currentLng: activeTrip.currentLng ?? undefined };
+    }
+    return route;
+  });
 
-  // Photo available for future use
-  const _photoUrl = tripDest ? getDestinationPhoto(tripDest, 400) : null;
-  void _photoUrl;
+  // If current user has live points but isn't in the DB routes yet
+  if (user && activeTrip.recentPoints.length > 0 && !displayRoutes.some(r => r.isCurrentUser)) {
+    displayRoutes.unshift({
+      userId: user.id,
+      displayName: "You",
+      points: activeTrip.recentPoints,
+      isCurrentUser: true,
+      currentLat: activeTrip.currentLat ?? undefined,
+      currentLng: activeTrip.currentLng ?? undefined,
+    });
+  }
+
+  const totalPoints = displayRoutes.reduce((sum, r) => sum + r.points.length, 0);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--td-bg)" }}>
@@ -111,9 +149,9 @@ export default function ActiveTripPage() {
         {tab === "map" && (
           <div className="absolute inset-0">
             <LiveRouteMap
-              points={displayPoints}
-              currentLat={activeTrip.currentLat}
-              currentLng={activeTrip.currentLng}
+              routes={displayRoutes}
+              followLat={activeTrip.currentLat}
+              followLng={activeTrip.currentLng}
             />
           </div>
         )}
@@ -132,7 +170,7 @@ export default function ActiveTripPage() {
               <div className="rounded-2xl px-4 py-5 text-center" style={{ backgroundColor: "var(--td-card)" }}>
                 <div className="text-3xl mb-1">📍</div>
                 <div className="text-[24px] font-black" style={{ color: "var(--td-label)" }}>
-                  {displayPoints.length}
+                  {totalPoints}
                 </div>
                 <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>GPS Points</div>
               </div>
@@ -153,11 +191,13 @@ export default function ActiveTripPage() {
                 <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>GPS Accuracy</div>
               </div>
               <div className="rounded-2xl px-4 py-5 text-center" style={{ backgroundColor: "var(--td-card)" }}>
-                <div className="text-3xl mb-1">⏱️</div>
+                <div className="text-3xl mb-1">👥</div>
                 <div className="text-[24px] font-black" style={{ color: "var(--td-label)" }}>
-                  {activeTrip.isRecording ? "Live" : "Paused"}
+                  {displayRoutes.length}
                 </div>
-                <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>Status</div>
+                <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>
+                  {displayRoutes.length === 1 ? "Tracker" : "Trackers"}
+                </div>
               </div>
             </div>
           </div>
