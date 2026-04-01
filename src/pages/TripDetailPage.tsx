@@ -168,19 +168,22 @@ export default function TripDetailPage() {
         )}
       </MapHero3D>
 
-      {/* === START TRIP BUTTON === */}
-      <div className="px-4 -mt-5 mb-3">
+      {/* === TRIP ACTION BUTTONS === */}
+      <div className="px-4 -mt-5 mb-3 flex gap-2">
         <button
           onClick={() => navigate(`/trip/${trip.id}/live`)}
-          className="w-full py-4 rounded-2xl text-[16px] font-bold active:opacity-70 flex items-center justify-center gap-2 shadow-lg"
-          style={{
-            backgroundColor: "#34C759",
-            color: "white",
-            boxShadow: "0 4px 16px rgba(52,199,89,0.4)",
-          }}
+          className="flex-1 py-4 rounded-2xl text-[15px] font-bold active:opacity-70 flex items-center justify-center gap-2 shadow-lg"
+          style={{ backgroundColor: "#34C759", color: "white", boxShadow: "0 4px 16px rgba(52,199,89,0.4)" }}
         >
           <span className="w-3 h-3 rounded-full bg-white animate-pulse" />
-          Start Trip — Go Live
+          Go Live
+        </button>
+        <button
+          onClick={() => navigate(`/trip/${trip.id}/playback`)}
+          className="flex-1 py-4 rounded-2xl text-[15px] font-bold active:opacity-70 flex items-center justify-center gap-2 shadow-lg"
+          style={{ backgroundColor: "var(--td-accent)", color: "var(--td-accent-text)" }}
+        >
+          🎬 Playback
         </button>
       </div>
 

@@ -6,6 +6,10 @@ import LiveRouteMap from "../components/activetrip/LiveRouteMap";
 import type { UserRoute } from "../components/activetrip/LiveRouteMap";
 import TripRecordingControls from "../components/activetrip/TripRecordingControls";
 import { getTrackingPointsByUser, subscribeToTrackingPoints, getTripMemberNames } from "../lib/tripTracking";
+import { getAllDailyStats, updateDailyStats } from "../lib/tripDailyStats";
+import { startStepCounter, stopStepCounter, isStepCounterAvailable, getStepCount } from "../lib/stepCounter";
+import type { DailyStats } from "../lib/tripDailyStats";
+import DailyStatsCard from "../components/activetrip/DailyStatsCard";
 import TripTimeline from "../components/activetrip/TripTimeline";
 import JournalEntryForm from "../components/activetrip/JournalEntryForm";
 
@@ -18,6 +22,8 @@ export default function ActiveTripPage() {
   const [userRoutes, setUserRoutes] = useState<UserRoute[]>([]);
   const [memberNames, setMemberNames] = useState<Map<string, string>>(new Map());
   const [showJournalForm, setShowJournalForm] = useState(false);
+  const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
+  const [stepCounterActive, setStepCounterActive] = useState(false);
   const [journalRefresh, setJournalRefresh] = useState(0);
   const [tripTitle, setTripTitle] = useState("");
   const [tripDest, setTripDest] = useState("");
@@ -44,6 +50,44 @@ export default function ActiveTripPage() {
       });
     });
   }, [tripId]);
+
+  // Load daily stats
+  useEffect(() => {
+    if (!tripId) return;
+    getAllDailyStats(tripId).then(setDailyStats);
+  }, [tripId]);
+
+  // Start step counter when recording
+  useEffect(() => {
+    if (!activeTrip.isRecording || !tripId || !user) return;
+    if (!isStepCounterAvailable()) return;
+
+    startStepCounter((count) => {
+      activeTrip.updateTodayStats(count, activeTrip.todayDistanceM);
+    }).then(ok => setStepCounterActive(ok));
+
+    // Save stats every 60 seconds
+    const saveInterval = setInterval(() => {
+      if (!tripId || !user) return;
+      updateDailyStats(tripId, user.id, {
+        step_count: getStepCount(),
+        distance_total_m: activeTrip.todayDistanceM,
+      });
+    }, 60_000);
+
+    return () => {
+      stopStepCounter();
+      setStepCounterActive(false);
+      clearInterval(saveInterval);
+      // Final save
+      if (tripId && user) {
+        updateDailyStats(tripId, user.id, {
+          step_count: getStepCount(),
+          distance_total_m: activeTrip.todayDistanceM,
+        });
+      }
+    };
+  }, [activeTrip.isRecording, tripId, user?.id]);
 
   // Load member names
   useEffect(() => {
@@ -165,41 +209,59 @@ export default function ActiveTripPage() {
 
         {/* Stats tab */}
         {tab === "stats" && (
-          <div className="px-4 py-6 pb-32">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl px-4 py-5 text-center" style={{ backgroundColor: "var(--td-card)" }}>
-                <div className="text-3xl mb-1">📍</div>
-                <div className="text-[24px] font-black" style={{ color: "var(--td-label)" }}>
-                  {totalPoints}
-                </div>
-                <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>GPS Points</div>
+          <div className="px-4 py-4 pb-32 overflow-y-auto" style={{ maxHeight: "calc(100vh - 180px)" }}>
+            {/* Live stats row */}
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              <div className="rounded-xl px-2 py-3 text-center" style={{ backgroundColor: "var(--td-card)" }}>
+                <div className="text-[20px] font-black" style={{ color: "var(--td-label)" }}>{totalPoints}</div>
+                <div className="text-[9px] font-medium" style={{ color: "var(--td-secondary)" }}>GPS Pts</div>
               </div>
-              <div className="rounded-2xl px-4 py-5 text-center" style={{ backgroundColor: "var(--td-card)" }}>
-                <div className="text-3xl mb-1">🚶</div>
-                <div className="text-[24px] font-black" style={{ color: "var(--td-label)" }}>
-                  {activeTrip.todayDistanceM < 1000
-                    ? `${Math.round(activeTrip.todayDistanceM)}m`
-                    : `${(activeTrip.todayDistanceM / 1000).toFixed(1)}km`}
+              <div className="rounded-xl px-2 py-3 text-center" style={{ backgroundColor: "var(--td-card)" }}>
+                <div className="text-[20px] font-black" style={{ color: "var(--td-label)" }}>
+                  {activeTrip.todayDistanceM < 1000 ? `${Math.round(activeTrip.todayDistanceM)}m` : `${(activeTrip.todayDistanceM / 1000).toFixed(1)}km`}
                 </div>
-                <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>Distance Today</div>
+                <div className="text-[9px] font-medium" style={{ color: "var(--td-secondary)" }}>Distance</div>
               </div>
-              <div className="rounded-2xl px-4 py-5 text-center" style={{ backgroundColor: "var(--td-card)" }}>
-                <div className="text-3xl mb-1">🎯</div>
-                <div className="text-[24px] font-black" style={{ color: "var(--td-label)" }}>
-                  {activeTrip.currentAccuracy ? `${Math.round(activeTrip.currentAccuracy)}m` : "—"}
+              <div className="rounded-xl px-2 py-3 text-center" style={{ backgroundColor: "var(--td-card)" }}>
+                <div className="text-[20px] font-black" style={{ color: "var(--td-label)" }}>
+                  {activeTrip.todaySteps.toLocaleString()}
                 </div>
-                <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>GPS Accuracy</div>
+                <div className="text-[9px] font-medium" style={{ color: "var(--td-secondary)" }}>
+                  Steps {stepCounterActive ? "🟢" : ""}
+                </div>
               </div>
-              <div className="rounded-2xl px-4 py-5 text-center" style={{ backgroundColor: "var(--td-card)" }}>
-                <div className="text-3xl mb-1">👥</div>
-                <div className="text-[24px] font-black" style={{ color: "var(--td-label)" }}>
-                  {displayRoutes.length}
-                </div>
-                <div className="text-[12px]" style={{ color: "var(--td-secondary)" }}>
-                  {displayRoutes.length === 1 ? "Tracker" : "Trackers"}
-                </div>
+              <div className="rounded-xl px-2 py-3 text-center" style={{ backgroundColor: "var(--td-card)" }}>
+                <div className="text-[20px] font-black" style={{ color: "var(--td-label)" }}>{displayRoutes.length}</div>
+                <div className="text-[9px] font-medium" style={{ color: "var(--td-secondary)" }}>Trackers</div>
               </div>
             </div>
+
+            {/* Daily stats cards */}
+            {dailyStats.length > 0 && (
+              <>
+                <h3 className="text-[13px] font-bold uppercase tracking-wide mb-3" style={{ color: "var(--td-secondary)" }}>
+                  Daily Breakdown
+                </h3>
+                <div className="flex flex-col gap-2.5">
+                  {[...dailyStats].reverse().map(s => (
+                    <DailyStatsCard
+                      key={s.id}
+                      stats={s}
+                      isToday={s.date === new Date().toISOString().split("T")[0]}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {dailyStats.length === 0 && (
+              <div className="text-center py-8">
+                <div className="text-3xl mb-2">📊</div>
+                <p className="text-[13px]" style={{ color: "var(--td-secondary)" }}>
+                  Daily stats will appear here as you record your trip.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
