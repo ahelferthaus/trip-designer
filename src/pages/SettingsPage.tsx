@@ -7,9 +7,9 @@ import TravelPartnersSection from "../components/settings/TravelPartnersSection"
 import { useGamification } from "../store/gamificationStore";
 
 const ALL_PROVIDERS = [
-  { name: "GPT-4o", envKey: "VITE_OPENAI_API_KEY" },
-  { name: "Claude", envKey: "VITE_ANTHROPIC_API_KEY" },
-  { name: "Gemini", envKey: "VITE_GEMINI_API_KEY" },
+  { name: "GPT-4o" },
+  { name: "Claude" },
+  { name: "Gemini" },
 ];
 
 const EMOJI_OPTIONS = ["😎", "🧳", "🌍", "🏖️", "🎒", "✈️", "🗺️", "🧭", "🌸", "🐾", "🎵", "🔥"];
