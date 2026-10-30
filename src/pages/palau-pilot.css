@@ -54,6 +54,7 @@
 .palau-avatar-stack { display: flex; padding-left: 5px; }
 .palau-avatar-stack span { width: 27px; height: 27px; border-radius: 50%; margin-left: -5px; border: 2px solid #e9eddf; display: grid; place-items: center; font-size: 9px; font-weight: 650; background: #b3c5b8; color: #36524b; }
 .palau-avatar-stack span:nth-child(2) { background: #dfceb4; }.palau-avatar-stack span:nth-child(3) { background: #c0ccc6; }.palau-avatar-stack span:nth-child(4) { background: #53756b; color: #f5f7ee; }
+.palau-avatar-stack span:nth-child(5) { background: #cfd9c2; }.palau-avatar-stack span:nth-child(6) { background: #e7d9c3; }.palau-avatar-stack span:nth-child(7) { background: #a9c1b7; }.palau-avatar-stack span:nth-child(8) { background: #7f9a8d; color: #f5f7ee; }
 .palau-hero-visual { position: relative; overflow: hidden; background: #278c8d; min-height: 440px; }
 .palau-island-art { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
 .palau-art-label { position: absolute; top: 30px; left: 30px; right: 30px; display: flex; justify-content: space-between; gap: 15px; font-size: 7px; letter-spacing: 1.4px; color: #e2efe0; }

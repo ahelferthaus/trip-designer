@@ -10,6 +10,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { INITIAL_TASKS, PILOT_EXPECTED_GROUP_SIZE, PILOT_TRAVELERS } from '../src/lib/palauPilot.ts';
 
 const base = process.env.PILOT_BASE_URL || 'http://127.0.0.1:5173';
 const output = process.env.PILOT_QA_OUTPUT || join(tmpdir(), 'vybr-palau-qa');
@@ -48,6 +49,8 @@ try {
     assert.match(await page.locator('body').innerText(), /Fictional travelers|Not connected/);
     assert.match(await page.locator('body').innerText(), /11–18 Mar · 7 boat nights/);
     assert.match(await page.locator('body').innerText(), /Palau local · UTC\+9/);
+    assert.match(await page.locator('body').innerText(), new RegExp(`${PILOT_EXPECTED_GROUP_SIZE} SAMPLE TRAVELERS`));
+    assert.equal(await page.locator('.palau-avatar-stack span').count(), PILOT_EXPECTED_GROUP_SIZE);
     assert.deepEqual(externalRequests, []); await noOverflow();
     await page.screenshot({ path: artifact('palau-mobile-home.png'), fullPage: true });
   });
@@ -81,6 +84,41 @@ try {
     assert.match(await kayak.innerText(), /Plan confirmed/);
     await actor('traveler-a'); await noOverflow();
     await page.screenshot({ path: artifact('palau-mobile-plan.png'), fullPage: true });
+  });
+  await check('all eight sample views see only their own personal checklist', async () => {
+    assert.equal(PILOT_TRAVELERS.length, PILOT_EXPECTED_GROUP_SIZE);
+    await section('Checklists').click();
+    for (const person of PILOT_TRAVELERS) {
+      await actor(person.id);
+      await page.getByText(`Viewing as ${person.name}`, { exact: true }).waitFor();
+      const ownTitles = new Set(INITIAL_TASKS.filter(task => task.scope === 'personal' && task.ownerId === person.id).map(task => task.title));
+      assert.ok(ownTitles.size >= 1, `${person.name} has a personal item`);
+      for (const title of ownTitles) {
+        assert.equal(await page.getByText(title, { exact: true }).count(), 1, `${person.name} sees own item "${title}"`);
+        assert.equal(await page.getByRole('checkbox', { name: new RegExp(`^(Complete|Uncheck) ${title}$`) }).isEnabled(), true);
+      }
+      for (const task of INITIAL_TASKS.filter(task => task.scope === 'personal' && task.ownerId !== person.id && !ownTitles.has(task.title))) {
+        assert.equal(await page.getByText(task.title, { exact: true }).count(), 0, `${person.name} must not see ${task.ownerId}'s "${task.title}"`);
+      }
+      await noOverflow();
+    }
+    await actor('traveler-a');
+  });
+  await check('a four-seat table fills at four of eight travelers and frees on decline', async () => {
+    await section('The plan').click();
+    const table = page.locator('.palau-activity').filter({ has: page.getByRole('heading', { name: 'A table at sunset' }) });
+    assert.match(await table.innerText(), /3\/4/);
+    await actor('traveler-d'); await table.getByRole('button', { name: 'Going', exact: true }).click();
+    assert.match(await table.innerText(), /4\/4/); assert.match(await table.innerText(), /Full/);
+    await actor('traveler-e');
+    assert.equal(await table.getByRole('button', { name: 'Going', exact: true }).isDisabled(), true);
+    await table.getByRole('button', { name: 'Maybe', exact: true }).click();
+    assert.equal(await table.getByRole('button', { name: 'Maybe', exact: true }).getAttribute('aria-pressed'), 'true');
+    await actor('traveler-d'); await table.getByRole('button', { name: 'Not going', exact: true }).click();
+    assert.match(await table.innerText(), /3\/4/);
+    await actor('traveler-e'); await table.getByRole('button', { name: 'Going', exact: true }).click();
+    assert.match(await table.innerText(), /4\/4/);
+    await actor('traveler-a'); await noOverflow();
   });
   await check('journal reuses VYBR card, escapes text, keeps Palau time and limits deletes to author', async () => {
     await section('Journal').click();

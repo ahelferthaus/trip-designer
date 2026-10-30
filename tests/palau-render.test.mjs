@@ -10,6 +10,21 @@ import { readFile } from 'node:fs/promises';
 const vite = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' });
 try {
   const { default: PalauPilotPage } = await vite.ssrLoadModule('/src/pages/PalauPilotPage.tsx');
+  const { PILOT_TRAVELERS, PILOT_EXPECTED_GROUP_SIZE, INITIAL_TASKS } = await vite.ssrLoadModule('/src/lib/palauPilot.ts');
+  await test('static React render: eight-person group count and every member view selector option', () => {
+    const html = renderToString(React.createElement(MemoryRouter, { initialEntries: ['/pilot/palau?section=checklist'] }, React.createElement(PalauPilotPage)));
+    // renderToString may place <!-- --> markers between adjacent text nodes.
+    const text = html.replace(/<!-- -->/g, '');
+    assert.ok(text.includes(`${PILOT_EXPECTED_GROUP_SIZE} SAMPLE TRAVELERS`));
+    assert.equal(text.includes('4 SAMPLE TRAVELERS'), false);
+    assert.equal(PILOT_TRAVELERS.length, PILOT_EXPECTED_GROUP_SIZE);
+    for (const person of PILOT_TRAVELERS) assert.match(text, new RegExp(`<option value="${person.id}"[^>]*>${person.name}`), `selector lists ${person.name}`);
+    assert.equal((text.match(/<option value="traveler-|<option value="organizer"/g) ?? []).length, PILOT_EXPECTED_GROUP_SIZE);
+    assert.ok(text.includes('Viewing as Traveler A'));
+    for (const task of INITIAL_TASKS.filter(item => item.scope === 'personal' && item.ownerId !== 'traveler-a')) {
+      if (!INITIAL_TASKS.some(item => item.ownerId === 'traveler-a' && item.title === task.title)) assert.equal(html.includes(task.title), false, `default view hides ${task.ownerId}'s personal item`);
+    }
+  });
   for (const [section, heading] of [['home','Less coordinating.'], ['plan','What sounds like you?'], ['checklist','Ready, without the rush.'], ['journal','The things we’ll remember.'], ['essentials','Less signal. Still a plan.']]) {
     await test(`static React render: ${section} has its content and sample boundary`, () => {
       const html = renderToString(React.createElement(MemoryRouter, { initialEntries: [`/pilot/palau?section=${section}`] }, React.createElement(PalauPilotPage)));

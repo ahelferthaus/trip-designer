@@ -3,13 +3,84 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   PILOT_TRAVELERS, PILOT_ACCESS_PREVIEWS, INITIAL_TASKS, INITIAL_ACTIVITIES, COORDINATION,
-  PILOT_TIME_ZONE, PILOT_SAMPLE_YEAR, canViewPilot, canEditTask, visibleTasks, toggleTask,
+  PILOT_TIME_ZONE, PILOT_SAMPLE_YEAR, PILOT_EXPECTED_GROUP_SIZE, canViewPilot, canEditTask, visibleTasks, toggleTask,
   goingCount, updateRsvp, updateActivityStatus, buildEssentials,
 } from '../src/lib/palauPilot.ts';
 
 const [a, b, c, organizer] = PILOT_TRAVELERS;
 const shared = INITIAL_TASKS.find(item => item.id === 's2');
 const personal = INITIAL_TASKS.find(item => item.id === 'a2');
+
+test('sample group is exactly eight people: one organizer plus seven travelers, first four order preserved', () => {
+  assert.equal(PILOT_EXPECTED_GROUP_SIZE, 8);
+  assert.equal(PILOT_TRAVELERS.length, PILOT_EXPECTED_GROUP_SIZE);
+  assert.deepEqual(PILOT_TRAVELERS.slice(0, 4).map(person => person.id), ['traveler-a', 'traveler-b', 'traveler-c', 'organizer']);
+  assert.equal(PILOT_TRAVELERS.filter(person => person.role === 'organizer').length, 1);
+  assert.equal(PILOT_TRAVELERS.filter(person => person.role === 'member').length, 7);
+  assert.equal(new Set(PILOT_TRAVELERS.map(person => person.id)).size, PILOT_EXPECTED_GROUP_SIZE);
+  assert.equal(new Set(PILOT_TRAVELERS.map(person => person.initials)).size, PILOT_EXPECTED_GROUP_SIZE, 'avatar initials are distinct');
+  for (const preview of PILOT_ACCESS_PREVIEWS) assert.equal(PILOT_TRAVELERS.some(person => person.id === preview.id), false);
+});
+
+test('visible group count comes from the constant, not a hardcoded four', () => {
+  const page = readFileSync(new URL('../src/pages/PalauPilotPage.tsx', import.meta.url), 'utf8');
+  assert.match(page, /\{PILOT_EXPECTED_GROUP_SIZE\} SAMPLE TRAVELERS/);
+  assert.doesNotMatch(page, /\b\d+ SAMPLE TRAVELERS/);
+});
+
+test('every one of the eight views sees shared items plus only their own personal checklist', () => {
+  for (const actor of PILOT_TRAVELERS) {
+    assert.equal(canViewPilot(actor), true);
+    const own = INITIAL_TASKS.filter(task => task.scope === 'personal' && task.ownerId === actor.id);
+    assert.ok(own.length >= 1, `${actor.name} has a meaningful personal checklist example`);
+    const visible = visibleTasks(actor, INITIAL_TASKS);
+    assert.deepEqual(visible.filter(task => task.scope === 'personal').map(task => task.id), own.map(task => task.id));
+    assert.equal(visible.filter(task => task.scope === 'shared').length, INITIAL_TASKS.filter(task => task.scope === 'shared').length);
+    for (const task of own) {
+      assert.equal(canEditTask(actor, task), true);
+      for (const other of PILOT_TRAVELERS.filter(person => person.id !== actor.id)) {
+        assert.equal(canEditTask(other, task), false, `${other.name} cannot edit ${actor.name}'s personal item`);
+        assert.deepEqual(toggleTask(other, INITIAL_TASKS, task.id), INITIAL_TASKS);
+      }
+      assert.equal(toggleTask(actor, INITIAL_TASKS, task.id).find(item => item.id === task.id).done, !task.done);
+    }
+  }
+});
+
+test('each of the eight members can only change their own RSVP', () => {
+  let activities = INITIAL_ACTIVITIES;
+  for (const actor of PILOT_TRAVELERS) {
+    const before = activities.find(item => item.id === 'rock-islands').responses;
+    const result = updateRsvp(actor, activities, 'rock-islands', 'maybe');
+    assert.equal(result.error, null);
+    activities = result.activities;
+    const after = activities.find(item => item.id === 'rock-islands').responses;
+    assert.equal(after[actor.id], 'maybe');
+    for (const [id, response] of Object.entries(before)) if (id !== actor.id) assert.equal(after[id], response);
+  }
+  assert.equal(Object.keys(activities.find(item => item.id === 'rock-islands').responses).length, PILOT_EXPECTED_GROUP_SIZE);
+});
+
+test('a four-seat activity stays four seats inside an eight-person group', () => {
+  const [, , , , d, e, f] = PILOT_TRAVELERS;
+  const table = INITIAL_ACTIVITIES.find(item => item.id === 'sunset');
+  assert.equal(table.capacity, 4, 'capacity is activity-specific and was not expanded to the group size');
+  for (const activity of INITIAL_ACTIVITIES) assert.ok(activity.capacity < PILOT_EXPECTED_GROUP_SIZE, `${activity.title} capacity is smaller than the group`);
+  assert.equal(goingCount(table), 3);
+  const fourth = updateRsvp(d, INITIAL_ACTIVITIES, table.id, 'going');
+  assert.equal(fourth.error, null);
+  assert.equal(goingCount(fourth.activities.find(item => item.id === table.id)), 4);
+  assert.ok(updateRsvp(e, fourth.activities, table.id, 'going').error, 'fifth Going is refused');
+  assert.ok(updateRsvp(f, fourth.activities, table.id, 'going').error);
+  assert.equal(updateRsvp(e, fourth.activities, table.id, 'maybe').error, null, 'Maybe is not blocked by capacity');
+  assert.equal(updateRsvp(d, fourth.activities, table.id, 'going').error, null, 'repeat Going by a seated traveler is accepted');
+  const freed = updateRsvp(d, fourth.activities, table.id, 'not-going');
+  assert.equal(goingCount(freed.activities.find(item => item.id === table.id)), 3);
+  const refilled = updateRsvp(e, freed.activities, table.id, 'going');
+  assert.equal(refilled.error, null);
+  assert.equal(goingCount(refilled.activities.find(item => item.id === table.id)), 4);
+  assert.equal(goingCount(INITIAL_ACTIVITIES.find(item => item.id === table.id)), 3, 'fixture is untouched');
+});
 
 test('only member and organizer previews see the sample trip', () => {
   for (const actor of PILOT_TRAVELERS) assert.equal(canViewPilot(actor), true);

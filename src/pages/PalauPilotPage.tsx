@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import JournalEntryCard from '../components/activetrip/JournalEntryCard';
 import type { JournalEntry } from '../lib/tripJournal';
-import { buildEssentials, canEditTask, canViewPilot, COORDINATION, goingCount, INITIAL_ACTIVITIES, INITIAL_TASKS, PILOT_ACCESS_PREVIEWS, PILOT_TIME_ZONE, PILOT_TRAVELERS, toggleTask, updateActivityStatus, updateRsvp, visibleTasks } from '../lib/palauPilot';
+import { buildEssentials, canEditTask, canViewPilot, COORDINATION, goingCount, INITIAL_ACTIVITIES, INITIAL_TASKS, PILOT_ACCESS_PREVIEWS, PILOT_EXPECTED_GROUP_SIZE, PILOT_TIME_ZONE, PILOT_TRAVELERS, toggleTask, updateActivityStatus, updateRsvp, visibleTasks } from '../lib/palauPilot';
 import type { PilotTab, PilotTask, Rsvp } from '../lib/palauPilot';
 import './palau-pilot.css';
 
@@ -129,7 +129,7 @@ export default function PalauPilotPage() {
       <button className="palau-primary" onClick={() => { setActorId('traveler-a'); setMessage('Returned to the sample member view.'); }}>Explore the sample as Traveler A <Icon name="arrow" /></button>
     </main> : <>
       <section className="palau-hero" aria-label="Palau sample trip introduction">
-        <div className="palau-hero-copy"><p className="palau-eyebrow">A LITTLE FURTHER. A LITTLE SLOWER.</p><h1>Palau,<br /><em>together.</em></h1><p className="palau-hero-description">A few days on land. A week on the water.<br />One place to bring the whole trip together.</p><div className="palau-hero-details"><span>7—19 MAR 2030 · FICTIONAL</span><span>4 SAMPLE TRAVELERS</span></div><div className="palau-hero-footer"><div className="palau-avatar-stack" aria-hidden="true">{PILOT_TRAVELERS.map(person => <span key={person.id}>{person.initials}</span>)}</div><span>Small group. Big blue.</span></div></div>
+        <div className="palau-hero-copy"><p className="palau-eyebrow">A LITTLE FURTHER. A LITTLE SLOWER.</p><h1>Palau,<br /><em>together.</em></h1><p className="palau-hero-description">A few days on land. A week on the water.<br />One place to bring the whole trip together.</p><div className="palau-hero-details"><span>7—19 MAR 2030 · FICTIONAL</span><span>{PILOT_EXPECTED_GROUP_SIZE} SAMPLE TRAVELERS</span></div><div className="palau-hero-footer"><div className="palau-avatar-stack" aria-hidden="true">{PILOT_TRAVELERS.map(person => <span key={person.id}>{person.initials}</span>)}</div><span>Small group. Big blue.</span></div></div>
         <div className="palau-hero-visual"><IslandArtwork /><div className="palau-art-label"><span>07°30′ N / 134°30′ E</span><span>PALAU / WESTERN PACIFIC</span></div><span className="palau-art-note">Illustrated island study · not a navigation map</span></div>
       </section>
       <nav className="palau-tabs" aria-label="Sample trip sections">{tabs.map(item => <button key={item.id} aria-current={tab === item.id ? 'page' : undefined} onClick={() => { setTab(item.id); setMessage(''); }}>{item.label}{item.id === 'checklist' && <span>{personalTasks.filter(task => !task.done).length + sharedTasks.filter(task => !task.done).length}</span>}</button>)}<div className="palau-zone"><Icon name="sun" size={16} /> Palau local · UTC+9</div></nav>

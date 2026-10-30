@@ -35,6 +35,15 @@ const migration = await readFile(new URL('../migrations/20261027161432_palau_pri
 const sampleSeed = await readFile(new URL('./fixtures/palau_sample_private_seed.sql',import.meta.url),'utf8');
 const { canaries } = JSON.parse(await readFile(new URL('./fixtures/privacy-canaries.json',import.meta.url),'utf8'));
 await db.exec(migration);
+// Exercise the forward upgrade from the older owner-only deletion policies.
+// The separate eight-person suite exercises a fresh installation.
+await db.exec(`
+ alter policy palau_media_delete on storage.objects using(bucket_id='palau-private' and palau_private.media_allowed(name,true));
+ alter policy palau_media_delete_fence on storage.objects using(case when bucket_id='palau-private' then palau_private.media_allowed(name,true) else true end);
+`);
+const moderationUpgrade = await readFile(new URL('../migrations/20261030203411_palau_linked_journal_media_moderation.sql',import.meta.url),'utf8');
+await db.exec(moderationUpgrade);
+await db.exec(moderationUpgrade); // safe to reapply; no data deletion
 let trip,otherTrip,activity,token;
 await test('private pilot actual PostgreSQL policy and RPC regression suite',async t=>{
  const check=(name,fn)=>t.test(name,fn);
