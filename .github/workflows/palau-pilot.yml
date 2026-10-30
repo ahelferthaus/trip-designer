@@ -1,0 +1,31 @@
+name: Palau pilot checks
+
+on:
+  push:
+    branches: ["pilot/palau-private"]
+  pull_request:
+    paths:
+      - "src/**"
+      - "supabase/**"
+      - "tests/**"
+      - "package*.json"
+      - ".github/workflows/palau-pilot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm test
+      - run: npm run test:rls
+      - name: Lint pilot source
+        run: npx eslint src/App.tsx src/LegacyApp.tsx src/lib/palauPilot.ts src/lib/privateTripAccess.ts src/lib/privateTripWorkspace.ts src/lib/privateTripPresentation.ts src/lib/supabase.ts src/pages/PalauPilotPage.tsx src/pages/PrivateTripAccessPage.tsx src/pages/PrivateTripWorkspace.tsx src/components/activetrip/JournalEntryCard.tsx

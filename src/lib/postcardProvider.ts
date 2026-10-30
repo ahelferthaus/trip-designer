@@ -134,7 +134,7 @@ async function sendPrintPostcard(postcard: Postcard): Promise<{ success: boolean
 
   const thanksKey = import.meta.env.VITE_THANKS_IO_API_KEY as string | undefined;
   if (!thanksKey) {
-    return { success: false, error: "Print postcard not configured. Set VITE_THANKS_IO_API_KEY." };
+    return { success: false, error: "Printed postcards require a secure server-side integration." };
   }
 
   const apiBase = "https://api.thanks.io/api/v2";

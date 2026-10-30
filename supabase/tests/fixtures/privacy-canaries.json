@@ -1,0 +1,11 @@
+{
+  "$comment": "Synthetic privacy canaries. Every string is fictional. They are planted in the test-only seed fixture and must never appear in a production bundle. If one does, server-side seed content has leaked into client code.",
+  "canaries": [
+    "CANARY-TRIP-QUOKKA-7731",
+    "Canary Harbor Lodge (fictional)",
+    "Canary Fleet / MV Fixture Pearl (fictional)",
+    "CANARY-FLIGHT-ZZ-9909",
+    "canary-organizer-note-do-not-ship",
+    "canary.contact@example.invalid"
+  ]
+}

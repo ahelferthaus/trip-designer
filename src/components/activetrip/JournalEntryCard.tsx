@@ -1,22 +1,24 @@
 import type { JournalEntry } from "../../lib/tripJournal";
 
-function formatTime(iso: string): string {
+function formatTime(iso: string, timeZone?: string): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone });
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, timeZone?: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone });
 }
 
 interface JournalEntryCardProps {
   entry: JournalEntry;
   onDelete?: () => void;
   isOwn?: boolean;
+  /** Omit to retain the existing viewer-local behavior. */
+  timeZone?: string;
 }
 
-export default function JournalEntryCard({ entry, onDelete, isOwn }: JournalEntryCardProps) {
+export default function JournalEntryCard({ entry, onDelete, isOwn, timeZone }: JournalEntryCardProps) {
   return (
     <div className="rounded-2xl overflow-hidden shadow-md" style={{ backgroundColor: "var(--td-card)" }}>
       {/* Photo */}
@@ -49,7 +51,7 @@ export default function JournalEntryCard({ entry, onDelete, isOwn }: JournalEntr
             </span>
           </div>
           <div className="text-[11px]" style={{ color: "var(--td-secondary)" }}>
-            {formatDate(entry.recorded_at)} · {formatTime(entry.recorded_at)}
+            {formatDate(entry.recorded_at, timeZone)} · {formatTime(entry.recorded_at, timeZone)}
           </div>
         </div>
 

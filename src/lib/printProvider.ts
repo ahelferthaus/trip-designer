@@ -33,7 +33,7 @@ export interface OrderResult {
 
 // --- Lulu API Integration ---
 // Docs: https://developers.lulu.com/
-// Requires: VITE_LULU_API_KEY env var
+// Physical orders require a server-side provider integration.
 // Free sandbox available for testing
 
 const LULU_API_BASE = "https://api.lulu.com";
@@ -62,7 +62,7 @@ export async function submitPrintOrder(order: PrintOrder): Promise<OrderResult> 
 
   if (order.provider === "lulu") {
     if (!key) {
-      return { success: false, error: "Lulu API key not configured. Set VITE_LULU_API_KEY." };
+      return { success: false, error: "Physical printing requires a secure server-side integration." };
     }
 
     try {

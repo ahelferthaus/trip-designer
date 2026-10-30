@@ -12,8 +12,27 @@ dist
 dist-ssr
 *.local
 
-# Environment variables
+# Environment variables: every variant except the blank public template
 .env
+.env.*
+!.env.example
+
+# Private pilot material (never published): local imports, private seeds, owner-only data
+private-import/
+*.local.json
+supabase/seed/*_private.sql
+supabase/seed/*private*/
+supabase/seed/palau_*
+
+# Local QA artifacts, archives and patches
+qa-output/
+*-qa/
+*.zip
+*.tgz
+*.tar.gz
+*.patch
+*.diff
+.vercel/
 
 # Editor directories and files
 .vscode/*
@@ -42,3 +61,6 @@ CLAUDE_TASK.md
 
 # Supabase local
 supabase/.temp/
+
+# Local Python preview caches
+__pycache__/
