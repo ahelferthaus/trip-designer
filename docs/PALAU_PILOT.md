@@ -87,9 +87,10 @@ Pilot-focused lint is clean. Full-repository lint has a legacy baseline of 28 er
 
 - The build strips legacy browser-side print-provider keys even if inherited deployment variables still define them. Physical print/postcard delivery stays unavailable until a secure server integration exists; PDF export is unaffected.
 - Access revalidation deliberately clears unsaved form drafts on focus/session changes. Save before switching tabs.
+- Workspace loads recheck identity, role and membership after fetching data and discard results if access changed. Checklist/status updates and journal deletion require one confirmed affected row; an RLS no-op is reported as unavailable, not saved.
 - Revoking a member also invalidates all outstanding trip invitations. Reissue invitations as needed; there is no self-service membership restoration or organizer transfer in this pilot.
 - Arrival and departure fields are always Palau local time (UTC+9), independent of the browser timezone. Journal attachment removal happens before row deletion; a storage failure keeps the entry for retry.
 - The RLS suites run in PGlite with a stubbed `auth` schema. Supabase Auth, PostgREST, Storage uploads, signed URLs, and session handling are not exercised end-to-end here and are not claimed to be validated.
 - The sample role selector and static tests are not evidence of deployed privacy. Treat the private routes as unreviewed until the migration and a staging test matrix have been approved in your own environment.
-- The private workspace does not collect GPS, does not take payments, and does not create supplier bookings. "Confirmed" is a group plan status only.
+- The private workspace does not request device geolocation, take payments, or create supplier bookings. Uploaded photos retain their original metadata, which can include location; remove sensitive metadata before uploading. "Confirmed" is a group plan status only.
 - Do not enter passports, medical details, payment data, or access codes into any pilot surface.

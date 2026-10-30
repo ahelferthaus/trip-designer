@@ -96,3 +96,24 @@ test('workspace attendance excludes revoked members just like the capacity RPC',
   const workspace=await loadPrivateTripWorkspace(client,tripId);
   assert.deepEqual(workspace.rsvps.map(r=>r.user_id),[user.id]);
 });
+
+
+test('workspace discards fetched data when the session changes during loading', async () => {
+  for (const laterIdentity of [null, { ...user, id: 'another-user' }]) {
+    const client = fakeClient(); let calls = 0;
+    client.auth.getUser = async () => ({ data: { user: ++calls === 1 ? user : laterIdentity }, error: null });
+    await assert.rejects(loadPrivateTripWorkspace(client, tripId), /unavailable/);
+    assert.equal(calls, 2);
+  }
+});
+
+test('workspace discards fetched data when membership is revoked during loading', async () => {
+  const client = fakeClient(); const from = client.from; let membershipChecks = 0;
+  client.from = table => {
+    const query = from(table);
+    if (table === 'palau_members') query.maybeSingle = async () => ({ data: ++membershipChecks === 1 ? { role: 'organizer', revoked_at: null } : null, error: null });
+    return query;
+  };
+  await assert.rejects(loadPrivateTripWorkspace(client, tripId), /unavailable/);
+  assert.equal(membershipChecks, 2);
+});

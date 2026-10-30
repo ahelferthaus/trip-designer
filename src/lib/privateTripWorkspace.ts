@@ -126,10 +126,14 @@ export async function loadPrivateTripWorkspace(client: SupabaseClient | null, tr
     client.from('palau_journal').select(workspaceSelects.journal).eq('trip_id', tripId).order('recorded_at', { ascending: false }),
   ]);
   if (queries.some(result => result.error)) throw unavailable();
+  // Discard results if sign-in, role or membership changed during the parallel fetch.
+  const currentAccess = await getPrivateTripAccess(client, tripId);
+  if (currentAccess.status !== 'member' || currentAccess.userId !== access.userId || currentAccess.role !== access.role) throw unavailable();
   const members = (queries[0].data ?? []) as PrivateMember[];
   const activeMemberIds = new Set(members.map(member => member.user_id));
+  if (!activeMemberIds.has(access.userId)) throw unavailable();
   return {
-    trip: access.trip,
+    trip: currentAccess.trip,
     currentUserId: access.userId,
     role: access.role,
     members,
@@ -144,8 +148,8 @@ export async function loadPrivateTripWorkspace(client: SupabaseClient | null, tr
 
 export async function setPrivateChecklistDone(client: SupabaseClient | null, tripId: string, itemId: string, done: boolean): Promise<void> {
   await verifiedUser(client);
-  const { error } = await client!.from('palau_checklist').update({ done }).eq('trip_id', tripId).eq('id', itemId);
-  if (error) throw unavailable();
+  const { data, error } = await client!.from('palau_checklist').update({ done }).eq('trip_id', tripId).eq('id', itemId).select('id');
+  if (error || data?.length !== 1) throw unavailable();
 }
 
 export async function addPrivateChecklistItem(client: SupabaseClient | null, tripId: string, title: string, visibility: ChecklistVisibility, ownerId?: string): Promise<void> {
@@ -164,8 +168,8 @@ export async function setPrivateRsvp(client: SupabaseClient | null, activityId: 
 
 export async function updatePrivateActivityStatus(client: SupabaseClient | null, tripId: string, activityId: string, bookingStatus: BookingStatus): Promise<void> {
   await verifiedUser(client);
-  const { error } = await client!.from('palau_activities').update({ booking_status: bookingStatus }).eq('trip_id', tripId).eq('id', activityId);
-  if (error) throw unavailable();
+  const { data, error } = await client!.from('palau_activities').update({ booking_status: bookingStatus }).eq('trip_id', tripId).eq('id', activityId).select('id');
+  if (error || data?.length !== 1) throw unavailable();
 }
 
 export async function saveOwnGroupArrival(client: SupabaseClient | null, tripId: string, arrival: Omit<GroupArrival, 'trip_id' | 'user_id'>): Promise<void> {
@@ -222,8 +226,8 @@ export async function deletePrivateJournalEntry(client: SupabaseClient | null, t
       throw new Error('The private image removal could not be confirmed. The journal entry was kept; ask the organizer to reconcile the attachment before retrying.');
     }
   }
-  const { error } = await client!.from('palau_journal').delete().eq('trip_id', tripId).eq('id', entryId);
-  if (error) throw unavailable();
+  const { data, error } = await client!.from('palau_journal').delete().eq('trip_id', tripId).eq('id', entryId).select('id');
+  if (error || data?.length !== 1) throw unavailable();
 }
 
 export async function getPrivateJournalMediaUrl(client: SupabaseClient | null, path: string): Promise<string> {

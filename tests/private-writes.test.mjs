@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { saveOwnGroupArrival, saveOwnPrivateTravelDetails, deletePrivateJournalEntry } from '../src/lib/privateTripWorkspace.ts';
+import { saveOwnGroupArrival, saveOwnPrivateTravelDetails, deletePrivateJournalEntry, setPrivateChecklistDone, updatePrivateActivityStatus } from '../src/lib/privateTripWorkspace.ts';
 
 const user = { id: '20000000-0000-4000-8000-000000000001', email_confirmed_at: '2030-01-01T00:00:00Z', is_anonymous: false };
 const tripId = '10000000-0000-4000-8000-000000000001';
-function client({ existing = false, insertError = null, mediaError = null, removedObjects = undefined } = {}) {
+function client({ existing = false, insertError = null, mediaError = null, removedObjects = undefined, affectedRows = [{ user_id: user.id }] } = {}) {
   const calls = [];
   return {
     calls,
@@ -17,7 +17,7 @@ function client({ existing = false, insertError = null, mediaError = null, remov
         delete() { call.operation = 'delete'; return query; },
         eq(key, value) { call.filters.push([key, value]); return query; },
         select() { return query; },
-        then(resolve, reject) { return Promise.resolve({ data: [{ user_id: user.id }], error: call.operation === 'insert' ? insertError ?? (existing ? { code: '23505' } : null) : null }).then(resolve, reject); },
+        then(resolve, reject) { return Promise.resolve({ data: affectedRows, error: call.operation === 'insert' ? insertError ?? (existing ? { code: '23505' } : null) : null }).then(resolve, reject); },
       };
       return query;
     },
@@ -58,5 +58,18 @@ test('empty, missing or mismatched storage results never delete the journal row'
     const c = client({ removedObjects });
     await assert.rejects(deletePrivateJournalEntry(c, tripId, 'entry', 'expected.png'), /entry was kept/);
     assert.deepEqual(c.calls.map(call => call.operation), ['remove']);
+  }
+});
+
+
+test('RLS no-op writes never report success, while one affected row succeeds', async () => {
+  const actions = [
+    c => setPrivateChecklistDone(c, tripId, 'item', true),
+    c => updatePrivateActivityStatus(c, tripId, 'activity', 'confirmed'),
+    c => deletePrivateJournalEntry(c, tripId, 'entry', null),
+  ];
+  for (const action of actions) {
+    for (const affectedRows of [[], null]) await assert.rejects(action(client({ affectedRows })), /unavailable/);
+    await action(client({ affectedRows: [{ id: 'record' }] }));
   }
 });
