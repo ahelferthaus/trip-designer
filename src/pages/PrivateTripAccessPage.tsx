@@ -4,6 +4,7 @@ import type { Subscription, SupabaseClient } from '@supabase/supabase-js';
 import { acceptPrivateTripInvite, getPrivateTripAccess, isVerifiedPrivateUser } from '../lib/privateTripAccess';
 import type { PrivateTripAccess } from '../lib/privateTripAccess';
 import PrivateTripWorkspace from './PrivateTripWorkspace';
+import { pilotToken, pilotDestination } from '../lib/pilotAuth';
 
 const enabled = import.meta.env.VITE_PALAU_PRIVATE_ENABLED === 'true';
 const message: Record<string, string> = {
@@ -20,7 +21,7 @@ export default function PrivateTripAccessPage() {
   const location = useLocation();
   const clientRef = useRef<SupabaseClient | null>(null);
   const [access, setAccess] = useState<PrivateTripAccess | { status: 'loading' }>({ status: 'loading' });
-  const [token, setToken] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get('token') ?? '');
+  const [token, setToken] = useState(() => pilotToken(window.location.hash));
   const [name, setName] = useState('');
   const [verified, setVerified] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -33,12 +34,12 @@ export default function PrivateTripAccessPage() {
     acceptanceGeneration.current += 1;
     setBusy(false);
     setError('');
-    const incoming = new URLSearchParams(location.hash.slice(1)).get('token');
+    const incoming = pilotToken(location.hash);
     if (incoming) setToken(incoming);
-    else if (tripId) setToken('');
+    else setToken('');
     // Preserve React Router's history state. A second invite updates in-memory token.
     if (window.location.hash) window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
-  }, [location.hash, tripId]);
+  }, [location.key, location.hash, tripId]);
 
   useEffect(() => {
     let alive = true;
@@ -58,7 +59,7 @@ export default function PrivateTripAccessPage() {
       if (!enabled) { setAccess({ status: 'unconfigured' }); return; }
       try {
         // Disabled routes do not even initialize a Supabase client/session refresh.
-        const client = clientRef.current ?? (await import('../lib/supabase')).supabase;
+        const client = clientRef.current ?? (await import('../lib/pilotSupabase')).supabase;
         if (!alive || request !== generation.current) return;
         clientRef.current = client;
         if (!client) { setAccess({ status: 'unconfigured' }); return; }
@@ -129,7 +130,7 @@ export default function PrivateTripAccessPage() {
           <button disabled={busy || !token || !name.trim()} style={{ background: '#194b3e', color: 'white', padding: '13px 18px', borderRadius: 10, opacity: busy || !token || !name.trim() ? 0.5 : 1 }}>{busy ? 'Checking invitation…' : 'Accept invitation'}</button>
           {error && <p role="alert">{error}</p>}
         </form>}
-        {enabled && (access.status === 'signed_out' || access.status === 'unverified') && <p><Link to="/auth">Go to VYBR sign-in</Link> · Then reopen your invitation link.</p>}
+        {enabled && (access.status === 'signed_out' || access.status === 'unverified') && <p><Link to={`/pilot/sign-in?next=${encodeURIComponent(tripId ? `/pilot/private/${tripId}` : '/pilot/invite')}${!tripId ? pilotDestination('/pilot/invite', token).replace('/pilot/invite', '') : ''}`}>Go to VYBR sign-in</Link> · Then reopen your invitation link.</p>}
       </section>
       <p style={{ fontSize: 13, lineHeight: 1.7, color: '#52685f', marginTop: 24 }}>This route is configuration-gated and fail-closed. Do not enter real traveler information until the migration, Auth, Storage, sessions, advisors and cross-user tests have passed in approved staging. The sample demo remains separate and does not save to this backend.</p>
       <p><Link to="/pilot/palau">Return to the sample pilot →</Link></p>

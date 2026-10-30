@@ -12,7 +12,9 @@
     "typecheck": "tsc -b",
     "test:rls": "node --test supabase/tests/*.test.mjs",
     "test:private-bundle": "node --test tests/private-bundle.test.mjs",
-    "test:browser": "node tests/palau-browser.mjs"
+    "test:browser": "node tests/palau-browser.mjs",
+    "build:pilot": "tsc -b && vite build --mode pilot",
+    "prepare:pilot-host": "npm run build:pilot && node tests/pilot-isolation.mjs && node scripts/prepare-pilot-host.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.0",
