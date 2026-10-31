@@ -5,6 +5,7 @@ import { acceptPrivateTripInvite, getPrivateTripAccess, isVerifiedPrivateUser } 
 import type { PrivateTripAccess } from '../lib/privateTripAccess';
 import PrivateTripWorkspace from './PrivateTripWorkspace';
 import { pilotToken, pilotDestination } from '../lib/pilotAuth';
+import { PrivateAccountReady } from './PrivateAccountReady';
 
 const enabled = import.meta.env.VITE_PALAU_PRIVATE_ENABLED === 'true';
 const message: Record<string, string> = {
@@ -52,6 +53,7 @@ export default function PrivateTripAccessPage() {
         acceptanceGeneration.current += 1;
         setBusy(false);
         setError('');
+        setName('');
         setAccess({ status: 'loading' });
         setVerified(false);
       }
@@ -101,7 +103,7 @@ export default function PrivateTripAccessPage() {
 
   const accept = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (busy || !enabled) return;
+    if (busy || !enabled || !verified || !token || !name.trim()) return;
     setBusy(true);
     setError('');
     const request = acceptanceGeneration.current;
@@ -121,8 +123,8 @@ export default function PrivateTripAccessPage() {
     <div style={{ maxWidth: access.status === 'member' ? 1180 : 620, margin: '0 auto' }}>
       <Link to="/pilot/palau" style={{ color: '#2e6253' }}>VYBR / Palau sample pilot</Link>
       {import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true' && <p><Link to="/pilot/trips">My trips / Create a trip</Link></p>}
-      <p style={{ marginTop: 48, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' }}>Private access • setup preview</p>
-      <h1 style={{ fontSize: 'clamp(32px,5vw,48px)', margin: '12px 0 24px', lineHeight: 1.1 }}>{tripId ? 'Your trip, by invitation.' : 'Accept a private invitation.'}</h1>
+      <p style={{ marginTop: 48, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' }}>Private trip access</p>
+      <h1 style={{ fontSize: 'clamp(32px,5vw,48px)', margin: '12px 0 24px', lineHeight: 1.1 }}>{tripId ? 'Your private trip' : token ? 'Accept a private invitation' : 'Your VYBR account'}</h1>
       <section style={{ background: '#fff', padding: 28, borderRadius: 20, border: '1px solid #d9e4dd' }} aria-live="polite">
         {clientRef.current && !['loading', 'unconfigured', 'signed_out'].includes(access.status) && <p><button type="button" disabled={busy} onClick={async () => {
           generation.current++; acceptanceGeneration.current++;
@@ -136,9 +138,9 @@ export default function PrivateTripAccessPage() {
           <p>{access.trip.start_date} – {access.trip.end_date} · {access.trip.time_zone}</p>
           <p>Verified role: <strong>{access.role}</strong></p>
           <p>The database access check passed. The persistent workspace is not yet connected to the sample UI.</p>
-        </> : <p>{!tripId && verified ? 'You are signed in with a verified account. Acceptance is checked on the server against the invited email and token expiry.' : message[access.status]}</p>}
-        {!tripId && enabled && verified && <form onSubmit={accept}>
-          {!token && <p>The invitation token is missing. Reopen the original invitation link after signing in.</p>}
+        </> : <p>{!tripId && verified ? (token ? 'You are signed in. Accept this invitation using the email your organizer invited.' : null) : message[access.status]}</p>}
+        {!tripId && enabled && verified && !token && <PrivateAccountReady />}
+        {!tripId && enabled && verified && token && <form onSubmit={accept}>
           <label htmlFor="private-name">Display name</label>
           <input id="private-name" value={name} onChange={event => setName(event.target.value)} maxLength={60} required autoComplete="nickname" style={{ display: 'block', width: '100%', margin: '8px 0 16px', border: '1px solid #91aaa0', borderRadius: 8, padding: 12 }} />
           <button disabled={busy || !token || !name.trim()} style={{ background: '#194b3e', color: 'white', padding: '13px 18px', borderRadius: 10, opacity: busy || !token || !name.trim() ? 0.5 : 1 }}>{busy ? 'Checking invitation…' : 'Accept invitation'}</button>
@@ -146,7 +148,7 @@ export default function PrivateTripAccessPage() {
         {error && <p role="alert">{error}</p>}
         {enabled && (access.status === 'signed_out' || access.status === 'unverified') && <p><Link to={`/pilot/sign-in?next=${encodeURIComponent(tripId ? `/pilot/private/${tripId}` : '/pilot/invite')}${!tripId ? pilotDestination('/pilot/invite', token).replace('/pilot/invite', '') : ''}`}>Go to VYBR sign-in</Link> · Then reopen your invitation link.</p>}
       </section>
-      <p style={{ fontSize: 13, lineHeight: 1.7, color: '#52685f', marginTop: 24 }}>This route is configuration-gated and fail-closed. Do not enter real traveler information until the migration, Auth, Storage, sessions, advisors and cross-user tests have passed in approved staging. The sample demo remains separate and does not save to this backend.</p>
+      <p style={{ fontSize: 13, lineHeight: 1.7, color: '#52685f', marginTop: 24 }}>Your trips are private. Each trip requires its own membership; confirming an account does not grant access to another person’s trip.</p>
       <p><Link to="/pilot/palau">Return to the sample pilot →</Link></p>
     </div>
   </main>;
