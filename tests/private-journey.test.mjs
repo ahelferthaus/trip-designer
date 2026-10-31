@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildPrivateJourney } from '../src/lib/privateJourney.ts';
+import { buildPrivateJourney, selectJourney } from '../src/lib/privateJourney.ts';
 import { readFile } from 'node:fs/promises';
 import ts from 'typescript';
 import { createElement } from 'react';
@@ -68,6 +68,7 @@ const js = ts.transpileModule(source, { compilerOptions: { jsx: ts.JsxEmit.React
   .replaceAll('"react/jsx-runtime"', JSON.stringify(import.meta.resolve('react/jsx-runtime')))
   .replace("'react'", JSON.stringify(import.meta.resolve('react')))
   .replace("'../lib/privateJourney'", JSON.stringify(new URL('../src/lib/privateJourney.ts', import.meta.url).href))
+  .replace("'../lib/journeyPhotoRequest'", JSON.stringify(new URL('../src/lib/journeyPhotoRequest.ts', import.meta.url).href))
   .replace("import { getPrivateJournalMediaUrl } from '../lib/privateTripWorkspace';", "const getPrivateJournalMediaUrl = () => { throw new Error('Unexpected render-time media request'); };");
 const { default: PrivateJourney } = await import(`data:text/javascript;base64,${Buffer.from(js).toString('base64')}`);
 const render = workspace => renderToStaticMarkup(createElement(PrivateJourney, { client: {}, workspace }));
@@ -83,4 +84,19 @@ test('render presents empty and invalid-zone states without falling back to anot
   assert.match(render(input), /No activities or memories yet/);
   input.trip.time_zone = 'Invalid/Zone';
   assert.match(render(input), /role="alert"/); assert.doesNotMatch(render(input), /<time/);
+});
+
+
+test('journey filters preserve order and privacy; photos exclude malformed paths and stops exclude memories', () => {
+  const input = fixture();
+  input.activities.push({ ...input.activities[0], id: 'blank', location: '  ' });
+  input.journal.push({ ...input.journal[0], id: 'external', media_path: 'https://example.com/private.png' });
+  const days = buildPrivateJourney(input);
+  const before = JSON.stringify(days);
+  assert.equal(selectJourney(days, 'photos').flatMap(d => d.items).length, 1);
+  assert.equal(selectJourney(days, 'memories').flatMap(d => d.items).length, 2);
+  assert.deepEqual(selectJourney(days, 'stops').flatMap(d => d.items).map(i => i.key), ['activity:activity-a']);
+  assert.equal(JSON.stringify(days), before);
+  assert.doesNotMatch(JSON.stringify(selectJourney(days, 'photos')), /SECRET|https:/);
+  assert.deepEqual(selectJourney([], 'photos'), []);
 });

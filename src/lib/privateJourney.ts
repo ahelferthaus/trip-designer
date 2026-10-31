@@ -10,6 +10,14 @@ export interface JourneyItem {
   mediaPath?: string;
 }
 export interface JourneyDay { day: string; items: JourneyItem[] }
+export type JourneyView = 'all' | 'memories' | 'photos' | 'stops';
+export function selectJourney(days: JourneyDay[], view: JourneyView): JourneyDay[] {
+  return days.map(day => ({ ...day, items: day.items.filter(item =>
+    view === 'all' || (view === 'memories' && item.kind === 'memory') ||
+    (view === 'photos' && item.kind === 'memory' && Boolean(item.mediaPath)) ||
+    (view === 'stops' && item.kind === 'activity' && Boolean(item.location?.trim()))
+  ) })).filter(day => day.items.length > 0);
+}
 
 function validInstant(value: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.exec(value);
