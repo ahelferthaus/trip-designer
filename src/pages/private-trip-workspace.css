@@ -54,3 +54,18 @@
   .private-inline-form { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .private-workspace * { scroll-behavior: auto !important; transition: none !important; } }
+
+/* Generated links sit outside .private-form: style their controls explicitly. */
+.private-invitation-card { min-width: 0; margin-top: 18px; }
+.private-invitation-recipient { overflow-wrap: anywhere; }
+.private-invitation-card > label { display: block; margin: 16px 0 8px; font-weight: 700; }
+.private-invitation-card > textarea { display: block; width: 100%; max-width: 100%; min-height: 96px; padding: 12px; border: 1px solid #8aa69b; border-radius: 9px; background: #f5f8f4; color: #183e38; font: 14px/1.55 ui-monospace, monospace; overflow-wrap: anywhere; word-break: break-all; resize: vertical; }
+.private-invitation-help { margin: 10px 0 16px; color: #4f675f; font-size: 13px; line-height: 1.5; }
+.private-invitation-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.private-invitation-actions > button { min-height: 44px; padding: 11px 16px; border: 1px solid #245e50; border-radius: 9px; font: inherit; font-weight: 650; cursor: pointer; }
+.private-invitation-copy { background: #245e50; color: #fff; }
+.private-invitation-hide { background: #fff; color: #245e50; }
+.private-invitation-actions > button[aria-disabled="true"] { opacity: .6; cursor: wait; }
+.private-invitation-card :focus-visible { outline: 3px solid #ad7313; outline-offset: 3px; }
+.private-invitation-feedback { min-height: 1.5em; margin: 12px 0 0; color: #234e3f; font-size: 14px; overflow-wrap: anywhere; }
+@media (max-width: 480px) { .private-invitation-actions { flex-direction: column; align-items: stretch; } .private-invitation-actions > button { width: 100%; } }
