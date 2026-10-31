@@ -1,6 +1,6 @@
 # General trip foundation: review and approval boundary
 
-Status: implemented on the pilot branch; **not deployed and migration not applied**. This is trip setup and membership infrastructure, not the full legacy feature integration.
+Status: implemented on the pilot branch; **migration applied to the approved isolated staging project on 2026-10-31; frontend remains disabled and unreleased**. This is trip setup and membership infrastructure, not the full legacy feature integration.
 
 ## Implemented
 
@@ -11,7 +11,7 @@ Status: implemented on the pilot branch; **not deployed and migration not applie
 - Trip timezone display; existing Palau local-time inputs unchanged. Other destinations explicitly edit UTC, avoiding untested daylight-saving wall-time conversion. Destination-local editing is a later UX improvement.
 - No automatic email invitations. Existing organizer copy-link controls remain the invitation mechanism.
 
-## Exact proposed migration approval
+## Approved migration scope
 
 File: `supabase/migrations/20261031071157_general_trip_foundation.sql`.
 
@@ -29,7 +29,7 @@ No changes to Auth configuration, Auth rows, storage policies, real-account role
 
 `VITE_VYBR_TRIP_FOUNDATION_ENABLED=false` is the documented default. No hosted setting has been changed. With the flag off, the new dashboard route is not mounted, sign-in retains the invited-trip destination, and new schema queries/RPC calls cannot run through this feature. Client helpers also refuse calls while disabled. The flag is a rollout control, not an authorization boundary; database checks enforce access.
 
-After migration approval and application, verify catalog grants, policies and advisors, then use a separately approved feature-enabled staging build for genuine authenticated creation/join tests. Only after those checks should a release with the flag enabled be approved. Do not deploy this branch as the separate live site yet.
+The exact revised migration is now applied and catalog-verified. Activation is conditionally approved only after independent-connection concurrency and hosted onboarding/access tests pass. Those conditions remain unmet. Do not deploy this branch as the separate live site yet.
 
 ## Evidence and remaining gaps
 

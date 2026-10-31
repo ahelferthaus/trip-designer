@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PrivateTripAccess } from '../lib/privateTripAccess';
 import {
@@ -24,6 +24,8 @@ interface Props {
 }
 // Leave cross-member destructive UI disabled until genuine moderation testing.
 const moderationEnabled = import.meta.env.VITE_PALAU_MODERATION_ENABLED === 'true';
+const journeyEnabled = import.meta.env.VITE_VYBR_JOURNEY_ENABLED === 'true';
+const Journey = journeyEnabled ? lazy(() => import('./PrivateJourney')) : () => null;
 
 function displayDate(value: string, zone: string): string {
   try { return new Intl.DateTimeFormat('en-US', { timeZone: zone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)); }
@@ -93,6 +95,7 @@ export default function PrivateTripWorkspace({ client, access }: Props) {
     </header>
     {(notice || error) && <p className={error ? 'private-alert is-error' : 'private-alert'} role={error ? 'alert' : 'status'}>{error || notice}</p>}
 
+    {journeyEnabled && <Suspense fallback={<p role="status">Loading journey…</p>}><Journey client={client} workspace={workspace} /></Suspense>}
     <section className="private-section" aria-labelledby="itinerary-heading">
       <div className="private-section-heading"><div><p className="private-eyebrow">GROUP PLAN</p><h3 id="itinerary-heading">Trip timeline</h3></div><span>Operator-confirmed and awaiting-reconfirmation items are labelled separately.</span></div>
       <div className="private-activity-grid">

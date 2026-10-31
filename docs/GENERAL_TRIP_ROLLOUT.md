@@ -40,7 +40,7 @@ revoke execute on function palau_private.create_general_trip(uuid,text,text,date
 
 Revocations do not change stored roles or delete trips. Re-enabling execution later requires explicit approval and validation of the repaired version. Any administrative trip deletion also deletes that trip's idempotency record under the current FK; future deletion/archive support must define tombstone behavior before it is exposed.
 
-## Current boundary
+## Original review boundary (before approval)
 
 No hosted SQL, configuration, permission revocation, role change, application rollback or activation was performed during this review. The forward migration remains unapplied. Local concurrency evidence is recorded separately; lack of a functioning local server must be reported rather than substituting sequential or mocked results.
 
@@ -60,3 +60,17 @@ The revised trigger checks `current_setting('transaction_isolation')` for limite
 Docker cleanup: the supported graceful stop command (`docker desktop stop --timeout 15`) reported failure, and desktop/backend processes remained afterward. No force-stop or runtime settings changes were attempted; restoring Docker to its initially stopped state remains unconfirmed.
 
 The trigger is explicitly VOLATILE to preserve statement-snapshot behavior. The concurrency property relies on documented READ COMMITTED semantics and has not yet been exercised using independent connections. The new columns remain absent from browser UPDATE grants in the reviewed base schema; hosted catalog drift must still be checked before apply.
+
+## Approved staging application — 2026-10-31
+
+The user approved the exact revised migration and conditional frontend activation. Canonical hash was verified against the approved value above. The single-file migration succeeded on the existing isolated staging project and appears in its migration history. Preflight found no partial application or conflicting membership trigger, and confirmed the old Palau-only timezone check and expected column-level grants.
+
+Postflight confirmed the private ledger has RLS/no browser table grants; the public wrapper is INVOKER; privileged helpers have empty search paths; anon has no execution permission; and browser UPDATE on timezone, destination and participant limit remains denied. The two preexisting trips retain NULL participant limits and unchanged membership behavior. No real account roles, Auth settings or production settings were changed.
+
+Local tests passed 93/93. A hosted rollback-only SQL policy smoke test passed creation ownership, same-request idempotency, expected-account rejection, one-use invitations, cross-trip denial, final capacity, revoke/accept and restore capacity. These use existing fictional identities as SQL claims, not real browser Auth sessions. An initial test incorrectly expected reuse of an accepted one-use invitation; the corrected test expects and verifies rejection. The failed transaction was rolled back.
+
+The supported connector did not provide observable overlapping transactions during a bounded contention attempt: the observer found no active test transaction. That attempt proves only serialized retry behavior, not concurrency. One synthetic trip/request remains preserved from that attempt; no cleanup was performed. Docker's engine pipe remains unavailable after a bounded launch/status check, so local independent-connection testing is still blocked. No software installation or runtime security change was made.
+
+Advisors show expected RLS-without-policy notices on the two private internal tables (no browser grants), and the preexisting leaked-password-protection warning. A backup restore point was not independently verified; the approved change used the supported transactional migration operation and the non-destructive rollback design above. Activation remains blocked on genuine concurrency and hosted onboarding/access evidence; the frontend flag and separate live artifact remain unchanged.
+
+Performance advisors also identify an unindexed `trip_creation_requests.trip_id` foreign key introduced by this migration, plus four other unindexed foreign keys and 15 existing per-row Auth RLS evaluations. These are performance findings, not permission failures. The new ledger index should be a separately reviewed forward change; the approved migration was not silently expanded.
