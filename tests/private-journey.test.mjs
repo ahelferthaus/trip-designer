@@ -65,6 +65,7 @@ test('journey rejects calendar overflow, missing offsets and date-only timestamp
 
 const source = await readFile(new URL('../src/pages/PrivateJourney.tsx', import.meta.url), 'utf8');
 const js = ts.transpileModule(source, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext } }).outputText
+  .replaceAll('import.meta.env.VITE_VYBR_STOP_MAP_ENABLED', "'false'")
   .replaceAll('"react/jsx-runtime"', JSON.stringify(import.meta.resolve('react/jsx-runtime')))
   .replace("'react'", JSON.stringify(import.meta.resolve('react')))
   .replace("'../lib/privateJourney'", JSON.stringify(new URL('../src/lib/privateJourney.ts', import.meta.url).href))

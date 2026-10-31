@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { buildPrivateJourney, selectJourney } from '../lib/privateJourney';
 import type { JourneyView } from '../lib/privateJourney';
@@ -6,6 +6,9 @@ import { requestJourneyPhoto } from '../lib/journeyPhotoRequest';
 import type { JourneyPhotoState } from '../lib/journeyPhotoRequest';
 import { getPrivateJournalMediaUrl } from '../lib/privateTripWorkspace';
 import type { PrivateTripWorkspace } from '../lib/privateTripWorkspace';
+
+const stopMapEnabled = import.meta.env.VITE_VYBR_STOP_MAP_ENABLED === 'true';
+const StopMap = stopMapEnabled ? lazy(() => import('./PrivateStopMap')) : null;
 
 function JourneyPhoto({ client, path }: { client: SupabaseClient; path: string }) {
   const [attempt, setAttempt] = useState(0);
@@ -31,6 +34,7 @@ function JourneyContent({ client, workspace }: { client: SupabaseClient; workspa
     <h3 id="journey-heading">Our journey</h3>
     <p>Plans and shared memories, shown in {workspace.trip.time_zone}. Planned stops are not a record of places visited.</p>
     <label>Show journey<select value={view} onChange={event => setView(event.target.value as JourneyView)}><option value="all">Plans and memories</option><option value="memories">Memories</option><option value="photos">Photos</option><option value="stops">Planned stops</option></select></label>
+    {view === 'stops' && StopMap && <Suspense fallback={<p role="status">Loading coordinate plot.</p>}><StopMap tripId={workspace.trip.id} stops={selectJourney(days, 'stops').flatMap(day => day.items).map(item => ({ id: item.key, tripId: workspace.trip.id, label: item.location!, shared: true, coordinates: null }))} /></Suspense>}
     {view === 'stops' && <p>Route outline in planned order, not a geographic map. Locations are shown exactly as entered; no GPS or external map service is used.</p>}
     {!days.length ? <p>No activities or memories yet. Add a journal entry to start your shared story.</p> : !visibleDays.length && <p role="status">No {view === 'photos' ? 'shared photos' : view === 'stops' ? 'planned stops with a location' : 'memories'} yet.</p>}
     {visibleDays.map(day => <section key={day.day} aria-label={day.day}>
