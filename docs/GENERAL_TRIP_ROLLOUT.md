@@ -1,5 +1,7 @@
 # General trip foundation rollout and rollback
 
+> Current status, 2026-10-31: the approved foundation and exact lock correction are applied and catalog-verified in isolated staging. All nine independent-connection PostgreSQL 17.11 scenarios passed with the correction. Earlier blocked/unapplied notes below are historical. Both real test-account confirmations succeeded; the deployed tokenless account screen has user-supplied rendered confirmation. General foundation activation still awaits real-session onboarding/access, recovery, revocation/expiry and approved deletion gates. See FOUNDATION_GATE_STATUS.md.
+
 This is an operational review, not approval to execute hosted changes. The reviewed migration is `20261031071157_general_trip_foundation.sql`; its revised Git-blob SHA256 (LF line endings) is `4441CA695DECFC384CEA6EADD2F83175A95E2F4B700583589860D2233A2FACF8`. The equivalent Windows working copy with CRLF has SHA256 `D80DFAEAFF85C47A27C9952E52E213863507C4AE374FF2A0A2D4F2B26838E03C`. This supersedes the earlier Windows foundation hash `2B524D904349AEDB01CADED6779A781087440FD6EB180794ED4125B65C4EFD99`: the draft now explicitly rejects unsupported transaction isolation for limited-trip membership changes. Approval must name this revised file.
 
 ## Before an approved staging apply

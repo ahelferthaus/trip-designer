@@ -1,5 +1,7 @@
 # Participant concurrency review
 
+> Current status, 2026-10-31: the approved foundation and exact lock correction are applied and catalog-verified in isolated staging. All nine independent-connection PostgreSQL 17.11 scenarios passed with the correction. Earlier blocked/unapplied notes below are historical. Both real test-account confirmations succeeded; the deployed tokenless account screen has user-supplied rendered confirmation. General foundation activation still awaits real-session onboarding/access, recovery, revocation/expiry and approved deletion gates. See FOUNDATION_GATE_STATUS.md.
+
 ## Real PostgreSQL evidence
 
 The opt-in `scripts/test-postgres-concurrency.mjs` runner uses PostgreSQL 17.11 with independent `psql` connections and an observer checking `pg_blocking_pids`. It creates a synthetic-only loopback cluster, removes its temporary initialization password file, and stops the server after testing. No hosted URL or credentials are accepted. It is not an Auth/HTTP test.

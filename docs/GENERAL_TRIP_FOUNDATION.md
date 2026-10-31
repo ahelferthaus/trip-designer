@@ -1,5 +1,7 @@
 # General trip foundation: review and approval boundary
 
+> Current status, 2026-10-31: the approved foundation and exact lock correction are applied and catalog-verified in isolated staging. All nine independent-connection PostgreSQL 17.11 scenarios passed with the correction. Earlier blocked/unapplied notes below are historical. Both real test-account confirmations succeeded; the deployed tokenless account screen has user-supplied rendered confirmation. General foundation activation still awaits real-session onboarding/access, recovery, revocation/expiry and approved deletion gates. See FOUNDATION_GATE_STATUS.md.
+
 Status: implemented on the pilot branch; **migration applied to the approved isolated staging project on 2026-10-31; frontend remains disabled and unreleased**. This is trip setup and membership infrastructure, not the full legacy feature integration.
 
 ## Implemented
