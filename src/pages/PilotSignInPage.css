@@ -62,6 +62,11 @@
 .pilot-sign-in button[type="button"]:hover:not(:disabled) { background: #e3f0ec; }
 .pilot-sign-in :is(a, input, button):focus-visible { outline: 3px solid #0757b9; outline-offset: 3px; }
 .pilot-sign-in button:disabled { background: #dce5e2; color: #36534b; border-color: #647d76; cursor: wait; }
-.pilot-sign-in [role="status"]:empty { display: none; }
-.pilot-sign-in [role="status"]:not(:empty) { padding: 12px; border: 1px solid #647d76; border-radius: 8px; background: #edf5f3; }
+.pilot-sign-in p[role="status"]:empty { display: none; }
+.pilot-sign-in p[role="status"]:not(:empty) { padding: 12px; border: 1px solid #647d76; border-radius: 8px; background: #edf5f3; }
 .pilot-sign-in__card > p:last-child { margin-bottom: 0; color: #425e56; font-size: 14px; }
+.pilot-sign-in__feedback:empty { display: none; }
+.pilot-sign-in__feedback:not(:empty) { margin: 20px 0; padding: 20px; border: 2px solid #126556; border-radius: 12px; background: #edf5f3; }
+.pilot-sign-in__feedback:focus { outline: 3px solid #0757b9; outline-offset: 3px; }
+.pilot-sign-in__feedback h2 { margin: 0 0 12px; font-size: 24px; }
+.pilot-sign-in__feedback li { margin-bottom: 8px; }

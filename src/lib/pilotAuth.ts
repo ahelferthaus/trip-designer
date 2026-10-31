@@ -18,7 +18,7 @@ export function pilotCallback(search: string, hash: string) {
   const failed = ['error','error_code','error_description'].some(key => fragment.has(key) || query.has(key));
   for (const key of ['code','error','error_code','error_description','type','access_token','refresh_token']) query.delete(key);
   const remaining = query.toString();
-  return { search: remaining ? `?${remaining}` : '', failed };
+  return { hadCode: new URLSearchParams(search).has('code'), search: remaining ? `?${remaining}` : '', failed };
 }
 
 /** One request at a time; interrupted requests must never navigate a later screen. */
@@ -37,10 +37,16 @@ export function createPilotAuthAction() {
           ? await client.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: redirect } })
           : await client.auth.signInWithPassword({ email: email.trim(), password });
         if (request !== generation) return { status: 'ignored' as const };
-        if (result.error) return { status: result.error.code === 'email_not_confirmed' ? 'confirm' as const : 'error' as const };
+        if (result.error) {
+          const code = result.error.code;
+          if (code === 'email_not_confirmed') return { status: 'confirm' as const };
+          if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit' || result.error.name === 'AuthRetryableFetchError') return { status: 'retry_later' as const };
+          if (code === 'weak_password') return { status: 'weak_password' as const };
+          return { status: 'error' as const };
+        }
         const user = result.data.user;
         return { status: result.data.session && user?.email_confirmed_at && !user.is_anonymous ? 'ready' as const : 'confirm' as const };
-      } catch { return { status: request === generation ? 'error' as const : 'ignored' as const }; }
+      } catch { return { status: request === generation ? 'retry_later' as const : 'ignored' as const }; }
       finally { if (request === generation) pending = false; }
     },
   };

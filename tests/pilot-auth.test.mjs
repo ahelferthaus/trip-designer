@@ -48,8 +48,8 @@ test('signup uses explicit callback and never carries invitation tokens in email
   assert.equal((await createPilotAuthAction().run(c,' a@example.test ','password',true,'https://example.test/pilot/sign-in')).status,'confirm');
   assert.deepEqual(c.calls[0].options,{emailRedirectTo:'https://example.test/pilot/sign-in'});
 });
-test('network failure becomes recoverable generic error', async () => {
-  assert.equal((await createPilotAuthAction().run(mock(()=>{throw Error('network');}),'a@example.test','password',false,'')).status,'error');
+test('network failure asks users to wait instead of repeating signup', async () => {
+  assert.equal((await createPilotAuthAction().run(mock(()=>{throw Error('network');}),'a@example.test','password',false,'')).status,'retry_later');
 });
 test('token case matches server acceptance and malformed UUID return paths fail closed', () => {
   assert.equal(pilotToken(`#token=${'A'.repeat(64)}`), '');
@@ -63,6 +63,15 @@ test('confirmation-required error is actionable while other Auth errors stay gen
 });
 test('callback cleanup removes sensitive parameters and detects expiry without displaying server text', () => {
   const result=pilotCallback('?next=%2Fpilot%2Finvite&code=sample-code&error_description=private-message&access_token=sample-access&refresh_token=sample-refresh','#error_code=otp_expired');
-  assert.deepEqual(result,{search:'?next=%2Fpilot%2Finvite',failed:true});
-  assert.deepEqual(pilotCallback('','#token='+token),{search:'',failed:false});
+  assert.deepEqual(result,{search:'?next=%2Fpilot%2Finvite',failed:true,hadCode:true});
+  assert.deepEqual(pilotCallback('','#token='+token),{search:'',failed:false,hadCode:false});
+});
+
+test('rate limits and password policy failures provide safe distinct guidance', async () => {
+  for (const [code, status] of [['over_request_rate_limit','retry_later'],['over_email_send_rate_limit','retry_later'],['weak_password','weak_password']]) {
+    const c = mock({ data: {}, error: { code, message: 'do not expose backend text' } });
+    assert.deepEqual(await createPilotAuthAction().run(c,'a@example.test','password',true,''), { status });
+    assert.equal(c.calls.length,1);
+  }
+  assert.equal(pilotCallback('?code=example', '').hadCode, true);
 });

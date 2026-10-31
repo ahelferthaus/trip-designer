@@ -33,6 +33,6 @@ jobs:
       - run: npm run test:private-bundle
       - run: node scripts/prepare-pilot-host.mjs
       - name: Lint pilot authentication
-        run: npx eslint src/PilotApp.tsx src/pilot-main.tsx src/lib/pilotAuth.ts src/lib/pilotSupabase.ts src/pages/PilotSignInPage.tsx vite.config.ts
+        run: npx eslint src/PilotApp.tsx src/pilot-main.tsx src/lib/pilotAuth.ts src/lib/pilotSupabase.ts src/pages/PilotSignInPage.tsx src/pages/PilotAuthFeedback.tsx vite.config.ts
       - name: Lint pilot source
         run: npx eslint src/App.tsx src/LegacyApp.tsx src/lib/palauPilot.ts src/lib/privateTripAccess.ts src/lib/privateTripWorkspace.ts src/lib/privateTripPresentation.ts src/lib/supabase.ts src/pages/PalauPilotPage.tsx src/pages/PrivateTripAccessPage.tsx src/pages/PrivateTripWorkspace.tsx src/components/activetrip/JournalEntryCard.tsx

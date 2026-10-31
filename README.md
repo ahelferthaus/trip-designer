@@ -1,5 +1,7 @@
 # VYBR Travel
 
+> **Deployment scope:** The isolated Palau pilot does not yet include all features below. VYBR remains a general travel platform; see [scope, feature audit and integration plan](docs/PLATFORM_SCOPE_AND_INTEGRATION.md) for deployed capabilities and remaining work.
+
 AI-powered travel companion. Plan trips with AI, vote with your group, track your journey, capture photos, create movies, send postcards, and order photo books.
 
 **Live at [vybrtravel.com](https://vybrtravel.com)**
