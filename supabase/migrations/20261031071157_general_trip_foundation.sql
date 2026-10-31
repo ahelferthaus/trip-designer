@@ -51,8 +51,9 @@ grant execute on function public.vybr_create_trip(uuid,text,text,date,date,text,
 
 -- Covers invitation acceptance and organizer restoration without changing role grants.
 -- Existing trips have NULL limits and retain their previous membership behavior.
+-- VOLATILE is required so the post-lock count receives a fresh statement snapshot.
 create function palau_private.enforce_participant_limit() returns trigger
-language plpgsql security definer set search_path='' as $$
+language plpgsql volatile security definer set search_path='' as $$
 declare v_limit integer; v_count integer;
 begin
  if new.revoked_at is not null then return new; end if;
@@ -60,6 +61,11 @@ begin
  -- Do not introduce a trip-then-existing-member lock path in future RPCs.
  select participant_limit into v_limit from public.palau_trips where id=new.trip_id;
  if v_limit is null then return new; end if;
+ -- The count after the lock must use a fresh statement snapshot.
+ -- Fail closed instead of relying on stale REPEATABLE READ snapshots.
+ if current_setting('transaction_isolation')<>'read committed' then
+  raise exception 'Participant changes require read committed isolation' using errcode='25000';
+ end if;
  select participant_limit into v_limit from public.palau_trips where id=new.trip_id for update;
  if v_limit is not null then
   select count(*) into v_count from public.palau_members where trip_id=new.trip_id and revoked_at is null and user_id<>new.user_id;

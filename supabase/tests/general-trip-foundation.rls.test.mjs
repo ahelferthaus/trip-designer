@@ -121,6 +121,25 @@ try {
    await db.exec('reset role');await run('update palau_members set revoked_at=now() where trip_id=$1 and user_id=$2',[created,organizer]);
    await as(organizer);await assert.rejects(create(uid(113),2),/Not authorized/);
   });
+  await t.test('limited trip creation and acceptance reject unsupported isolation, then recover at read committed',async()=>{
+   await as(organizer);
+   await db.exec('begin isolation level repeatable read');
+   await assert.rejects(create(uid(120),2),/read committed isolation/);await db.exec('rollback');
+   const limited=await create(uid(120),2);
+   const invitation=(await run('select palau_create_invite($1,$2) token',[limited,'other@example.test'])).rows[0].token;
+   await as(other);
+   for(const isolation of ['repeatable read','serializable']) {
+    await db.exec(`begin isolation level ${isolation}`);
+    await assert.rejects(run('select palau_accept_invite($1,$2)',[invitation,'Other']),/read committed isolation/);
+    await db.exec('rollback');
+   }
+   await run('select palau_accept_invite($1,$2)',[invitation,'Other']);
+   assert.equal((await run('select count(*) n from palau_members where trip_id=$1 and revoked_at is null',[limited])).rows[0].n,2);
+   await as(organizer);await db.exec('begin isolation level repeatable read');
+   const legacy=(await run("select palau_create_trip('Legacy isolation','2030-04-01','2030-04-02','Organizer') id")).rows[0].id;
+   assert.equal((await run('select participant_limit from palau_trips where id=$1',[legacy])).rows[0].participant_limit,null);
+   await db.exec('rollback');
+  });
   await t.test('new exposed RPC is invoker; no anonymous grants',async()=>{
    await db.exec('reset role');const r=(await run("select p.prosecdef, has_function_privilege('anon',p.oid,'EXECUTE') anon from pg_proc p join pg_namespace n on p.pronamespace=n.oid where n.nspname='public' and p.proname='vybr_create_trip'")).rows[0];assert.equal(r.prosecdef,false);assert.equal(r.anon,false);
   });

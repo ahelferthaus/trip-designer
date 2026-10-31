@@ -44,3 +44,9 @@ New trips start with empty coordination/activity data. Generic itinerary authori
 Security design follows the [Supabase database function guidance](https://supabase.com/docs/guides/database/functions): restricted execution and empty search paths for privileged code. Before hosted activation, check the deployed PostgreSQL timezone-data version against the [Supabase changelog](https://supabase.com/changelog.md); no database upgrade is authorized or performed by this change.
 
 Migration execution must use the transactional migration runner. Administrative deletion of a newly created trip currently cascades its idempotency ledger entry; any future trip-deletion feature must define tombstone/retry behavior before release. No trip-deletion API is added here.
+
+See [rollout and non-destructive rollback review](GENERAL_TRIP_ROLLOUT.md) before applying or activating the foundation. In particular, the UI flag does not revoke direct creation RPC access.
+
+The 2026-10-31 attempt to run independent local connections was blocked by incomplete native PostgreSQL and an unresponsive Docker engine; see the rollout review for exact evidence. These concurrency checks remain unrun.
+
+The revised unapplied cap trigger now explicitly requires READ COMMITTED for limited-trip membership changes and rejects other modes with SQLSTATE 25000; legacy NULL-limit trips are unaffected. This changes the migration hash, so use the revised hash in the rollout review for approval. The guard tests do not replace independent-connection concurrency tests.
