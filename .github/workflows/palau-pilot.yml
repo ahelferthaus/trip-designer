@@ -29,6 +29,7 @@ jobs:
       - run: npm run test:rls
       - run: npm run build:pilot
       - run: node tests/pilot-isolation.mjs
+      - run: node --test tests/pilot-host.mjs
       - run: npm run test:private-bundle
       - run: node scripts/prepare-pilot-host.mjs
       - name: Lint pilot authentication

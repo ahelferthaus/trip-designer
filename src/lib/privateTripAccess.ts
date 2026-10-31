@@ -71,7 +71,7 @@ export async function acceptPrivateTripInvite(client: SupabaseClient | null, tok
   const { data: { user }, error: authError } = await client.auth.getUser();
   if (authError || !isVerifiedPrivateUser(user)) throw new Error('Sign in with your verified invited account first.');
   const { data, error } = await client.rpc('palau_accept_invite', { p_token: token, p_name: displayName.trim() });
-  if (error || typeof data !== 'string') throw new Error('Invitation unavailable. Check the account, expiry, or ask the organizer.');
+  if (error || typeof data !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(data)) throw new Error('Invitation unavailable. Check the account, expiry, or ask the organizer.');
   return data;
 }
 

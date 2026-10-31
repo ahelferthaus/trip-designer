@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 const assets = await readdir(new URL('../dist/assets/',import.meta.url));
+async function inspect(directory) {
+  for(const entry of await readdir(directory,{withFileTypes:true})) {
+    const path=new URL(entry.name+(entry.isDirectory()?'/':''),directory);
+    if(entry.isDirectory()) await inspect(path);
+    else assert.doesNotMatch(entry.name,/^(?:sw|service-worker)\.|\.env|private.*\.sql$/i,'Unexpected deployable artifact');
+  }
+}
+await inspect(new URL('../dist/',import.meta.url));
 assert.ok(assets.some(name=>name.startsWith('PilotSignInPage-')));
 for(const name of assets) {
   assert.doesNotMatch(name,/LegacyApp|AuthPage|mapbox|jspdf|html2canvas/);

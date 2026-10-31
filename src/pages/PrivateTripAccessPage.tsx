@@ -44,18 +44,22 @@ export default function PrivateTripAccessPage() {
   useEffect(() => {
     let alive = true;
     let subscription: Subscription | undefined;
+    setAccess({ status: 'loading' });
+    setVerified(false);
     const updateIdentity = (userId: string | null) => {
       if (identity.current !== userId) {
         identity.current = userId;
         acceptanceGeneration.current += 1;
         setBusy(false);
         setError('');
+        setAccess({ status: 'loading' });
+        setVerified(false);
       }
     };
     const refresh = async () => {
       const request = ++generation.current;
-      setAccess({ status: 'loading' });
-      setVerified(false);
+      // Same-identity rechecks preserve the mounted editor and its unsaved inputs.
+      // Identity changes clear the view immediately; failed rechecks still fail closed.
       if (!enabled) { setAccess({ status: 'unconfigured' }); return; }
       try {
         // Disabled routes do not even initialize a Supabase client/session refresh.
@@ -65,15 +69,17 @@ export default function PrivateTripAccessPage() {
         if (!client) { setAccess({ status: 'unconfigured' }); return; }
         if (!subscription) subscription = client.auth.onAuthStateChange((_event, session) => {
           generation.current += 1;
-          setAccess({ status: 'loading' });
-          setVerified(false);
           updateIdentity(session?.user.id ?? null);
+          if (!session) { setAccess({ status: 'signed_out' }); setVerified(false); }
           // Defer client calls outside the Auth event lock.
           window.setTimeout(() => { if (alive) void refresh(); }, 0);
         }).data.subscription;
         if (tripId) {
           const result = await getPrivateTripAccess(client, tripId);
-          if (alive && request === generation.current) setAccess(result);
+          if (alive && request === generation.current) {
+            if (result.status === 'member') identity.current = result.userId;
+            setAccess(result);
+          }
         } else {
           const { data: { user }, error: authError } = await client.auth.getUser();
           if (!alive || request !== generation.current) return;
@@ -82,7 +88,7 @@ export default function PrivateTripAccessPage() {
           setAccess({ status: !user && (!authError || authError.name === 'AuthSessionMissingError') ? 'signed_out' : authError ? 'error' : isVerifiedPrivateUser(user) ? 'unavailable' : 'unverified' });
         }
       } catch {
-        if (alive && request === generation.current) setAccess({ status: 'error' });
+        if (alive && request === generation.current) { setAccess({ status: 'error' }); setVerified(false); }
       }
     };
     void refresh();
@@ -117,7 +123,14 @@ export default function PrivateTripAccessPage() {
       <p style={{ marginTop: 48, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' }}>Private access • setup preview</p>
       <h1 style={{ fontSize: 'clamp(32px,5vw,48px)', margin: '12px 0 24px', lineHeight: 1.1 }}>{tripId ? 'Your trip, by invitation.' : 'Accept a private invitation.'}</h1>
       <section style={{ background: '#fff', padding: 28, borderRadius: 20, border: '1px solid #d9e4dd' }} aria-live="polite">
-        {access.status === 'loading' ? <p>Checking access…</p> : access.status === 'member' && clientRef.current ? <PrivateTripWorkspace client={clientRef.current} access={access} /> : access.status === 'member' ? <>
+        {clientRef.current && !['loading', 'unconfigured', 'signed_out'].includes(access.status) && <p><button type="button" disabled={busy} onClick={async () => {
+          generation.current++; acceptanceGeneration.current++;
+          setAccess({ status: 'signed_out' }); setVerified(false); setBusy(true); setError('');
+          try { const result = await clientRef.current?.auth.signOut({ scope: 'local' }); if (result?.error) { setAccess({ status: 'error' }); setError('Sign-out could not be completed. Please retry.'); } }
+          catch { setAccess({ status: 'error' }); setError('Sign-out could not be completed. Please retry.'); }
+          finally { setBusy(false); }
+        }}>Sign out of the pilot</button></p>}
+        {access.status === 'loading' ? <p>Checking access…</p> : access.status === 'member' && clientRef.current ? <PrivateTripWorkspace key={`${access.userId}:${access.trip.id}:${access.role}`} client={clientRef.current} access={access} /> : access.status === 'member' ? <>
           <h2>{access.trip.title}</h2>
           <p>{access.trip.start_date} – {access.trip.end_date} · {access.trip.time_zone}</p>
           <p>Verified role: <strong>{access.role}</strong></p>
@@ -128,8 +141,8 @@ export default function PrivateTripAccessPage() {
           <label htmlFor="private-name">Display name</label>
           <input id="private-name" value={name} onChange={event => setName(event.target.value)} maxLength={60} required autoComplete="nickname" style={{ display: 'block', width: '100%', margin: '8px 0 16px', border: '1px solid #91aaa0', borderRadius: 8, padding: 12 }} />
           <button disabled={busy || !token || !name.trim()} style={{ background: '#194b3e', color: 'white', padding: '13px 18px', borderRadius: 10, opacity: busy || !token || !name.trim() ? 0.5 : 1 }}>{busy ? 'Checking invitation…' : 'Accept invitation'}</button>
-          {error && <p role="alert">{error}</p>}
         </form>}
+        {error && <p role="alert">{error}</p>}
         {enabled && (access.status === 'signed_out' || access.status === 'unverified') && <p><Link to={`/pilot/sign-in?next=${encodeURIComponent(tripId ? `/pilot/private/${tripId}` : '/pilot/invite')}${!tripId ? pilotDestination('/pilot/invite', token).replace('/pilot/invite', '') : ''}`}>Go to VYBR sign-in</Link> · Then reopen your invitation link.</p>}
       </section>
       <p style={{ fontSize: 13, lineHeight: 1.7, color: '#52685f', marginTop: 24 }}>This route is configuration-gated and fail-closed. Do not enter real traveler information until the migration, Auth, Storage, sessions, advisors and cross-user tests have passed in approved staging. The sample demo remains separate and does not save to this backend.</p>

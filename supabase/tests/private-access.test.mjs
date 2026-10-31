@@ -26,3 +26,10 @@ test('private invitation: input validation and generic server error do not leak 
 test('private invitation: RPC receives explicit token and trimmed display name, no role override',async()=>{let args;const c={...client(),rpc:async(name,params)=>{args={name,params};return {data:tripId,error:null};}};assert.equal(await acceptPrivateTripInvite(c,'a'.repeat(64),' Sample '),tripId);assert.deepEqual(args,{name:'palau_accept_invite',params:{p_token:'a'.repeat(64),p_name:'Sample'}});});
 test('private invitation URL keeps token out of request query',()=>{const url=new URL(privateInviteLink('https://example.test','a'.repeat(64)));assert.equal(url.pathname,'/pilot/invite');assert.equal(url.search,'');assert.equal(url.hash,'#token='+'a'.repeat(64));assert.throws(()=>privateInviteLink('https://example.test','invalid'));});
 test('private media uses dedicated bucket and 60-second signed URL, no public API',async()=>{let args;const c={storage:{from:bucket=>({createSignedUrl:async(path,expiry)=>{args={bucket,path,expiry};return {data:{signedUrl:'https://example.test/signed'},error:null};}})}};assert.equal(await getPrivateMediaUrl(c,'trip/user/file.jpg'),'https://example.test/signed');assert.deepEqual(args,{bucket:'palau-private',path:'trip/user/file.jpg',expiry:60});});
+
+test('private invitation rejects malformed successful RPC destinations', async()=>{
+  for(const data of ['//example.test','not-a-trip','/pilot/private/other']) {
+    const c={...client(),rpc:async()=>({data,error:null})};
+    await assert.rejects(acceptPrivateTripInvite(c,'a'.repeat(64),'Sample'),/Invitation unavailable/);
+  }
+});

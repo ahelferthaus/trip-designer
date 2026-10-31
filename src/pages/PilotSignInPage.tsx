@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { createPilotAuthAction, pilotDestination, pilotReturnPath, pilotToken } from '../lib/pilotAuth';
+import { createPilotAuthAction, pilotCallback, pilotDestination, pilotReturnPath, pilotToken } from '../lib/pilotAuth';
 import { supabase } from '../lib/pilotSupabase';
 
 export default function PilotSignInPage() {
@@ -15,12 +15,13 @@ function PilotSignInForm() {
   const token = useRef(pilotToken(location.hash));
   const [signup, setSignup] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(() => pilotCallback(location.search, location.hash).failed ? 'That confirmation link is invalid or expired. Sign in if already confirmed, or contact your organizer for help.' : '');
   const next = pilotReturnPath(new URLSearchParams(location.search).get('next'));
   useEffect(() => {
     const current = action.current;
     token.current = pilotToken(location.hash);
-    if (location.hash) window.history.replaceState(window.history.state, '', location.pathname + location.search);
+    const callback = pilotCallback(location.search, location.hash);
+    if (location.hash || callback.search !== location.search) window.history.replaceState(window.history.state, '', location.pathname + callback.search);
     return () => current.cancel();
   }, [location.key, location.hash, location.pathname, location.search]);
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {

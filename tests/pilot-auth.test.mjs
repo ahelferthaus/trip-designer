@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPilotAuthAction, pilotReturnPath, pilotToken, pilotDestination } from '../src/lib/pilotAuth.ts';
+import { createPilotAuthAction, pilotReturnPath, pilotToken, pilotDestination, pilotCallback } from '../src/lib/pilotAuth.ts';
 
 const token = 'a'.repeat(64);
 const trip = '/pilot/private/10000000-0000-4000-8000-000000000001';
@@ -50,4 +50,19 @@ test('signup uses explicit callback and never carries invitation tokens in email
 });
 test('network failure becomes recoverable generic error', async () => {
   assert.equal((await createPilotAuthAction().run(mock(()=>{throw Error('network');}),'a@example.test','password',false,'')).status,'error');
+});
+test('token case matches server acceptance and malformed UUID return paths fail closed', () => {
+  assert.equal(pilotToken(`#token=${'A'.repeat(64)}`), '');
+  assert.equal(pilotDestination('/pilot/invite','A'.repeat(64)), '/pilot/invite');
+  assert.equal(pilotReturnPath(`/pilot/private/${'-'.repeat(36)}`), '/pilot/invite');
+});
+test('confirmation-required error is actionable while other Auth errors stay generic', async () => {
+  for(const [code,status] of [['email_not_confirmed','confirm'],['invalid_credentials','error']]) {
+    assert.equal((await createPilotAuthAction().run(mock({data:{},error:{code}}),'a@example.test','password',false,'')).status,status);
+  }
+});
+test('callback cleanup removes sensitive parameters and detects expiry without displaying server text', () => {
+  const result=pilotCallback('?next=%2Fpilot%2Finvite&code=sample-code&error_description=private-message&access_token=sample-access&refresh_token=sample-refresh','#error_code=otp_expired');
+  assert.deepEqual(result,{search:'?next=%2Fpilot%2Finvite',failed:true});
+  assert.deepEqual(pilotCallback('','#token='+token),{search:'',failed:false});
 });

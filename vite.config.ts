@@ -6,7 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss(), ...(mode === 'pilot' ? [{
     name: 'pilot-only-entry',
-    transformIndexHtml: { order: 'pre' as const, handler(html: string) { return html.replace('/src/main.tsx', '/src/pilot-main.tsx'); } },
+    transformIndexHtml: { order: 'pre' as const, handler(html: string) {
+      if (!html.includes('/src/main.tsx')) throw new Error('Pilot build requires the expected main entry.');
+      return html.replace('/src/main.tsx', '/src/pilot-main.tsx');
+    } },
   }] : [])],
   // Older deployments may still define these billing-capable keys. Never embed
   // them in a public preview; physical delivery needs a server-side integration.
