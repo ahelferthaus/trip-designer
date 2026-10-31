@@ -21,7 +21,7 @@ export interface PrivateTripSummary {
   title: string;
   start_date: string;
   end_date: string;
-  time_zone: 'Pacific/Palau';
+  time_zone: string;
   coordination: PrivateTripCoordination;
 }
 export type PrivateTripAccess =

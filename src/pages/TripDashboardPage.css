@@ -1,0 +1,7 @@
+.trip-dashboard { max-width: 760px; }
+.trip-dashboard nav, .trip-dashboard li { margin: 20px 0; }
+.trip-dashboard input[readonly] { background: #edf5f3; }
+.trip-dashboard [role="alert"]:empty { display: none; }
+.trip-dashboard [role="alert"]:not(:empty) { padding: 16px; border: 2px solid #9e3020; border-radius: 8px; }
+.trip-dashboard [role="alert"]:focus { outline: 3px solid #0757b9; outline-offset: 3px; }
+.trip-dashboard #create-trip { margin-top: 32px; border-top: 1px solid #647d76; padding-top: 16px; }

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export function pilotReturnPath(value: string | null): string {
-  return value && (/^\/pilot\/private\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value) || value === '/pilot/invite') ? value : '/pilot/invite';
+  return value && (/^\/pilot\/private\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value) || value === '/pilot/invite' || value === '/pilot/trips') ? value : '/pilot/invite';
 }
 export function pilotToken(hash: string): string {
   const token = new URLSearchParams(hash.replace(/^#/, '')).get('token') ?? '';

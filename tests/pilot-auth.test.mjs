@@ -75,3 +75,8 @@ test('rate limits and password policy failures provide safe distinct guidance', 
   }
   assert.equal(pilotCallback('?code=example', '').hadCode, true);
 });
+
+test('dashboard is an allowed internal return path but arbitrary routes remain rejected',()=>{
+ assert.equal(pilotReturnPath('/pilot/trips'),'/pilot/trips');
+ assert.equal(pilotReturnPath('/pilot/trips?next=https://evil.example'),'/pilot/invite');
+});

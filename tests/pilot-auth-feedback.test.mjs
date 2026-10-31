@@ -29,3 +29,8 @@ test('errors remain prominent and escape backend-looking text', () => {
   assert.doesNotMatch(html, /<script>/);
   assert.equal(render({}), '');
 });
+
+test('general foundation confirmation offers organizer and invited traveler paths without granting a role',()=>{
+ const html=render({confirmation:true,signup:true,generalTrips:true});
+ assert.match(html,/create your own trip or open an invitation/);assert.match(html,/role is specific to each trip/);assert.doesNotMatch(html,/currently supports invited trips/);
+});

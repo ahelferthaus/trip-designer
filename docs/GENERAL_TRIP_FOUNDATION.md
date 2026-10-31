@@ -1,0 +1,46 @@
+# General trip foundation: review and approval boundary
+
+Status: implemented on the pilot branch; **not deployed and migration not applied**. This is trip setup and membership infrastructure, not the full legacy feature integration.
+
+## Implemented
+
+- `/pilot/trips`: verified-account dashboard listing only active memberships, each with its own organizer/traveler role; explicit Create a trip and Join an invited trip paths.
+- Destination-neutral title, destination, dates, IANA timezone and total participant limit (1–100, default 8 including organizer). This limit is separate from each activity's capacity and is immutable through browser APIs in this version.
+- Atomic server-authorized trip creation with creator membership. No caller-selected owner or role. An expected-account parameter must equal auth.uid(); it only rejects session switches and cannot grant ownership. Same-account/same-request retries return the same trip; changed details under that request fail.
+- Session-change invalidation and revalidation of dashboard identity/membership. Missing migration produces a safe unavailable state rather than leaking data.
+- Trip timezone display; existing Palau local-time inputs unchanged. Other destinations explicitly edit UTC, avoiding untested daylight-saving wall-time conversion. Destination-local editing is a later UX improvement.
+- No automatic email invitations. Existing organizer copy-link controls remain the invitation mechanism.
+
+## Exact proposed migration approval
+
+File: `supabase/migrations/20261031071157_general_trip_foundation.sql`.
+
+Apply this exact new SQL file only to the existing isolated staging project after review, never automatically from CI. Inspect existing migration history first; do not run a blanket database push or rerun earlier migrations:
+
+1. Add `destination` and nullable `participant_limit` to `public.palau_trips`. Existing rows keep empty destination and NULL participant limit; no existing membership is revoked or deleted. Existing Palau timezone values remain.
+2. Replace the Palau-only timezone CHECK with a bounded string CHECK. The new create RPC validates a region timezone against PostgreSQL's timezone catalog (or UTC), rejects abbreviations and posix/right prefixes. Existing clients still cannot update timezone directly.
+3. Create private RLS-enabled `palau_private.trip_creation_requests`, with no browser table privileges, to hold normalized request inputs and the resulting trip ID.
+4. Add public INVOKER `vybr_create_trip(uuid,text,text,date,date,text,integer,text,uuid)` and private DEFINER `create_general_trip` with empty search paths and explicit authenticated-only execution. The private function verifies confirmed, nonanonymous `auth.uid()`, validates inputs, then inserts trip and organizer membership in one transaction. This expands supported creation to any verified account, without granting that account authority over another trip.
+5. Add a private trigger that serializes active membership inserts/restores on the parent trip, enforcing the configured participant limit. Existing trip limits stay NULL and retain previous behavior. New limited trips cannot exceed their cap via invitation acceptance or restoration. Role/identity mutation grants are unchanged. Activity RSVP capacity stays independent.
+
+No changes to Auth configuration, Auth rows, storage policies, real-account roles, secrets, legacy tables or production settings. No migration or backfill of existing private trip content. The old creation RPC remains compatible and uses its existing unspecified-limit behavior; 100 is a limit for this new creation flow, not a retroactive platform-wide limit.
+
+## Gating and release sequence
+
+`VITE_VYBR_TRIP_FOUNDATION_ENABLED=false` is the documented default. No hosted setting has been changed. With the flag off, the new dashboard route is not mounted, sign-in retains the invited-trip destination, and new schema queries/RPC calls cannot run through this feature. Client helpers also refuse calls while disabled. The flag is a rollout control, not an authorization boundary; database checks enforce access.
+
+After migration approval and application, verify catalog grants, policies and advisors, then use a separately approved feature-enabled staging build for genuine authenticated creation/join tests. Only after those checks should a release with the flag enabled be approved. Do not deploy this branch as the separate live site yet.
+
+## Evidence and remaining gaps
+
+Local PGlite tests exercise real SQL/RLS under synthetic auth claims, including caller ownership, cross-trip denial, role immutability, invalid inputs, idempotency, atomic rollback, full-trip invitation failure without consuming the invitation, restore limits, per-trip roles and legacy compatibility. Client tests cover disabled gating, unverified/anonymous users, stale identity/membership results, missing migration, safe RPC arguments, retry identity and timezone handling.
+
+PGlite execution is serialized. Two independent PostgreSQL connections must still verify blocking/serialization for simultaneous final-seat acceptance and duplicate creation; no claim of eight simultaneous HTTP sessions is made. Browser/mobile/keyboard testing is pending because computer-use URL enforcement remains blocked. Real signup/recovery/invitation redemption is not completed by these local tests.
+
+Creation retries keep fields fixed after an uncertain submission; definitive SQL input-validation rejection unlocks editing. Submitted request state survives a temporarily unavailable dashboard in memory, is shown only after the same account is verified, and is cleared on account change/sign-out. Reloading or losing the page loses the in-memory request ID: users must check My trips before starting a fresh request. Creation quotas/rate limiting and trip archival are future public-scale controls; no global organizer role or new service credential is introduced here.
+
+New trips start with empty coordination/activity data. Generic itinerary authoring/AI generation, maps, tracking, photo collections/books/postcards and printing remain separate integration work described in PLATFORM_SCOPE_AND_INTEGRATION.md. Do not advertise them as enabled by this foundation.
+
+Security design follows the [Supabase database function guidance](https://supabase.com/docs/guides/database/functions): restricted execution and empty search paths for privileged code. Before hosted activation, check the deployed PostgreSQL timezone-data version against the [Supabase changelog](https://supabase.com/changelog.md); no database upgrade is authorized or performed by this change.
+
+Migration execution must use the transactional migration runner. Administrative deletion of a newly created trip currently cascades its idempotency ledger entry; any future trip-deletion feature must define tombstone/retry behavior before release. No trip-deletion API is added here.

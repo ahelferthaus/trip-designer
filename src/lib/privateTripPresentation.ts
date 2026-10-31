@@ -23,3 +23,19 @@ export function safeExternalUrl(value: string | null | undefined): string | unde
     return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.href : undefined;
   } catch { return undefined; }
 }
+
+/** Legacy Palau forms retain their local-time behavior; other destinations edit explicit UTC.
+ * This avoids silently interpreting ambiguous/nonexistent daylight-saving wall times. */
+export function tripDateTimeInput(value: string | null, zone: string): string {
+  if (zone === 'Pacific/Palau') return palauDateTimeInput(value);
+  if (!value || !Number.isFinite(Date.parse(value))) return '';
+  return new Date(value).toISOString().slice(0,16);
+}
+export function tripDateTimeToIso(value: string, zone: string): string | null {
+  if (zone === 'Pacific/Palau') return palauDateTimeToIso(value);
+  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) || !Number.isFinite(Date.parse(value+'Z'))) throw new Error('Enter a valid UTC date and time.');
+  const iso = new Date(value+'Z').toISOString();
+  if (iso.slice(0,16)!==value) throw new Error('Enter a valid UTC date and time.');
+  return iso;
+}

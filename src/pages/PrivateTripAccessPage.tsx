@@ -120,6 +120,7 @@ export default function PrivateTripAccessPage() {
   return <main style={{ minHeight: '100vh', background: '#f4f4ee', color: '#183e38', padding: 'clamp(24px,6vw,72px)', fontFamily: 'system-ui, sans-serif' }}>
     <div style={{ maxWidth: access.status === 'member' ? 1180 : 620, margin: '0 auto' }}>
       <Link to="/pilot/palau" style={{ color: '#2e6253' }}>VYBR / Palau sample pilot</Link>
+      {import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true' && <p><Link to="/pilot/trips">My trips / Create a trip</Link></p>}
       <p style={{ marginTop: 48, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' }}>Private access • setup preview</p>
       <h1 style={{ fontSize: 'clamp(32px,5vw,48px)', margin: '12px 0 24px', lineHeight: 1.1 }}>{tripId ? 'Your trip, by invitation.' : 'Accept a private invitation.'}</h1>
       <section style={{ background: '#fff', padding: 28, borderRadius: 20, border: '1px solid #d9e4dd' }} aria-live="polite">

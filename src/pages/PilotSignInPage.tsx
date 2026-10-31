@@ -23,7 +23,8 @@ function PilotSignInForm() {
   const emailInput = useRef<HTMLInputElement>(null);
   const returnFocus = useRef(false);
   const [message, setMessage] = useState(() => pilotCallback(location.search, location.hash).failed ? 'That confirmation link is invalid or expired. Sign in if already confirmed, or contact your organizer for help.' : pilotCallback(location.search, location.hash).hadCode ? 'Confirmation link opened. Sign in to check your account. If it still needs confirmation, ask for help before requesting another email.' : '');
-  const next = pilotReturnPath(new URLSearchParams(location.search).get('next'));
+  const requestedNext = new URLSearchParams(location.search).get('next');
+  const next = !requestedNext && !pilotToken(location.hash) && import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true' ? '/pilot/trips' : pilotReturnPath(requestedNext);
   useEffect(() => {
     if (confirmation) confirmationFeedback.current?.focus();
     else if (message) feedback.current?.focus();
@@ -54,12 +55,12 @@ function PilotSignInForm() {
   return <main className="pilot-sign-in"><section className="pilot-sign-in__card" aria-labelledby="pilot-sign-in-title">
     <Link to="/pilot/palau">VYBR / Palau sample</Link>
     <h1 id="pilot-sign-in-title">{signup ? 'Create your pilot account' : 'Sign in to your private trip'}</h1>
-    <p>Use the email your organizer invited. Trip access requires a confirmed account and an accepted invitation.</p>
+    <p>{import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true' ? 'Create an account to organize a trip, or use the email your organizer invited.' : 'Use the email your organizer invited.'} A confirmed account is required. Joining someone else’s trip also requires an accepted invitation.</p>
     <div ref={feedback} tabIndex={-1} className="pilot-sign-in__feedback" role="alert">
-      <PilotAuthFeedback confirmation={false} signup={signup} message={confirmation ? '' : message} onReturn={() => {}} />
+      <PilotAuthFeedback generalTrips={import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true'} confirmation={false} signup={signup} message={confirmation ? '' : message} onReturn={() => {}} />
     </div>
     <div ref={confirmationFeedback} tabIndex={-1} className="pilot-sign-in__feedback" role="status">
-      {confirmation && <PilotAuthFeedback confirmation signup={signup} message="" onReturn={() => { returnFocus.current = true; setConfirmation(false); setSignup(false); setMessage(''); }} />}
+      {confirmation && <PilotAuthFeedback generalTrips={import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true'} confirmation signup={signup} message="" onReturn={() => { returnFocus.current = true; setConfirmation(false); setSignup(false); setMessage(''); }} />}
     </div>
     {!supabase ? <p role="status">Private sign-in has not been enabled.</p> : !confirmation && <form onSubmit={submit} aria-busy={busy}>
       <label>Email <input ref={emailInput} name="email" type="email" required autoComplete="email" /></label>

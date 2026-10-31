@@ -5,8 +5,11 @@ const Sample = lazy(() => import('./pages/PalauPilotPage'));
 const Access = lazy(() => import('./pages/PrivateTripAccessPage'));
 const SignIn = lazy(() => import('./pages/PilotSignInPage'));
 const Recovery = lazy(() => import('./pages/PilotRecoveryPage'));
+const foundationEnabled = import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true';
+const TripDashboard = foundationEnabled ? lazy(() => import('./pages/TripDashboardPage')) : () => null;
 export default function PilotApp() {
   return <BrowserRouter><ErrorBoundary><Suspense fallback={<p role="status">Loading pilot…</p>}><Routes>
+    {foundationEnabled && <Route path="/pilot/trips" element={<TripDashboard />} />}
     <Route path="/pilot/palau" element={<Sample />} />
     <Route path="/pilot/private/:tripId" element={<Access />} />
     <Route path="/pilot/invite" element={<Access />} />

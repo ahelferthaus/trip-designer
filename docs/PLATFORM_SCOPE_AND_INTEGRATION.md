@@ -4,6 +4,8 @@ VYBR is intended to let anyone organize a trip anywhere and invite travelers. Pa
 
 The isolated pilot is a deliberately limited deployment. The original repository contains the broader features below, but their presence in source is not evidence that they are deployed, secure, configured, or tested end to end. Do not describe the pilot as containing the whole original platform.
 
+**Next foundation:** [Dashboard/create-trip implementation and exact migration approval scope](GENERAL_TRIP_FOUNDATION.md) is now prepared behind a disabled flag. It is not deployed or applied to staging.
+
 ## Feature and backend audit (2026-10-31)
 
 | Capability | Original implementation evidence | Isolated pilot | Integration dependency / limitation |
