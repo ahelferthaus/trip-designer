@@ -23,6 +23,7 @@ test('render preserves legacy text safely and exposes labelled native pickers', 
   assert.match(html, /Friday &lt;script&gt;late&lt;\/script&gt;/);
   assert.match(html, /type="date"/);
   assert.match(html, /type="time"/);
+  assert.equal((html.match(/form="[^"]+-calendar-draft"/g) ?? []).length, 2);
   assert.match(html, /Pacific\/Palau/);
   assert.match(html, /Leave blank if unknown/);
   assert.match(html, /<legend>Arrival<\/legend>/);

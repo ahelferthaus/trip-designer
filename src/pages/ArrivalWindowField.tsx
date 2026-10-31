@@ -13,9 +13,10 @@ export default function ArrivalWindowField({ label, value, zone, onChange }: { l
     <input id={`${id}-summary`} value={value} maxLength={120} onChange={event => onChange(event.target.value)} placeholder="Not decided yet, or describe a flexible window" />
     <details><summary>Choose from a calendar</summary>
       <p id={`${id}-zone`}>These times are in {zone}, the trip’s saved time zone. Leave the time blank if it is not decided. Your existing text changes only when you choose Use this date.</p>
+      {/* Unapplied calendar drafts must not block the enclosing shared-text form validation. */}
       <div className="arrival-calendar-fields">
-        <label>Date<input type="date" value={date} aria-describedby={`${id}-zone`} onChange={event => setDate(event.target.value)} /></label>
-        <label>Time (optional)<input type="time" value={time} aria-describedby={`${id}-zone`} onChange={event => setTime(event.target.value)} /></label>
+        <label>Date<input type="date" form={`${id}-calendar-draft`} value={date} aria-describedby={`${id}-zone`} onChange={event => setDate(event.target.value)} /></label>
+        <label>Time (optional)<input type="time" form={`${id}-calendar-draft`} value={time} aria-describedby={`${id}-zone`} onChange={event => setTime(event.target.value)} /></label>
       </div>
       <button type="button" onClick={() => { try { onChange(calendarArrivalWindow(date, time, zone)); setStatus('Date added to your draft. Save your shared update to publish it.'); } catch (error) { setStatus(error instanceof Error ? error.message : 'Check the date and time.'); } }}>Use this date</button>
     </details>
