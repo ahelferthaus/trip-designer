@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPrivateTripAccess, privateInviteLink } from './privateTripAccess.ts';
+import { clearPilotCallbackSession, PilotCallbackCleanupError } from './pilotAuth.ts';
 
 export async function createPilotInvitation(client: SupabaseClient, tripId: string, email: string, origin: string) {
   const recipient = email.trim().toLowerCase();
@@ -21,13 +22,24 @@ export async function requestPilotRecovery(client: SupabaseClient, email: string
 
 export async function exchangePilotRecovery(client: SupabaseClient, code: string) {
   if (!code || code.length > 2048) return null;
+  let exchangedToken: string | undefined;
   try {
     const { data, error } = await client.auth.exchangeCodeForSession(code);
+    exchangedToken = data.session?.access_token;
     // auth-js stores the PKCE verifier suffix as PASSWORD_RECOVERY, not the implicit-flow type.
-    const valid = !error && 'redirectType' in data && data.redirectType === 'PASSWORD_RECOVERY' && data.session && data.user?.email_confirmed_at && !data.user?.is_anonymous;
-    if (!valid && data.session) await client.auth.signOut({ scope: 'local' });
-    return valid ? data.user.id : null;
-  } catch { return null; }
+    const valid = !error && 'redirectType' in data && data.redirectType === 'PASSWORD_RECOVERY' && exchangedToken && data.user?.email_confirmed_at && !data.user?.is_anonymous;
+    if (!valid || !exchangedToken) { if (exchangedToken) await clearPilotCallbackSession(client, exchangedToken); return null; }
+    const verified = await client.auth.getUser(exchangedToken);
+    const current = await client.auth.getSession();
+    if (verified.error || verified.data.user?.id !== data.user.id || !verified.data.user?.email_confirmed_at || verified.data.user.is_anonymous || current.error) {
+      await clearPilotCallbackSession(client, exchangedToken); return null;
+    }
+    return current.data.session?.access_token === exchangedToken ? data.user.id : null;
+  } catch (error) {
+    if (error instanceof PilotCallbackCleanupError) throw error;
+    if (exchangedToken) await clearPilotCallbackSession(client, exchangedToken);
+    return null;
+  }
 }
 
 export async function updatePilotRecoveredPassword(client: SupabaseClient, recoveredUserId: string | null, password: string, confirmation: string) {

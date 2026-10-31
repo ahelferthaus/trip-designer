@@ -5,9 +5,13 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import { createServer } from 'vite';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-const vite = await createServer({ server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' });
+// Do not invalidate the dependency cache of a running development/test session.
+const cacheDir = await mkdtemp(join(tmpdir(), 'vybr-render-cache-'));
+const vite = await createServer({ cacheDir, server: { middlewareMode: true, hmr: false, watch: null }, appType: 'custom' });
 try {
   const { default: PalauPilotPage } = await vite.ssrLoadModule('/src/pages/PalauPilotPage.tsx');
   const { PILOT_TRAVELERS, PILOT_EXPECTED_GROUP_SIZE, INITIAL_TASKS } = await vite.ssrLoadModule('/src/lib/palauPilot.ts');

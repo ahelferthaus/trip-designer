@@ -21,6 +21,54 @@ export function pilotCallback(search: string, hash: string) {
   return { hadCode: new URLSearchParams(search).has('code'), search: remaining ? `?${remaining}` : '', failed };
 }
 
+export class PilotCallbackCleanupError extends Error {
+  constructor() { super('This sign-in could not be cleared. Retry before continuing.'); }
+}
+
+/** Only clear the exchanged session, never a different session that replaced it. */
+export async function clearPilotCallbackSession(client: SupabaseClient, exchangedToken: string): Promise<void> {
+  try {
+    const current = await client.auth.getSession();
+    if (current.error) throw new PilotCallbackCleanupError();
+    if (current.data.session?.access_token !== exchangedToken) return;
+    const cleared = await client.auth.signOut({ scope: 'local' });
+    if (cleared.error) throw new PilotCallbackCleanupError();
+    const remaining = await client.auth.getSession();
+    if (remaining.error || remaining.data.session?.access_token === exchangedToken) throw new PilotCallbackCleanupError();
+  } catch { throw new PilotCallbackCleanupError(); }
+}
+
+/** Exchange a one-use PKCE confirmation code through Auth, then recheck identity.
+ * The caller keeps the promise in memory so StrictMode cannot exchange it twice.
+ * Recovery codes belong exclusively to the password recovery route. */
+export async function exchangePilotConfirmation(client: SupabaseClient, code: string): Promise<boolean> {
+  if (!code || code.length > 2048) return false;
+  let exchangedToken: string | undefined;
+  try {
+    const { data, error } = await client.auth.exchangeCodeForSession(code);
+    exchangedToken = data.session?.access_token;
+    if (error || !exchangedToken || !data.user?.id) {
+      if (exchangedToken) await clearPilotCallbackSession(client, exchangedToken);
+      return false;
+    }
+    if ('redirectType' in data && data.redirectType === 'PASSWORD_RECOVERY') {
+      await clearPilotCallbackSession(client, data.session.access_token);
+      return false;
+    }
+    let verified = await client.auth.getUser(data.session.access_token);
+    if (verified.error) verified = await client.auth.getUser(data.session.access_token);
+    const current = await client.auth.getSession();
+    const valid = !verified.error && verified.data.user?.id === data.user.id &&
+      Boolean(verified.data.user?.email_confirmed_at) && !verified.data.user?.is_anonymous;
+    if (!valid || current.error) { await clearPilotCallbackSession(client, data.session.access_token); return false; }
+    return !current.error && current.data.session?.access_token === data.session.access_token;
+  } catch (error) {
+    if (error instanceof PilotCallbackCleanupError) throw error;
+    if (exchangedToken) await clearPilotCallbackSession(client, exchangedToken);
+    return false;
+  }
+}
+
 /** One request at a time; interrupted requests must never navigate a later screen. */
 export function createPilotAuthAction() {
   let generation = 0;

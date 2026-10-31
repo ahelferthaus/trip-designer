@@ -9,7 +9,7 @@ import { PrivateAccountReady } from './PrivateAccountReady';
 
 const enabled = import.meta.env.VITE_PALAU_PRIVATE_ENABLED === 'true';
 const message: Record<string, string> = {
-  unconfigured: 'The private backend has not been enabled. The sample pilot works without an account or backend.',
+  unconfigured: 'Trip access is temporarily unavailable. Please try again later.',
   signed_out: 'Sign in with your invited account, then reopen this private link. No trip details are available before authorization.',
   unverified: 'Use a verified, non-anonymous account. Confirm your email before opening this private trip.',
   unavailable: 'This private trip is unavailable to this account. Check your invitation with the organizer.',
@@ -101,6 +101,12 @@ export default function PrivateTripAccessPage() {
     return () => { alive = false; invalidate(); subscription?.unsubscribe(); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', onVisible); };
   }, [tripId, location.hash]);
 
+  useEffect(() => {
+    if (!tripId && verified && !token && import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true') {
+      navigate('/pilot/trips', { replace: true });
+    }
+  }, [tripId, verified, token, navigate]);
+
   const accept = async (event: React.FormEvent) => {
     event.preventDefault();
     if (busy || !enabled || !verified || !token || !name.trim()) return;
@@ -121,7 +127,7 @@ export default function PrivateTripAccessPage() {
 
   return <main style={{ minHeight: '100vh', background: '#f4f4ee', color: '#183e38', padding: 'clamp(24px,6vw,72px)', fontFamily: 'system-ui, sans-serif' }}>
     <div style={{ maxWidth: access.status === 'member' ? 1180 : 620, margin: '0 auto' }}>
-      <Link to="/pilot/palau" style={{ color: '#2e6253' }}>VYBR / Palau sample pilot</Link>
+      <Link to={import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true' ? '/pilot/trips' : '/pilot/palau'} style={{ color: '#2e6253' }}>VYBR</Link>
       {import.meta.env.VITE_VYBR_TRIP_FOUNDATION_ENABLED === 'true' && <p><Link to="/pilot/trips">My trips / Create a trip</Link></p>}
       <p style={{ marginTop: 48, fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' }}>Private trip access</p>
       <h1 style={{ fontSize: 'clamp(32px,5vw,48px)', margin: '12px 0 24px', lineHeight: 1.1 }}>{tripId ? 'Your private trip' : token ? 'Accept a private invitation' : 'Your VYBR account'}</h1>
@@ -132,7 +138,7 @@ export default function PrivateTripAccessPage() {
           try { const result = await clientRef.current?.auth.signOut({ scope: 'local' }); if (result?.error) { setAccess({ status: 'error' }); setError('Sign-out could not be completed. Please retry.'); } }
           catch { setAccess({ status: 'error' }); setError('Sign-out could not be completed. Please retry.'); }
           finally { setBusy(false); }
-        }}>Sign out of the pilot</button></p>}
+        }}>Sign out</button></p>}
         {access.status === 'loading' ? <p>Checking access…</p> : access.status === 'member' && clientRef.current ? <PrivateTripWorkspace key={`${access.userId}:${access.trip.id}:${access.role}`} client={clientRef.current} access={access} /> : access.status === 'member' ? <>
           <h2>{access.trip.title}</h2>
           <p>{access.trip.start_date} – {access.trip.end_date} · {access.trip.time_zone}</p>
@@ -149,7 +155,7 @@ export default function PrivateTripAccessPage() {
         {enabled && (access.status === 'signed_out' || access.status === 'unverified') && <p><Link to={`/pilot/sign-in?next=${encodeURIComponent(tripId ? `/pilot/private/${tripId}` : '/pilot/invite')}${!tripId ? pilotDestination('/pilot/invite', token).replace('/pilot/invite', '') : ''}`}>Go to VYBR sign-in</Link> · Then reopen your invitation link.</p>}
       </section>
       <p style={{ fontSize: 13, lineHeight: 1.7, color: '#52685f', marginTop: 24 }}>Your trips are private. Each trip requires its own membership; confirming an account does not grant access to another person’s trip.</p>
-      <p><Link to="/pilot/palau">Return to the sample pilot →</Link></p>
+      <p><Link to="/pilot/palau">Explore a sample trip →</Link></p>
     </div>
   </main>;
 }

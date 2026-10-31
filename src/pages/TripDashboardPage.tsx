@@ -24,7 +24,7 @@ export default function TripDashboardPage() {
     return ()=> { alive=false; subscription?.unsubscribe(); window.removeEventListener('focus',refresh); };
   },[revision]);
   return <main className="pilot-sign-in"><section className="pilot-sign-in__card trip-dashboard" aria-labelledby="dashboard-title">
-    <Link to="/pilot/palau">VYBR / Sample trip</Link><h1 id="dashboard-title">Your trips, anywhere</h1>
+    <Link to="/">VYBR</Link><h1 id="dashboard-title">Your trips, anywhere</h1>
     <p>Create a trip as its organizer, or join a trip with an invitation. Your role belongs to each trip.</p>
     {state.status==='loading' && <p role="status">Checking your account and trips.</p>}
     {state.status==='disabled' && <p role="status">General trip creation is not enabled yet. Existing private trip links still work.</p>}
@@ -33,8 +33,8 @@ export default function TripDashboardPage() {
     {state.status==='unavailable' && <><p role="alert">Your trips could not be loaded. No private details are displayed. Try again later.</p><button onClick={()=>setRevision(n=>n+1)}>Retry</button></>}
     {state.status==='ready' && <>
       <button type="button" onClick={async()=>{requestGeneration.current++;identity.current=null;setAttempt(null);setState({status:'signed_out'});try {const result=await supabase?.auth.signOut({scope:'local'});if(result?.error)setState({status:'unavailable'});}catch{setState({status:'unavailable'});}}}>Sign out</button>
-      <nav aria-label="Trip journeys"><a href="#create-trip">Create a trip</a> · <Link to="/pilot/invite">Join an invited trip</Link></nav>
-      <p>To join, open the original private link from your organizer using the email they invited. Signing up alone does not join a trip.</p>
+      <nav aria-label="Trip journeys"><a href="#create-trip">Create a trip</a> · <a href="#join-trip">Join an invited trip</a></nav>
+      <p id="join-trip">To join, open the original private link from your organizer using the email they invited. Signing up alone does not join a trip.</p>
       <h2>My trips</h2>{state.trips.length ? <ul>{state.trips.map(trip=><li key={trip.id}><Link to={`/pilot/private/${trip.id}`}>{trip.title}</Link><p>{trip.destination || 'Existing private trip'} · {trip.role}<br />{trip.start_date} – {trip.end_date} · {trip.time_zone}{trip.participant_limit ? ` · Up to ${trip.participant_limit} participants, including organizer` : ''}</p></li>)}</ul> : <p>No active trips yet. Create one below or open your invitation.</p>}
       <CreateTripForm key={state.userId} attempt={attemptForUser(attempt,state.userId)} onAttempt={(requestId,draft)=>setAttempt({userId:state.userId,requestId,draft})} onRejected={()=>setAttempt(null)} />
     </>}

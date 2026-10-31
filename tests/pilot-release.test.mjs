@@ -23,15 +23,17 @@ test('recovery uses fixed same-origin route and hides account existence', async(
   assert.deepEqual(captured,['person@example.test',{redirectTo:'https://app.example/pilot/recover'}]);
   c.auth.resetPasswordForEmail=async()=>({error:{status:429,message:'backend detail'}});assert.equal(await requestPilotRecovery(c,'person@example.test','https://app.example'),'limited');
 });
-test('only exchanged recovery sessions enable password update, never ordinary signup codes', async()=>{
-  let cleared=0;
-  const c={auth:{signOut:async args=>{assert.deepEqual(args,{scope:'local'});cleared++;},exchangeCodeForSession:async()=>({data:{session:{},user,redirectType:'signup'},error:null})}};
-  assert.equal(await exchangePilotRecovery(c,'code'),null);
-  assert.equal(cleared,1);
-  c.auth.exchangeCodeForSession=async()=>({data:{session:{},user,redirectType:'recovery'},error:null});assert.equal(await exchangePilotRecovery(c,'code'),null);
-  c.auth.exchangeCodeForSession=async()=>({data:{session:{},user,redirectType:'PASSWORD_RECOVERY'},error:null});assert.equal(await exchangePilotRecovery(c,'code'),id);
-  assert.equal(await exchangePilotRecovery(c,''),null);
+test('recovery checks fresh identity and rejects ordinary codes, including cleanup failure',async()=>{
+ let session=null,cleared=0,kind='signup';
+ const c={auth:{getSession:async()=>({data:{session},error:null}),getUser:async()=>({data:{user},error:null}),signOut:async()=>{session=null;cleared++;return {error:null};},exchangeCodeForSession:async()=>{session={access_token:'synthetic'};return {data:{session,user,redirectType:kind},error:null};}}};
+ assert.equal(await exchangePilotRecovery(c,'code'),null);assert.equal(cleared,1);
+ kind='recovery';assert.equal(await exchangePilotRecovery(c,'code'),null);
+ kind='PASSWORD_RECOVERY';assert.equal(await exchangePilotRecovery(c,'code'),id);
+ c.auth.getUser=async()=>({data:{user:{...user,id:'switched'}},error:null});assert.equal(await exchangePilotRecovery(c,'code'),null);
+ kind='signup';c.auth.signOut=async()=>({error:{message:'private'}});await assert.rejects(exchangePilotRecovery(c,'code'),/could not be cleared/);
+ assert.equal(await exchangePilotRecovery(c,''),null);
 });
+
 test('password update rejects identity switches, missing recovery and mismatched passwords', async()=>{
   const c=mock();let updates=0;c.auth.updateUser=async()=>{updates++;return {error:null};};
   assert.equal(await updatePilotRecoveredPassword(c,null,'password123','password123'),'invalid');

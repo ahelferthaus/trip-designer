@@ -80,3 +80,57 @@ test('dashboard is an allowed internal return path but arbitrary routes remain r
  assert.equal(pilotReturnPath('/pilot/trips'),'/pilot/trips');
  assert.equal(pilotReturnPath('/pilot/trips?next=https://evil.example'),'/pilot/invite');
 });
+
+// Synthetic SDK responses: no real accounts, credentials, or requests.
+function callbackClient(kind = null) {
+ const user={id:'synthetic-user',email_confirmed_at:'2030-01-01',is_anonymous:false};
+ let session=null; const calls={exchange:0,verify:0,clear:0};
+ const auth={
+  exchangeCodeForSession:async()=>{calls.exchange++;session={access_token:'synthetic-exchanged'};return {data:{session,user,redirectType:kind},error:null};},
+  getUser:async token=>{assert.equal(token,'synthetic-exchanged');calls.verify++;return {data:{user},error:null};},
+  getSession:async()=>({data:{session},error:null}),
+  signOut:async args=>{assert.deepEqual(args,{scope:'local'});calls.clear++;session=null;return {error:null};}
+ };
+ return {auth,calls,user,replaceSession:value=>{session=value;}};
+}
+
+test('confirmation verifies exchanged identity and rejects invalid identities with cleanup',async()=>{
+ const {exchangePilotConfirmation}=await import('../src/lib/pilotAuth.ts');
+ const c=callbackClient();assert.equal(await exchangePilotConfirmation(c,'code'),true);assert.equal(c.calls.exchange,1);
+ for(const user of [null,{...c.user,id:'other'},{...c.user,email_confirmed_at:null},{...c.user,is_anonymous:true}]){
+  const client=callbackClient();client.auth.getUser=async()=>({data:{user},error:null});
+  assert.equal(await exchangePilotConfirmation(client,'code'),false);assert.equal(client.calls.clear,1);
+ }
+});
+test('confirmation rejects recovery, expired and oversized codes without leaking errors',async()=>{
+ const {exchangePilotConfirmation}=await import('../src/lib/pilotAuth.ts');
+ const c=callbackClient('PASSWORD_RECOVERY');
+ assert.equal(await exchangePilotConfirmation(c,''),false);assert.equal(await exchangePilotConfirmation(c,'x'.repeat(2049)),false);assert.equal(c.calls.exchange,0);
+ assert.equal(await exchangePilotConfirmation(c,'code'),false);assert.equal(c.calls.clear,1);assert.equal(c.calls.verify,0);
+ c.auth.exchangeCodeForSession=async()=>{throw Error('private detail')};assert.equal(await exchangePilotConfirmation(c,'expired'),false);
+});
+test('cleanup failure blocks completion and cannot be mistaken for normal invalid link',async()=>{
+ const {exchangePilotConfirmation,PilotCallbackCleanupError}=await import('../src/lib/pilotAuth.ts');
+ for(const failure of ['error','retained']){
+  const c=callbackClient('PASSWORD_RECOVERY');c.auth.signOut=async()=>({error:failure==='error'?{message:'private detail'}:null});
+  await assert.rejects(exchangePilotConfirmation(c,'code'),PilotCallbackCleanupError);
+ }
+});
+test('session switch is not cleared or treated as completion',async()=>{
+ const {exchangePilotConfirmation}=await import('../src/lib/pilotAuth.ts');
+ const c=callbackClient();c.auth.getUser=async()=>{c.replaceSession({access_token:'different-session'});return {data:{user:c.user},error:null};};
+ assert.equal(await exchangePilotConfirmation(c,'code'),false);assert.equal(c.calls.clear,0);
+});
+test('verification retries do not repeat one-use exchange and thrown verification cleans session',async()=>{
+ const {exchangePilotConfirmation}=await import('../src/lib/pilotAuth.ts');
+ const c=callbackClient();let attempts=0;c.auth.getUser=async()=>++attempts===1?{data:{user:null},error:{}}:{data:{user:c.user},error:null};
+ assert.equal(await exchangePilotConfirmation(c,'code'),true);assert.equal(c.calls.exchange,1);assert.equal(attempts,2);
+ c.auth.getUser=async()=>{throw Error('network')};assert.equal(await exchangePilotConfirmation(c,'code'),false);assert.equal(c.calls.clear,1);
+});
+test('delayed rejected exchange still clears its session after consumer stops waiting',async()=>{
+ const {exchangePilotConfirmation}=await import('../src/lib/pilotAuth.ts');
+ const c=callbackClient('PASSWORD_RECOVERY');const original=c.auth.exchangeCodeForSession;let release;
+ c.auth.exchangeCodeForSession=()=>new Promise(resolve=>{release=async()=>resolve(await original());});
+ const pending=exchangePilotConfirmation(c,'code');await release();
+ assert.equal(await pending,false);assert.equal(c.calls.clear,1);
+});

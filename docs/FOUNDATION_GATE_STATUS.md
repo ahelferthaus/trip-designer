@@ -1,6 +1,6 @@
 # Foundation gate status — 2026-10-31
 
-The stable separate site serves the isolated account-confirmation fix from `7af2bc4`, based on `db8ae3f`. The integration source is `c067a91`. These are intentionally different releases. No foundation activation or journey release has occurred.
+The stable separate site serves the isolated account-confirmation fix from `7af2bc4`, based on `db8ae3f`. The protected foundation test artifact uses `c067a91`; the integration branch contains subsequent unpublished onboarding fixes. These are intentionally different releases. No stable-site foundation activation or journey release has occurred.
 
 | Gate | Evidence | Remaining work |
 | --- | --- | --- |
@@ -16,20 +16,22 @@ The stable separate site serves the isolated account-confirmation fix from `7af2
 | Recovery | Mocked recovery code/session/update checks pass; stable recovery callback user-confirmed saved | User completes genuine recovery and signs in again; no new message sent by this checkpoint |
 | Hosted visual/keyboard/navigation | Corrected account screen has user-supplied rendered evidence | Foundation browser checks remain pending; no browser restriction bypass |
 
-## Avoiding the activation/testing cycle
+## Test deployment and current development
 
-A static test artifact has been prepared with foundation on, private authentication on, and journey/moderation off. It is not deployed or linked to a hosting project. A protected Preview test deployment is distinct from switching the stable live alias: it should use the existing staging backend and existing fictional accounts, no callbacks/settings changes, no emails and no real trips. Resolve the protected Preview target/scope before deployment; do not silently activate the stable site to obtain test evidence. Existing-account password sign-in does not require a new confirmation callback.
+A protected static foundation Preview was published from `c067a91` with foundation on and journey/moderation off. Preview-only Vercel Authentication was verified; the stable production alias remained on `7af2bc4`. This preview is internal QA infrastructure, not customer onboarding. Later source changes described below remain unpublished pending genuine Auth gates.
 
-The loopback development server is also prepared for independent testing. Local Auth/HTTP results can close local probes but must not be relabeled hosted navigation results. Server startup and successful page HTTP responses do not prove that a user is signed in.
+The current source fixes confirmation-code exchange before navigation, independently verifies the exchanged identity, and separates recovery from ordinary confirmation. Callback work finishes its cleanup even if its UI consumer unmounts. Failed cleanup blocks the form and offers an explicit local sign-out retry. A changed current session is not deliberately cleared. The SDK publishes sessions during exchange, so server-side verified-account checks and RLS remain authoritative; client navigation is not an authorization boundary.
 
-## Minimum manual sequence
+Root navigation and account copy now support the ordinary create-trip/join-trip journey when the foundation flag is enabled. Disabled builds retain the account screen without exposing the dashboard. No backend permissions or hosted flags changed in this source update.
 
-1. Existing local test harness: fictional traveler signs in, runs simultaneous-full-capacity and uncached-photo-expiry probes, shares only pass/fail output. Do not share credentials or signed URLs.
-2. Keep that session for coordinated exact-target revoke/restore checks. Do not revoke a user before the session is ready. Restore after testing even when a check fails.
-3. Fictional photo owner signs in and deletes only the specifically approved checker entry/object. No other cleanup or cross-member moderation is authorized by this test.
-4. Foundation test: fictional organizer creates a plainly synthetic trip, checks refresh and My trips, copies an email-bound invitation for the fictional traveler; outsider cannot redeem, intended traveler can redeem once, and roles persist after reload. No email delivery is needed for copied test links. Repeat on the protected hosted test artifact before live activation.
-5. Recovery remains a separate genuine user-completed gate at the stable recovery route. Do not request another confirmation email or imply confirmation already proves password recovery.
+Claude Opus 5.5 reviewed the generic callback/recovery design, with no additional source-file disclosure. Codex reviewed the actual edits. Mocked callback tests cover invalid identity, recovery separation, cleanup error/retained session, account switching, delayed completion, and verification retry without re-exchanging a one-use code. These are not genuine Auth or email-redemption results.
 
-Original production, real memberships, friend invitations and private imports remain outside these tests. Journey/maps/book/postcard integration remains separately gated.
+## Agent-owned testing and one session handoff
 
-Local handoff (Adrians-Laptop only): the existing harness remains at http://127.0.0.1:5175/staging.local/ (existing process preserved). The tested isolated foundation static build is separately served at http://127.0.0.1:5176/pilot/sign-in?next=%2Fpilot%2Ftrips and http://127.0.0.1:5176/pilot/trips. The latter's compiled route was checked over HTTP. These are not hosted URLs and require the laptop to remain running. Use fictional accounts only; the stable hosted site remains disabled for foundation/journey.
+Do not ask the user to execute probes or repeat the old multi-step QA checklist. The agent runs authorized probes after access is available. The supported browser provider currently exposes the ChatGPT in-app browser, not the user's Chrome session; no secure credential-entry connector is available. Existing in-app tabs are signed out. No password/session extraction, credential reset, or new account is appropriate.
+
+The loopback harness at `http://127.0.0.1:5175/staging.local/` renders its fictional-account sign-in form. Its earlier blank screen was reproduced as invalidated Vite optimized dependencies: SSR tests shared the dev server cache. Render tests now use a separate temporary cache, and live dependencies remain available after the tests. An HTTP 200 for the document alone was insufficient verification.
+
+An in-app-browser tab is prepared for one user-controlled fictional traveler sign-in. Credentials stay in that normal form. Afterward the agent can run the existing capacity and expiry probes and coordinate the exact approved revoke/restore test. This does not supply the separate photo owner's session or authorize password-entry automation. Genuine recovery necessarily requires user-controlled password entry. The supported visibility command currently returns hidden even after requesting display, so a user-accessible handoff is not yet verified. Report that access limitation; do not tell the user to open unrelated Chrome or an unsupported connection card.
+
+Remaining gates stay as listed above. Local results must not be relabeled hosted results. No new emails, real memberships, friend invitations, private imports, or destructive fixture cleanup occurred in this update. Original production and both deployed artifacts remain unchanged. Journey/maps/book/postcard integration remains separately gated.

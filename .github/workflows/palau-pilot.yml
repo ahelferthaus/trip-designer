@@ -44,6 +44,6 @@ jobs:
       - run: node tests/pilot-isolation.mjs
       - run: npm run test:private-bundle
       - name: Lint pilot authentication
-        run: npx eslint src/PilotApp.tsx src/pilot-main.tsx src/lib/pilotAuth.ts src/lib/pilotSupabase.ts src/pages/PilotSignInPage.tsx src/pages/PilotAuthFeedback.tsx src/pages/TripDashboardPage.tsx src/lib/tripDashboard.ts vite.config.ts
+        run: npx eslint src/PilotApp.tsx src/pilot-main.tsx src/lib/pilotAuth.ts src/lib/pilotRelease.ts src/lib/pilotSupabase.ts src/pages/PilotSignInPage.tsx src/pages/PilotRecoveryPage.tsx src/pages/PilotAuthFeedback.tsx src/pages/TripDashboardPage.tsx src/lib/tripDashboard.ts vite.config.ts
       - name: Lint pilot source
         run: npx eslint src/App.tsx src/LegacyApp.tsx src/lib/palauPilot.ts src/lib/privateTripAccess.ts src/lib/privateTripWorkspace.ts src/lib/privateTripPresentation.ts src/lib/privateJourney.ts src/lib/supabase.ts src/pages/PrivateJourney.tsx src/pages/PalauPilotPage.tsx src/pages/PrivateTripAccessPage.tsx src/pages/PrivateTripWorkspace.tsx src/components/activetrip/JournalEntryCard.tsx
