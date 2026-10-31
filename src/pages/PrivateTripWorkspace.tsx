@@ -16,6 +16,7 @@ import {
 import type { BookingStatus, GroupArrival, PrivateJournalEntry, PrivateTripWorkspace as WorkspaceData, TransferStatus } from '../lib/privateTripWorkspace';
 import './private-trip-workspace.css';
 import PilotInviteControls from './PilotInviteControls';
+import ArrivalWindowField from './ArrivalWindowField';
 import { tripDateTimeInput, tripDateTimeToIso, safeExternalUrl } from '../lib/privateTripPresentation';
 
 interface Props {
@@ -88,7 +89,7 @@ export default function PrivateTripWorkspace({ client, access }: Props) {
   const canEditTask = (ownerId: string, visibility: string) => ownerId === workspace.currentUserId || (visibility === 'shared' && workspace.role === 'organizer');
 
   return <div className="private-workspace">
-    <div className="private-workspace-banner"><strong>PRIVATE WORKSPACE</strong><span>Verified membership required. Data persists only when the isolated backend is enabled.</span></div>
+    <div className="private-workspace-banner"><strong>YOUR TRIP TOGETHER</strong><span>{workspace.role === 'organizer' ? 'Coordinate arrivals, plans and invitations. Each traveler adds their own travel details below.' : 'Add your travel details so your organizer can coordinate the trip, then explore the group plan.'}</span></div>
     <header className="private-workspace-header">
       <div><p className="private-eyebrow">VYBR · {workspace.role}</p><h2>{workspace.trip.title}</h2><p>{workspace.trip.start_date} – {workspace.trip.end_date} · {workspace.trip.time_zone}</p></div>
       <div className="private-role">Signed in as <strong>{members.get(workspace.currentUserId) ?? 'Trip member'}</strong></div>
@@ -114,16 +115,18 @@ export default function PrivateTripWorkspace({ client, access }: Props) {
     </section>
 
     <section className="private-section" aria-labelledby="group-logistics-heading">
-      <div className="private-section-heading"><div><p className="private-eyebrow">GROUP VISIBLE</p><h3 id="group-logistics-heading">Arrival windows & handoffs</h3></div><span>Keep exact references in the restricted section.</span></div>
+      <div className="private-section-heading"><div><p className="private-eyebrow">GROUP VISIBLE</p><h3 id="group-logistics-heading">Arrivals, departures & transfers</h3></div><span>Keep exact references in the restricted section.</span></div>
       <div className="private-grid">
-        <div className="private-list">{workspace.groupArrivals.length ? workspace.groupArrivals.map(item => <article className="private-card" key={item.user_id}><strong>{members.get(item.user_id) ?? 'Trip member'}</strong><p>{item.arrival_window || 'Arrival window pending'} · {item.departure_window || 'Departure pending'}</p><p>{item.handoff_note || 'No handoff note yet.'}</p><span className="private-status">{item.transfer_status.replace('_', ' ')}</span></article>) : <p className="private-muted">No group arrival windows have been shared.</p>}</div>
-        <form className="private-form" onSubmit={event => { event.preventDefault(); void mutate(() => saveOwnGroupArrival(client, workspace.trip.id, groupForm), 'Your group-visible logistics were saved.'); }}>
-          <h4>Your group-visible update</h4>
-          <label>Arrival window<input value={groupForm.arrival_window} maxLength={120} onChange={event => setGroupForm({ ...groupForm, arrival_window: event.target.value })} placeholder="Arrival day · afternoon" /></label>
-          <label>Departure window<input value={groupForm.departure_window} maxLength={120} onChange={event => setGroupForm({ ...groupForm, departure_window: event.target.value })} placeholder="Departure day · morning" /></label>
-          <label>Handoff note<textarea value={groupForm.handoff_note} maxLength={500} onChange={event => setGroupForm({ ...groupForm, handoff_note: event.target.value })} placeholder="Pickup coordination only—no booking codes." /></label>
+        <div className="private-list">{workspace.groupArrivals.length ? workspace.groupArrivals.map(item => <article className="private-card" key={item.user_id}><strong>{members.get(item.user_id) ?? 'Trip member'}</strong><p>{item.arrival_window || 'Arrival window pending'} · {item.departure_window || 'Departure pending'}</p><p>{item.handoff_note || 'No transfer or meeting details shared.'}</p><span className="private-status">{item.transfer_status.replace('_', ' ')}</span></article>) : <p className="private-muted">No group arrival windows have been shared.</p>}</div>
+        <form className="private-form" onSubmit={event => { event.preventDefault(); void mutate(() => saveOwnGroupArrival(client, workspace.trip.id, groupForm), 'Your update is saved and visible to everyone on this trip.'); }}>
+          <h4>Share your arrival and departure plans</h4>
+          <ArrivalWindowField label="Arrival" value={groupForm.arrival_window} zone={workspace.trip.time_zone} onChange={value => setGroupForm(current => ({ ...current, arrival_window: value }))} />
+          <ArrivalWindowField label="Departure" value={groupForm.departure_window} zone={workspace.trip.time_zone} onChange={value => setGroupForm(current => ({ ...current, departure_window: value }))} />
+          <p>Everyone on this trip, including the organizer, can see this update. Add only details you want to share with the group.</p>
+          <p>Optional: share where to meet, pickup plans, or whether you need a transfer. Do not include booking or access codes.</p>
+          <label>Transfer or meeting details<textarea value={groupForm.handoff_note} maxLength={500} onChange={event => setGroupForm({ ...groupForm, handoff_note: event.target.value })} placeholder="Pickup coordination only—no booking codes." /></label>
           <label>Transfer status<select value={groupForm.transfer_status} onChange={event => setGroupForm({ ...groupForm, transfer_status: event.target.value as TransferStatus })}><option value="needed">Needed</option><option value="coordinating">Coordinating</option><option value="confirmed">Confirmed</option><option value="not_needed">Not needed</option></select></label>
-          <button disabled={busy}>Save group logistics</button>
+          <button disabled={busy}>Save shared update</button>
         </form>
       </div>
     </section>
@@ -132,12 +135,12 @@ export default function PrivateTripWorkspace({ client, access }: Props) {
       <div className="private-section-heading"><div><p className="private-eyebrow">RESTRICTED</p><h3 id="travel-details-heading">Private travel details</h3></div><span>Visible only to you and the organizer. Never enter passport, medical, payment, or access-code data.</span></div>
       <div className="private-grid">
         <form className="private-form" onSubmit={event => { event.preventDefault(); void mutate(() => saveOwnPrivateTravelDetails(client, workspace.trip.id, { ...travelForm, arrival_at: tripDateTimeToIso(travelForm.arrival_at, workspace.trip.time_zone), departure_at: tripDateTimeToIso(travelForm.departure_at, workspace.trip.time_zone) }), 'Your restricted travel details were saved.'); }}>
-          <h4>Your restricted details</h4>
+          <h4>Details for you and your organizer</h4><p>Use the calendar controls for exact times, or leave them blank until confirmed. These fields do not fill in your shared update above. Times here are entered in {workspace.trip.time_zone === 'Pacific/Palau' ? 'Pacific/Palau (UTC+9)' : 'UTC'}; the trip display zone is {workspace.trip.time_zone}.</p>
           <label>Arrival time ({workspace.trip.time_zone === 'Pacific/Palau' ? 'Palau local' : 'UTC'})<input type="datetime-local" value={travelForm.arrival_at} onChange={event => setTravelForm({ ...travelForm, arrival_at: event.target.value })} /></label>
           <label>Departure time ({workspace.trip.time_zone === 'Pacific/Palau' ? 'Palau local' : 'UTC'})<input type="datetime-local" value={travelForm.departure_at} onChange={event => setTravelForm({ ...travelForm, departure_at: event.target.value })} /></label>
           <label>Flight reference<input value={travelForm.flight_reference} maxLength={160} onChange={event => setTravelForm({ ...travelForm, flight_reference: event.target.value })} placeholder="Airline / flight number only" /></label>
           <label>Lodging reference<input value={travelForm.lodging_reference} maxLength={240} onChange={event => setTravelForm({ ...travelForm, lodging_reference: event.target.value })} placeholder="Property and dates—no door or booking codes" /></label>
-          <label>Organizer note<textarea value={travelForm.private_note} maxLength={1000} onChange={event => setTravelForm({ ...travelForm, private_note: event.target.value })} /></label>
+          <label>Note for your organizer (optional)<textarea value={travelForm.private_note} maxLength={1000} onChange={event => setTravelForm({ ...travelForm, private_note: event.target.value })} /></label>
           <button disabled={busy}>Save restricted details</button>
         </form>
         {workspace.role === 'organizer' ? <div className="private-list"><h4>Organizer view</h4>{workspace.privateTravelDetails.map(detail => <article className="private-card" key={detail.user_id}><strong>{members.get(detail.user_id) ?? 'Trip member'}</strong><p>{detail.arrival_at ? displayDate(detail.arrival_at, workspace.trip.time_zone) : 'Arrival pending'} → {detail.departure_at ? displayDate(detail.departure_at, workspace.trip.time_zone) : 'Departure pending'}</p><p>{detail.flight_reference || 'No flight reference'} · {detail.lodging_reference || 'No lodging reference'}</p>{detail.private_note && <p>{detail.private_note}</p>}</article>)}</div> : <div className="private-card"><h4>Privacy boundary</h4><p>You cannot fetch another traveler’s restricted details. The organizer can review them for coordination; other members only see the group-visible arrival windows above.</p></div>}
