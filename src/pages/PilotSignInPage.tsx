@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createPilotAuthAction, pilotCallback, pilotDestination, pilotReturnPath, pilotToken } from '../lib/pilotAuth';
 import { supabase } from '../lib/pilotSupabase';
+import './PilotSignInPage.css';
 
 export default function PilotSignInPage() {
   const location = useLocation();
@@ -36,17 +37,17 @@ function PilotSignInForm() {
     if (result.status === 'ready') navigate(pilotDestination(next, token.current), { replace: true });
     else setMessage(result.status === 'confirm' ? 'Check your email to confirm your account, then sign in here and reopen your original invitation. Creating an account does not grant trip access.' : result.status === 'invalid' ? 'Enter an email and password. New accounts require at least 8 characters.' : 'Sign-in or account creation could not be completed. Check your details and try again.');
   };
-  return <main style={{ maxWidth: 620, margin: '48px auto', padding: 24, fontFamily: 'system-ui', color: '#183e38' }}>
+  return <main className="pilot-sign-in"><section className="pilot-sign-in__card" aria-labelledby="pilot-sign-in-title">
     <Link to="/pilot/palau">VYBR / Palau sample</Link>
-    <h1>{signup ? 'Create your pilot account' : 'Sign in to your private trip'}</h1>
+    <h1 id="pilot-sign-in-title">{signup ? 'Create your pilot account' : 'Sign in to your private trip'}</h1>
     <p>Use the email your organizer invited. Trip access requires a confirmed account and an accepted invitation.</p>
     {!supabase ? <p role="status">Private sign-in has not been enabled.</p> : <form onSubmit={submit}>
-      <label>Email <input name="email" type="email" required autoComplete="email" style={{ display: 'block', width: '100%', margin: '8px 0 20px', padding: 12 }} /></label>
-      <label>Password <input name="password" type="password" required minLength={signup ? 8 : 1} autoComplete={signup ? 'new-password' : 'current-password'} style={{ display: 'block', width: '100%', margin: '8px 0 20px', padding: 12 }} /></label>
+      <label>Email <input name="email" type="email" required autoComplete="email" /></label>
+      <label>Password <input name="password" type="password" required minLength={signup ? 8 : 1} autoComplete={signup ? 'new-password' : 'current-password'} /></label>
       <button disabled={busy}>{busy ? 'Please wait…' : signup ? 'Create account and send confirmation' : 'Sign in'}</button>
       <p><button type="button" disabled={busy} onClick={() => { setSignup(!signup); setMessage(''); }}>{signup ? 'Use an existing account' : 'Create an account'}</button></p>
     </form>}
     <p role="status">{message}</p>
     <p>If you leave or reload this page, reopen the original invitation after signing in. Invitation tokens are not stored here.</p>
-  </main>;
+  </section></main>;
 }
