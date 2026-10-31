@@ -206,12 +206,22 @@ export async function addPrivateJournalEntry(client: SupabaseClient | null, trip
   const cleanBody = body.trim();
   if (!cleanBody || cleanBody.length > 4000) throw new Error('Journal entries must be 1-4,000 characters.');
   let mediaPath: string | null = null;
+  let rejectedInsert = false;
   try {
     if (media) mediaPath = await uploadPrivateJournalMedia(client!, tripId, user.id, media);
     const { error } = await client!.from('palau_journal').insert({ trip_id: tripId, user_id: user.id, body: cleanBody, media_path: mediaPath });
-    if (error) throw unavailable();
+    if (error) {
+      // Only a definite PostgreSQL rejection proves no row committed. A network
+      // failure may occur after commit; never delete that possibly linked image.
+      rejectedInsert = /^(22|23|42)[A-Z0-9]{3}$/.test(error.code ?? '');
+      throw unavailable();
+    }
   } catch (error) {
-    if (mediaPath) await client!.storage.from('palau-private').remove([mediaPath]);
+    if (mediaPath) {
+      if (!rejectedInsert) throw new Error('The save outcome could not be confirmed. The image was retained; refresh and check the journal before retrying.');
+      const cleanup = await client!.storage.from('palau-private').remove([mediaPath]).catch(() => null);
+      if (!cleanup || cleanup.error || !cleanup.data?.some(object => object.name === mediaPath)) throw new Error('The journal entry was not saved. Image cleanup could not be confirmed; ask the organizer to reconcile the upload.');
+    }
     throw error;
   }
 }
@@ -222,11 +232,23 @@ export async function deletePrivateJournalEntry(client: SupabaseClient | null, t
   // If cleanup fails, the entry remains visible and can be retried.
   if (mediaPath) {
     const { data: removed, error: mediaError } = await client!.storage.from('palau-private').remove([mediaPath]);
-    if (mediaError || !removed?.some(object => object.name === mediaPath)) {
+    let confirmed = !mediaError && Boolean(removed?.some(object => object.name === mediaPath));
+    if (!mediaError && Array.isArray(removed) && removed.length === 0) {
+      // The reviewed forward RPC checks current authority and exact linkage,
+      // then reads Storage metadata with trusted visibility. RLS-filtered empty
+      // listings are never evidence of absence. Missing RPC fails closed.
+      try {
+        const proof = await client!.rpc('palau_journal_media_absent', { p_trip: tripId, p_entry: entryId, p_path: mediaPath });
+        confirmed = !proof.error && proof.data === true;
+      } catch { confirmed = false; }
+    }
+    if (!confirmed) {
       throw new Error('The private image removal could not be confirmed. The journal entry was kept; ask the organizer to reconcile the attachment before retrying.');
     }
   }
-  const { data, error } = await client!.from('palau_journal').delete().eq('trip_id', tripId).eq('id', entryId).select('id');
+  const deletion = client!.from('palau_journal').delete().eq('trip_id', tripId).eq('id', entryId);
+  // Do not remove a row whose attachment changed during the Storage request.
+  const { data, error } = await (mediaPath === null ? deletion.is('media_path', null) : deletion.eq('media_path', mediaPath)).select('id');
   if (error || data?.length !== 1) throw unavailable();
 }
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { saveOwnGroupArrival, saveOwnPrivateTravelDetails, deletePrivateJournalEntry, setPrivateChecklistDone, updatePrivateActivityStatus } from '../src/lib/privateTripWorkspace.ts';
+import { saveOwnGroupArrival, saveOwnPrivateTravelDetails, addPrivateJournalEntry, deletePrivateJournalEntry, setPrivateChecklistDone, updatePrivateActivityStatus } from '../src/lib/privateTripWorkspace.ts';
 
 const user = { id: '20000000-0000-4000-8000-000000000001', email_confirmed_at: '2030-01-01T00:00:00Z', is_anonymous: false };
 const tripId = '10000000-0000-4000-8000-000000000001';
@@ -16,6 +16,7 @@ function client({ existing = false, insertError = null, mediaError = null, remov
         update(payload) { call.operation = 'update'; call.payload = payload; return query; },
         delete() { call.operation = 'delete'; return query; },
         eq(key, value) { call.filters.push([key, value]); return query; },
+        is(key, value) { call.filters.push([key, value]); return query; },
         select() { return query; },
         then(resolve, reject) { return Promise.resolve({ data: affectedRows, error: call.operation === 'insert' ? insertError ?? (existing ? { code: '23505' } : null) : null }).then(resolve, reject); },
       };
@@ -48,6 +49,7 @@ test('journal attachment cleanup precedes row deletion and failures preserve the
   const c = client();
   await deletePrivateJournalEntry(c, tripId, 'entry', `${tripId}/${user.id}/sample.png`);
   assert.deepEqual(c.calls.map(call => call.operation), ['remove', 'delete']);
+  assert.deepEqual(c.calls.at(-1).filters.at(-1), ['media_path', `${tripId}/${user.id}/sample.png`]);
   const denied = client({ mediaError: { message: 'denied' } });
   await assert.rejects(deletePrivateJournalEntry(denied, tripId, 'entry', 'sample.png'), /entry was kept/);
   assert.deepEqual(denied.calls.map(call => call.operation), ['remove']);
@@ -57,7 +59,7 @@ test('empty, missing or mismatched storage results never delete the journal row'
   for (const removedObjects of [[], null, [{ name: 'a-different-object.png' }]]) {
     const c = client({ removedObjects });
     await assert.rejects(deletePrivateJournalEntry(c, tripId, 'entry', 'expected.png'), /entry was kept/);
-    assert.deepEqual(c.calls.map(call => call.operation), ['remove']);
+    assert.deepEqual(c.calls.map(call => call.operation).filter(Boolean), ['remove']);
   }
 });
 
@@ -72,4 +74,32 @@ test('RLS no-op writes never report success, while one affected row succeeds', a
     for (const affectedRows of [[], null]) await assert.rejects(action(client({ affectedRows })), /unavailable/);
     await action(client({ affectedRows: [{ id: 'record' }] }));
   }
+});
+
+test('partial photo deletion requires authoritative absence proof and final affected row', async () => {
+  const path = `${tripId}/${user.id}/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.png`;
+  function retryClient(proof, rows = [{id:'entry'}]) {
+    const c=client({removedObjects:[],affectedRows:rows});
+    c.rpc=async(name,args)=>{assert.equal(name,'palau_journal_media_absent');assert.deepEqual(args,{p_trip:tripId,p_entry:'entry',p_path:path});return proof;};
+    return c;
+  }
+  const c=retryClient({data:true,error:null});await deletePrivateJournalEntry(c,tripId,'entry',path);
+  assert.equal(c.calls.filter(c=>c.operation==='delete').length,1);
+  for(const proof of [{data:false,error:null},{data:null,error:null},{data:true,error:{message:'denied'}},{data:null,error:{code:'PGRST202'}}]){
+    const c=retryClient(proof);await assert.rejects(deletePrivateJournalEntry(c,tripId,'entry',path),/entry was kept/);assert.equal(c.calls.filter(c=>c.operation==='delete').length,0);
+  }
+  await assert.rejects(deletePrivateJournalEntry(retryClient({data:true,error:null},[]),tripId,'entry',path),/unavailable/);
+});
+
+test('failed journal insert reports unconfirmed image cleanup without claiming rollback', async () => {
+  const c=client({insertError:{code:'42501'},removedObjects:[]});
+  const storage=c.storage.from();c.storage.from=()=>({...storage,upload:async()=>({error:null})});
+  await assert.rejects(addPrivateJournalEntry(c,tripId,'Synthetic journal',new File(['fixture'],'fixture.png',{type:'image/png'})),/entry was not saved.*cleanup could not be confirmed/);
+});
+
+test('ambiguous journal insert failure never deletes a possibly committed attachment', async () => {
+  const c=client({insertError:{message:'network outcome unknown'}});
+  const storage=c.storage.from();c.storage.from=()=>({...storage,upload:async()=>({error:null})});
+  await assert.rejects(addPrivateJournalEntry(c,tripId,'Synthetic journal',new File(['fixture'],'fixture.png',{type:'image/png'})),/save outcome could not be confirmed.*image was retained/);
+  assert.equal(c.calls.some(call=>call.operation==='remove'),false);
 });
