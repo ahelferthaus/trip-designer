@@ -47,6 +47,7 @@ function PilotSignInForm() {
       <button disabled={busy}>{busy ? 'Please wait…' : signup ? 'Create account and send confirmation' : 'Sign in'}</button>
       <p><button type="button" disabled={busy} onClick={() => { setSignup(!signup); setMessage(''); }}>{signup ? 'Use an existing account' : 'Create an account'}</button></p>
     </form>}
+    <p><Link to="/pilot/recover">Forgot your password?</Link></p>
     <p role="status">{message}</p>
     <p>If you leave or reload this page, reopen the original invitation after signing in. Invitation tokens are not stored here.</p>
   </section></main>;
