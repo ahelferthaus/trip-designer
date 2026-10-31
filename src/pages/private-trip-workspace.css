@@ -69,3 +69,11 @@
 .private-invitation-card :focus-visible { outline: 3px solid #ad7313; outline-offset: 3px; }
 .private-invitation-feedback { min-height: 1.5em; margin: 12px 0 0; color: #234e3f; font-size: 14px; overflow-wrap: anywhere; }
 @media (max-width: 480px) { .private-invitation-actions { flex-direction: column; align-items: stretch; } .private-invitation-actions > button { width: 100%; } }
+
+.arrival-window-field { min-width: 0; margin: 0; padding: 1rem; border: 1px solid #72828e; border-radius: .75rem; }
+.arrival-window-field legend { font-weight: 700; padding: 0 .35rem; }
+.arrival-window-field summary { cursor: pointer; padding: .75rem 0; text-decoration: underline; }
+.arrival-window-field summary:focus-visible { outline: 3px solid #167b86; outline-offset: 3px; }
+.arrival-calendar-fields { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.arrival-calendar-fields input { min-width: 0; max-width: 100%; }
+@media (max-width: 480px) { .arrival-calendar-fields { grid-template-columns: 1fr; } }
