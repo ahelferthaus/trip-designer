@@ -52,6 +52,15 @@ test('journey returns a useful empty state and rejects invalid trip zones', () =
   const input = fixture(); input.activities = []; input.journal = [];
   assert.deepEqual(buildPrivateJourney(input), []);
   input.trip.time_zone = 'Invalid/Zone'; assert.throws(() => buildPrivateJourney(input), RangeError);
+  for (const zone of ['', undefined, null]) { input.trip.time_zone = zone; assert.throws(() => buildPrivateJourney(input), RangeError); }
+});
+test('journey rejects calendar overflow, missing offsets and date-only timestamps', () => {
+  for (const at of ['2030-02-31T10:00:00Z','2030-04-01','2030-04-01T10:00:00','infinity']) {
+    const input=fixture(); input.activities=[]; input.journal[0].recorded_at=at;
+    assert.deepEqual(buildPrivateJourney(input), []);
+  }
+  const input=fixture(); input.activities=[]; input.journal[0].recorded_at='2030-04-01T10:00:00.123456+00:00';
+  assert.equal(buildPrivateJourney(input).length,1);
 });
 
 const source = await readFile(new URL('../src/pages/PrivateJourney.tsx', import.meta.url), 'utf8');

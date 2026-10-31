@@ -30,6 +30,7 @@ for (const [id,email,anonymous,confirmed] of [[organizer,'organizer@example.test
 await db.exec(await readFile(new URL('../migrations/20261027161432_palau_private_pilot.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../migrations/20261031060000_palau_member_restore.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../migrations/20261031071157_general_trip_foundation.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../migrations/20261031133442_participant_limit_lock_compatibility.sql',import.meta.url),'utf8'));
 const create = async (request=uid(100),limit=2,title='Tokyo discovery',zone='Asia/Tokyo') => (await run('select vybr_create_trip($1,$2,$3,$4,$5,$6,$7,$8,auth.uid()) id',[request,title,'Tokyo','2030-04-01','2030-04-10',zone,limit,'Organizer'])).rows[0].id;
 try {
  await test('general trip foundation security and compatibility',async t=>{
